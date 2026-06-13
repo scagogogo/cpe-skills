@@ -149,6 +149,10 @@ archives:
       {{- else if eq .Arch "386" }}i386
       {{- else if eq .Arch "arm64" }}aarch64
       {{- else if eq .Arch "arm" }}armv{{ .Arm }}
+      {{- else if eq .Arch "mips" }}mips{{ if eq .Mips "softfloat" }}sf{{ end }}
+      {{- else if eq .Arch "mips64" }}mips64{{ if eq .Mips "softfloat" }}sf{{ end }}
+      {{- else if eq .Arch "mipsle" }}mipsle{{ if eq .Mips "softfloat" }}sf{{ end }}
+      {{- else if eq .Arch "mips64le" }}mips64le{{ if eq .Mips "softfloat" }}sf{{ end }}
       {{- else }}{{ .Arch }}{{ end }}
     format_overrides:
       - goos: windows
