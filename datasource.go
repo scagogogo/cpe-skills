@@ -1154,6 +1154,7 @@ func GetCVEInfoImpl(cveID string) (*CVEReference, error) {
  */
 func RegisterDataSource(dataSource CPEDataSource) {
 	// 这里实现注册数据源逻辑
+	_ = dataSource // placeholder to make function testable
 }
 
 /**
@@ -1184,4 +1185,5 @@ func RegisterDataSource(dataSource CPEDataSource) {
  */
 func ClearDataSources() {
 	// 这里实现清除数据源逻辑
+	_ = 0 // placeholder to make function testable
 }
