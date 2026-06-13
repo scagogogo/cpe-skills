@@ -45,7 +45,7 @@ func TestFileStorage_Initialize_CacheInitFailure(t *testing.T) {
 
 	// Make the metadata dir read-only so StoreModificationTimestamp inside Initialize fails
 	metadataDir := filepath.Join(tempDir, "metadata")
-	os.Chmod(metadataDir, 0555)
+	os.Chmod(metadataDir, 0555) //nolint:errcheck
 	defer os.Chmod(metadataDir, 0755)
 
 	err = fs.Initialize()
@@ -77,11 +77,11 @@ func TestFileStorage_StoreCPE_WriteFailure(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Make cpes directory read-only to cause write failure
 	cpesDir := filepath.Join(tempDir, "cpes")
-	os.Chmod(cpesDir, 0555)
+	os.Chmod(cpesDir, 0555) //nolint:errcheck
 	defer os.Chmod(cpesDir, 0755)
 
 	cpe := &CPE{
@@ -105,7 +105,7 @@ func TestFileStorage_StoreCPE_TrulyEmptyURI(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// CPE{} still generates a URI like "cpe:2.3:::::::::::" via FormatURI
 	cpe := &CPE{}
@@ -121,7 +121,7 @@ func TestFileStorage_StoreCPE_CacheUpdateFailure(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cpe := &CPE{
 		Cpe23:       "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",
@@ -142,13 +142,13 @@ func TestFileStorage_RetrieveCPE_InvalidJSON(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Write invalid JSON to a CPE file manually
 	cpeID := "cpe:2.3:a:vendor:badjson:1.0:*:*:*:*:*:*:*"
 	filePath := fs.CPEFilePath(cpeID)
-	os.MkdirAll(filepath.Dir(filePath), 0755)
-	os.WriteFile(filePath, []byte("not valid json"), 0644)
+	os.MkdirAll(filepath.Dir(filePath), 0755) //nolint:errcheck
+	os.WriteFile(filePath, []byte("not valid json"), 0644) //nolint:errcheck
 
 	_, err := fs.RetrieveCPE(cpeID)
 	if err == nil {
@@ -161,7 +161,7 @@ func TestFileStorage_RetrieveCPE_CacheHit(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cpe := &CPE{
 		Cpe23:       "cpe:2.3:a:vendor:cachehit:1.0:*:*:*:*:*:*:*",
@@ -170,7 +170,7 @@ func TestFileStorage_RetrieveCPE_CacheHit(t *testing.T) {
 		ProductName: Product("cachehit"),
 		Version:     Version("1.0"),
 	}
-	fs.StoreCPE(cpe)
+	_ = fs.StoreCPE(cpe)
 
 	// First retrieve populates cache, second should hit cache
 	result, err := fs.RetrieveCPE(cpe.Cpe23)
@@ -196,7 +196,7 @@ func TestFileStorage_UpdateCPE_CacheUpdate(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cpe := &CPE{
 		Cpe23:       "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",
@@ -205,7 +205,7 @@ func TestFileStorage_UpdateCPE_CacheUpdate(t *testing.T) {
 		ProductName: Product("product"),
 		Version:     Version("1.0"),
 	}
-	fs.StoreCPE(cpe)
+	_ = fs.StoreCPE(cpe)
 
 	cpe.Version = Version("2.0")
 	cpe.Cpe23 = "cpe:2.3:a:vendor:product:2.0:*:*:*:*:*:*:*"
@@ -220,7 +220,7 @@ func TestFileStorage_DeleteCPE_StatError2(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Delete a non-existent CPE - should not error
 	err := fs.DeleteCPE("nonexistent_uri")
@@ -234,7 +234,7 @@ func TestFileStorage_DeleteCPE_RemoveError(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cpe := &CPE{
 		Cpe23:       "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",
@@ -243,12 +243,12 @@ func TestFileStorage_DeleteCPE_RemoveError(t *testing.T) {
 		ProductName: Product("product"),
 		Version:     Version("1.0"),
 	}
-	fs.StoreCPE(cpe)
+	_ = fs.StoreCPE(cpe)
 
 	// Make the file a directory to cause Remove to fail
 	filePath := fs.CPEFilePath(cpe.Cpe23)
 	os.Remove(filePath)
-	os.MkdirAll(filePath, 0755)
+	os.MkdirAll(filePath, 0755) //nolint:errcheck
 
 	err := fs.DeleteCPE(cpe.Cpe23)
 	if err == nil {
@@ -264,11 +264,11 @@ func TestFileStorage_SearchCPE_LoadError(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Make cpes directory unreadable
 	cpesDir := filepath.Join(tempDir, "cpes")
-	os.Chmod(cpesDir, 0000)
+	os.Chmod(cpesDir, 0000) //nolint:errcheck
 	defer os.Chmod(cpesDir, 0755)
 
 	_, err := fs.SearchCPE(nil, nil)
@@ -299,11 +299,11 @@ func TestFileStorage_StoreCVE_WriteFailure(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Make cves directory read-only
 	cvesDir := filepath.Join(tempDir, "cves")
-	os.Chmod(cvesDir, 0555)
+	os.Chmod(cvesDir, 0555) //nolint:errcheck
 	defer os.Chmod(cvesDir, 0755)
 
 	cve := NewCVEReference("CVE-2021-99999")
@@ -321,7 +321,7 @@ func TestFileStorage_StoreCVE_CacheUpdateFailure(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-77777")
 	cve.Description = "Cache test"
@@ -336,13 +336,13 @@ func TestFileStorage_RetrieveCVE_InvalidJSON(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Write invalid JSON to CVE file
 	cveID := "CVE-2021-BADJSON"
 	filePath := fs.CVEFilePath(cveID)
-	os.MkdirAll(filepath.Dir(filePath), 0755)
-	os.WriteFile(filePath, []byte("not valid json"), 0644)
+	os.MkdirAll(filepath.Dir(filePath), 0755) //nolint:errcheck
+	os.WriteFile(filePath, []byte("not valid json"), 0644) //nolint:errcheck
 
 	_, err := fs.RetrieveCVE(cveID)
 	if err == nil {
@@ -355,7 +355,7 @@ func TestFileStorage_RetrieveCVE_CacheUpdateAfterMiss(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-55555")
 	cve.Description = "Cache miss test"
@@ -379,7 +379,7 @@ func TestFileStorage_UpdateCVE_CacheUpdate(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-UPDATE1")
 	cve.Description = "Original"
@@ -397,7 +397,7 @@ func TestFileStorage_UpdateCVE_WriteFailure(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-WRITEFAIL")
 	cve.Description = "Original"
@@ -405,7 +405,7 @@ func TestFileStorage_UpdateCVE_WriteFailure(t *testing.T) {
 
 	// Make cves dir read-only
 	cvesDir := filepath.Join(tempDir, "cves")
-	os.Chmod(cvesDir, 0555)
+	os.Chmod(cvesDir, 0555) //nolint:errcheck
 	defer os.Chmod(cvesDir, 0755)
 
 	cve.Description = "Updated"
@@ -422,7 +422,7 @@ func TestFileStorage_DeleteCVE_RemoveFailure(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-DELFAIL")
 	fs.StoreCVE(cve)
@@ -430,7 +430,7 @@ func TestFileStorage_DeleteCVE_RemoveFailure(t *testing.T) {
 	// Make file a directory to cause Remove to fail
 	filePath := fs.CVEFilePath(cve.CVEID)
 	os.Remove(filePath)
-	os.MkdirAll(filePath, 0755)
+	os.MkdirAll(filePath, 0755) //nolint:errcheck
 
 	err := fs.DeleteCVE(cve.CVEID)
 	if err == nil {
@@ -445,7 +445,7 @@ func TestFileStorage_DeleteCVE_CacheFailure(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-DELCACHE")
 	cve.Description = "test"
@@ -462,7 +462,7 @@ func TestFileStorage_StoreDictionary_CacheUpdate(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	dict := &CPEDictionary{
 		Items: []*CPEItem{
@@ -482,11 +482,11 @@ func TestFileStorage_StoreDictionary_WriteFailure(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Make dictionary dir read-only
 	dictDir := filepath.Join(tempDir, "dictionary")
-	os.Chmod(dictDir, 0555)
+	os.Chmod(dictDir, 0555) //nolint:errcheck
 	defer os.Chmod(dictDir, 0755)
 
 	dict := &CPEDictionary{
@@ -507,12 +507,12 @@ func TestFileStorage_RetrieveDictionary_InvalidJSON(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Write invalid JSON to dictionary file
 	dictPath := fs.DictionaryFilePath()
-	os.MkdirAll(filepath.Dir(dictPath), 0755)
-	os.WriteFile(dictPath, []byte("not valid json"), 0644)
+	os.MkdirAll(filepath.Dir(dictPath), 0755) //nolint:errcheck
+	os.WriteFile(dictPath, []byte("not valid json"), 0644) //nolint:errcheck
 
 	_, err := fs.RetrieveDictionary()
 	if err == nil {
@@ -525,11 +525,11 @@ func TestFileStorage_StoreModificationTimestamp_WriteFailure(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Make metadata dir read-only
 	metaDir := filepath.Join(tempDir, "metadata")
-	os.Chmod(metaDir, 0555)
+	os.Chmod(metaDir, 0555) //nolint:errcheck
 	defer os.Chmod(metaDir, 0755)
 
 	err := fs.StoreModificationTimestamp("test_key", time.Now())
@@ -545,7 +545,7 @@ func TestFileStorage_StoreModificationTimestamp_CacheUpdate(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	err := fs.StoreModificationTimestamp("cache_ts_test", time.Now())
 	if err != nil {
@@ -558,12 +558,12 @@ func TestFileStorage_RetrieveModificationTimestamp_InvalidJSON(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Write invalid JSON to metadata file
 	metaPath := fs.MetadataFilePath("bad_key")
-	os.MkdirAll(filepath.Dir(metaPath), 0755)
-	os.WriteFile(metaPath, []byte("not valid json"), 0644)
+	os.MkdirAll(filepath.Dir(metaPath), 0755) //nolint:errcheck
+	os.WriteFile(metaPath, []byte("not valid json"), 0644) //nolint:errcheck
 
 	_, err := fs.RetrieveModificationTimestamp("bad_key")
 	if err == nil {
@@ -576,7 +576,7 @@ func TestFileStorage_RetrieveModificationTimestamp_CacheMiss(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	testTime := time.Now()
 	fs.StoreModificationTimestamp("miss_test", testTime)
@@ -599,7 +599,7 @@ func TestFileStorage_AdvancedSearchCPE_CacheError(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cpe := &CPE{
 		Cpe23:       "cpe:2.3:a:vendor:advsearch:1.0:*:*:*:*:*:*:*",
@@ -608,7 +608,7 @@ func TestFileStorage_AdvancedSearchCPE_CacheError(t *testing.T) {
 		ProductName: Product("advsearch"),
 		Version:     Version("1.0"),
 	}
-	fs.StoreCPE(cpe)
+	_ = fs.StoreCPE(cpe)
 
 	// Use exact match criteria
 	criteria := &CPE{
@@ -649,7 +649,7 @@ func TestFileStorage_AdvancedSearchCPE_WithCacheError(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Store CPE, then clear cache to test cache search error path
 	cpe := &CPE{
@@ -659,7 +659,7 @@ func TestFileStorage_AdvancedSearchCPE_WithCacheError(t *testing.T) {
 		ProductName: Product("product"),
 		Version:     Version("1.0"),
 	}
-	fs.StoreCPE(cpe)
+	_ = fs.StoreCPE(cpe)
 
 	// Clear cache so SearchCPE returns empty from cache
 	fs.cache.Initialize()
@@ -679,7 +679,7 @@ func TestFileStorage_FindCVEsByCPE_WithoutCache(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cpe := &CPE{
 		Cpe23:       "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",
@@ -688,7 +688,7 @@ func TestFileStorage_FindCVEsByCPE_WithoutCache(t *testing.T) {
 		ProductName: Product("product"),
 		Version:     Version("1.0"),
 	}
-	fs.StoreCPE(cpe)
+	_ = fs.StoreCPE(cpe)
 
 	cve := NewCVEReference("CVE-2021-FIND1")
 	cve.AddAffectedCPE("cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*")
@@ -708,7 +708,7 @@ func TestFileStorage_FindCPEsByCVE_WithoutCache(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cpe := &CPE{
 		Cpe23:       "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",
@@ -717,7 +717,7 @@ func TestFileStorage_FindCPEsByCVE_WithoutCache(t *testing.T) {
 		ProductName: Product("product"),
 		Version:     Version("1.0"),
 	}
-	fs.StoreCPE(cpe)
+	_ = fs.StoreCPE(cpe)
 
 	cve := NewCVEReference("CVE-2021-FIND2")
 	cve.AddAffectedCPE("cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*")
@@ -735,7 +735,7 @@ func TestFileStorage_loadAllCVEs_WithInvalidFile(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Store a valid CVE
 	cve := NewCVEReference("CVE-2021-VALID")
@@ -743,7 +743,7 @@ func TestFileStorage_loadAllCVEs_WithInvalidFile(t *testing.T) {
 
 	// Also add an invalid JSON file to cves directory
 	cvesDir := filepath.Join(tempDir, "cves")
-	os.WriteFile(filepath.Join(cvesDir, "invalid.json"), []byte("not json"), 0644)
+	os.WriteFile(filepath.Join(cvesDir, "invalid.json"), []byte("not json"), 0644) //nolint:errcheck
 
 	cves, err := fs.loadAllCVEs()
 	if err != nil {
@@ -759,11 +759,11 @@ func TestFileStorage_loadAllCVEs_WithSubDir(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Create a subdirectory in cves dir (should be skipped)
 	cvesDir := filepath.Join(tempDir, "cves")
-	os.MkdirAll(filepath.Join(cvesDir, "subdir"), 0755)
+	os.MkdirAll(filepath.Join(cvesDir, "subdir"), 0755) //nolint:errcheck
 
 	cves, err := fs.loadAllCVEs()
 	if err != nil {
@@ -3235,7 +3235,7 @@ func TestFileStorage_RetrieveCPE_ReadError(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Create a CPE file, then make it unreadable
 	cpe := &CPE{
@@ -3245,11 +3245,11 @@ func TestFileStorage_RetrieveCPE_ReadError(t *testing.T) {
 		ProductName: Product("unreadable"),
 		Version:     Version("1.0"),
 	}
-	fs.StoreCPE(cpe)
+	_ = fs.StoreCPE(cpe)
 
 	// Make the file unreadable
 	filePath := fs.CPEFilePath(cpe.Cpe23)
-	os.Chmod(filePath, 0000)
+	os.Chmod(filePath, 0000) //nolint:errcheck
 	defer os.Chmod(filePath, 0644)
 
 	_, err := fs.RetrieveCPE(cpe.Cpe23)
@@ -3265,14 +3265,14 @@ func TestFileStorage_RetrieveCVE_ReadError(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-UNREADABLE")
 	fs.StoreCVE(cve)
 
 	// Make the file unreadable
 	filePath := fs.CVEFilePath(cve.CVEID)
-	os.Chmod(filePath, 0000)
+	os.Chmod(filePath, 0000) //nolint:errcheck
 	defer os.Chmod(filePath, 0644)
 
 	_, err := fs.RetrieveCVE(cve.CVEID)
@@ -3288,14 +3288,14 @@ func TestFileStorage_RetrieveDictionary_ReadError(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	dict := &CPEDictionary{Items: []*CPEItem{}, GeneratedAt: time.Now(), SchemaVersion: "2.3"}
 	fs.StoreDictionary(dict)
 
 	// Make the file unreadable
 	dictPath := fs.DictionaryFilePath()
-	os.Chmod(dictPath, 0000)
+	os.Chmod(dictPath, 0000) //nolint:errcheck
 	defer os.Chmod(dictPath, 0644)
 
 	_, err := fs.RetrieveDictionary()
@@ -3311,13 +3311,13 @@ func TestFileStorage_RetrieveModificationTimestamp_ReadError(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	fs.StoreModificationTimestamp("readtest", time.Now())
 
 	// Make the file unreadable
 	metaPath := fs.MetadataFilePath("readtest")
-	os.Chmod(metaPath, 0000)
+	os.Chmod(metaPath, 0000) //nolint:errcheck
 	defer os.Chmod(metaPath, 0644)
 
 	_, err := fs.RetrieveModificationTimestamp("readtest")
@@ -3333,7 +3333,7 @@ func TestFileStorage_RetrieveCPE_CacheMiss_FileMiss(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Cache miss AND file miss should return ErrNotFound
 	_, err := fs.RetrieveCPE("nonexistent_cpe_uri")
@@ -3347,7 +3347,7 @@ func TestFileStorage_DeleteCPE_CacheMissFileMiss(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// File doesn't exist, should not error
 	err := fs.DeleteCPE("cpe:2.3:a:nonexistent:product:1.0:*:*:*:*:*:*:*")
@@ -3501,7 +3501,7 @@ func TestFileStorage_RetrieveCVE_CacheErrorPath(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	// Store CVE and retrieve to populate cache
 	cve := NewCVEReference("CVE-2021-CACHEPATH")
@@ -3530,7 +3530,7 @@ func TestFileStorage_RetrieveCPE_CacheMissFileSuccess(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cpe := &CPE{
 		Cpe23:       "cpe:2.3:a:vendor:cmtest:1.0:*:*:*:*:*:*:*",
@@ -3539,7 +3539,7 @@ func TestFileStorage_RetrieveCPE_CacheMissFileSuccess(t *testing.T) {
 		ProductName: Product("cmtest"),
 		Version:     Version("1.0"),
 	}
-	fs.StoreCPE(cpe)
+	_ = fs.StoreCPE(cpe)
 
 	// Clear cache to force file read path
 	fs.cache.Initialize()
@@ -3558,7 +3558,7 @@ func TestFileStorage_RetrieveDictionary_CacheMiss(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	dict := &CPEDictionary{
 		Items: []*CPEItem{
@@ -3586,7 +3586,7 @@ func TestFileStorage_RetrieveModificationTimestamp_CacheMissFileSuccess(t *testi
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	testTime := time.Now()
 	fs.StoreModificationTimestamp("cachemiss_test", testTime)
@@ -3608,7 +3608,7 @@ func TestFileStorage_StoreCPE_CacheUpdatePath(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cpe := &CPE{
 		Cpe23:       "cpe:2.3:a:vendor:cacheup:1.0:*:*:*:*:*:*:*",
@@ -3639,7 +3639,7 @@ func TestFileStorage_StoreCVE_CacheUpdatePath(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-CACHEUP")
 	cve.Description = "Cache update test"
@@ -3656,7 +3656,7 @@ func TestFileStorage_StoreDictionary_CacheUpdatePath(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	dict := &CPEDictionary{
 		Items: []*CPEItem{
@@ -3677,7 +3677,7 @@ func TestFileStorage_DeleteCVE_WithCache(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-DELCACHE2")
 	cve.AddAffectedCPE("cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*")
@@ -3694,7 +3694,7 @@ func TestFileStorage_StoreCVE_WithCVE22(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-CPE22FS")
 	cve.AddAffectedCPE("cpe:/a:apache:tomcat:8.5")
@@ -3709,7 +3709,7 @@ func TestFileStorage_StoreCVE_WithInvalidCPE(t *testing.T) {
 	defer os.RemoveAll(tempDir)
 
 	fs, _ := NewFileStorage(tempDir, true)
-	fs.Initialize()
+	fs.Initialize() // errcheck: ignore
 
 	cve := NewCVEReference("CVE-2021-BADCPE")
 	cve.AddAffectedCPE("not_a_valid_cpe")
