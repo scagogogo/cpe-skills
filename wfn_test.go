@@ -186,7 +186,33 @@ func TestToCPE(t *testing.T) {
 	}
 }
 
-// TestFromCPE23String 测试从CPE 2.3字符串创建WFN
+// TestToCPEDefaultPart 测试WFN转CPE时无效Part默认为Application
+func TestToCPEDefaultPart(t *testing.T) {
+	wfn := &WFN{
+		Part:    "x",
+		Vendor:  "test",
+		Product: "product",
+		Version: "1.0",
+	}
+	cpe := wfn.ToCPE()
+	if cpe.Part.ShortName != "a" {
+		t.Errorf("Invalid part should default to 'a', got %q", cpe.Part.ShortName)
+	}
+}
+
+// TestToCPEHardwarePart 测试WFN转CPE硬件类型
+func TestToCPEHardwarePart(t *testing.T) {
+	wfn := &WFN{
+		Part:    "h",
+		Vendor:  "intel",
+		Product: "core_i7",
+		Version: "1068g7",
+	}
+	cpe := wfn.ToCPE()
+	if cpe.Part.ShortName != "h" {
+		t.Errorf("Part = %q, want %q", cpe.Part.ShortName, "h")
+	}
+}
 func TestFromCPE23String(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -426,5 +452,188 @@ func TestUnescapeValue(t *testing.T) {
 				t.Errorf("unescapeValue() = %v, want %v", got, tt.expected)
 			}
 		})
+	}
+}
+
+// TestWFNMatchExtendedAttributes 测试WFN Match的扩展属性匹配
+func TestWFNMatchExtendedAttributes(t *testing.T) {
+	// Test NA values matching
+	wfn1 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "-",
+	}
+	wfn2 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "-",
+	}
+	if !wfn1.Match(wfn2) {
+		t.Error("Expected NA versions to match")
+	}
+
+	// Test NA vs specific version
+	wfn3 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "10",
+	}
+	if wfn1.Match(wfn3) {
+		t.Error("Expected NA and specific version not to match")
+	}
+
+	// Test mismatch on Update
+	wfn4 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "10",
+		Update:  "sp1",
+	}
+	wfn5 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "10",
+		Update:  "sp2",
+	}
+	if wfn4.Match(wfn5) {
+		t.Error("Expected different Update values not to match")
+	}
+
+	// Test mismatch on Edition
+	wfn6 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "10",
+		Edition: "pro",
+	}
+	wfn7 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "10",
+		Edition: "home",
+	}
+	if wfn6.Match(wfn7) {
+		t.Error("Expected different Edition values not to match")
+	}
+
+	// Test mismatch on Language
+	wfn8 := &WFN{
+		Part:     "a",
+		Vendor:   "microsoft",
+		Product:  "windows",
+		Version:  "10",
+		Language: "en",
+	}
+	wfn9 := &WFN{
+		Part:     "a",
+		Vendor:   "microsoft",
+		Product:  "windows",
+		Version:  "10",
+		Language: "de",
+	}
+	if wfn8.Match(wfn9) {
+		t.Error("Expected different Language values not to match")
+	}
+
+	// Test wildcard on Update
+	wfn10 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "10",
+		Update:  "*",
+	}
+	wfn11 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "10",
+		Update:  "sp1",
+	}
+	if !wfn10.Match(wfn11) {
+		t.Error("Expected ANY Update to match specific Update")
+	}
+
+	// Test mismatch on SoftwareEdition
+	wfn12 := &WFN{
+		Part:            "a",
+		Vendor:          "microsoft",
+		Product:         "windows",
+		Version:         "10",
+		SoftwareEdition: "enterprise",
+	}
+	wfn13 := &WFN{
+		Part:            "a",
+		Vendor:          "microsoft",
+		Product:         "windows",
+		Version:         "10",
+		SoftwareEdition: "standard",
+	}
+	if wfn12.Match(wfn13) {
+		t.Error("Expected different SoftwareEdition values not to match")
+	}
+
+	// Test mismatch on TargetSoftware
+	wfn14 := &WFN{
+		Part:           "a",
+		Vendor:         "microsoft",
+		Product:        "windows",
+		Version:        "10",
+		TargetSoftware: "linux",
+	}
+	wfn15 := &WFN{
+		Part:           "a",
+		Vendor:         "microsoft",
+		Product:        "windows",
+		Version:        "10",
+		TargetSoftware: "windows",
+	}
+	if wfn14.Match(wfn15) {
+		t.Error("Expected different TargetSoftware values not to match")
+	}
+
+	// Test mismatch on TargetHardware
+	wfn16 := &WFN{
+		Part:           "a",
+		Vendor:         "microsoft",
+		Product:        "windows",
+		Version:        "10",
+		TargetHardware: "x86",
+	}
+	wfn17 := &WFN{
+		Part:           "a",
+		Vendor:         "microsoft",
+		Product:        "windows",
+		Version:        "10",
+		TargetHardware: "arm",
+	}
+	if wfn16.Match(wfn17) {
+		t.Error("Expected different TargetHardware values not to match")
+	}
+
+	// Test mismatch on Other
+	wfn18 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "10",
+		Other:   "custom1",
+	}
+	wfn19 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "10",
+		Other:   "custom2",
+	}
+	if wfn18.Match(wfn19) {
+		t.Error("Expected different Other values not to match")
 	}
 }

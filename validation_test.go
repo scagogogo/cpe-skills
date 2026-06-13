@@ -331,3 +331,193 @@ func TestURIToFSString(t *testing.T) {
 		})
 	}
 }
+
+// TestValidateCPENil 测试nil CPE验证
+func TestValidateCPENil(t *testing.T) {
+	err := ValidateCPE(nil)
+	if err == nil {
+		t.Error("Expected error for nil CPE")
+	}
+}
+
+// TestValidateCPEEmptyPart 测试空Part验证
+func TestValidateCPEEmptyPart(t *testing.T) {
+	cpe := &CPE{
+		Part:        Part{ShortName: ""},
+		Vendor:      "microsoft",
+		ProductName: "windows",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for empty Part")
+	}
+}
+
+// TestValidateCPEEmptyVendor 测试空Vendor验证
+func TestValidateCPEEmptyVendor(t *testing.T) {
+	cpe := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "",
+		ProductName: "linux",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for empty Vendor")
+	}
+}
+
+// TestValidateCPEEmptyProductName 测试空ProductName验证
+func TestValidateCPEEmptyProductName(t *testing.T) {
+	cpe := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for empty ProductName")
+	}
+}
+
+// TestValidateCPEInvalidVersion 测试无效Version验证
+func TestValidateCPEInvalidVersion(t *testing.T) {
+	cpe := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10!invalid",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for invalid Version")
+	}
+}
+
+// TestValidateCPEInvalidUpdate 测试无效Update验证
+func TestValidateCPEInvalidUpdate(t *testing.T) {
+	cpe := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Update:      "sp1@bad",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for invalid Update")
+	}
+}
+
+// TestValidateCPEInvalidEdition 测试无效Edition验证
+func TestValidateCPEInvalidEdition(t *testing.T) {
+	cpe := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Edition:     "pro#bad",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for invalid Edition")
+	}
+}
+
+// TestValidateCPEInvalidLanguage 测试无效Language验证
+func TestValidateCPEInvalidLanguage(t *testing.T) {
+	cpe := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Language:    "en$bad",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for invalid Language")
+	}
+}
+
+// TestValidateCPEInvalidSoftwareEdition 测试无效SoftwareEdition验证
+func TestValidateCPEInvalidSoftwareEdition(t *testing.T) {
+	cpe := &CPE{
+		Part:            *PartApplication,
+		Vendor:          "microsoft",
+		ProductName:     "windows",
+		SoftwareEdition: "enterprise&bad",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for invalid SoftwareEdition")
+	}
+}
+
+// TestValidateCPEInvalidTargetSoftware 测试无效TargetSoftware验证
+func TestValidateCPEInvalidTargetSoftware(t *testing.T) {
+	cpe := &CPE{
+		Part:           *PartApplication,
+		Vendor:         "microsoft",
+		ProductName:    "windows",
+		TargetSoftware: "linux!bad",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for invalid TargetSoftware")
+	}
+}
+
+// TestValidateCPEInvalidTargetHardware 测试无效TargetHardware验证
+func TestValidateCPEInvalidTargetHardware(t *testing.T) {
+	cpe := &CPE{
+		Part:           *PartApplication,
+		Vendor:         "microsoft",
+		ProductName:    "windows",
+		TargetHardware: "x86|bad",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for invalid TargetHardware")
+	}
+}
+
+// TestValidateCPEInvalidOther 测试无效Other验证
+func TestValidateCPEInvalidOther(t *testing.T) {
+	cpe := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Other:       "custom<bad",
+	}
+	err := ValidateCPE(cpe)
+	if err == nil {
+		t.Error("Expected error for invalid Other")
+	}
+}
+
+// TestValidateCPEAnyPart 测试ANY Part验证
+func TestValidateCPEAnyPart(t *testing.T) {
+	cpe := &CPE{
+		Part:        Part{ShortName: "*"},
+		Vendor:      "microsoft",
+		ProductName: "windows",
+	}
+	err := ValidateCPE(cpe)
+	if err != nil {
+		t.Errorf("ANY Part should be valid, got error: %v", err)
+	}
+}
+
+// TestFSStringToURIGeneric 测试通用FSStringToURI转换
+func TestFSStringToURIGeneric(t *testing.T) {
+	// Test the generic (non-hardcoded) path
+	result := FSStringToURI("cpe___2.3_a_vendor_product_1.0_-_-_-_-_-_-_")
+	if result == "" {
+		t.Error("FSStringToURI generic path should return non-empty string")
+	}
+}
+
+// TestURIToFSStringGeneric 测试通用URIToFSString转换
+func TestURIToFSStringGeneric(t *testing.T) {
+	// Test the generic (non-hardcoded) path
+	result := URIToFSString("cpe:2.3:a:vendor:product:1.0:-:-:-:-:-:-:-")
+	if result == "" {
+		t.Error("URIToFSString generic path should return non-empty string")
+	}
+}

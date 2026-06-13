@@ -133,3 +133,101 @@ func TestCPEBuilderErrorPropagation(t *testing.T) {
 		t.Error("Expected error after invalid part")
 	}
 }
+
+func TestCPEBuilderErrorPropagationAllMethods(t *testing.T) {
+	// Start with an error, then try all setter methods - they should all skip
+	builder := NewCPEBuilder().Part("x")
+
+	// All these should return the builder without modifying the WFN due to existing error
+	result := builder.Update("sp1")
+	if result != builder {
+		t.Error("Update() should return same builder when error exists")
+	}
+
+	result = builder.Edition("pro")
+	if result != builder {
+		t.Error("Edition() should return same builder when error exists")
+	}
+
+	result = builder.Language("en")
+	if result != builder {
+		t.Error("Language() should return same builder when error exists")
+	}
+
+	result = builder.SoftwareEdition("enterprise")
+	if result != builder {
+		t.Error("SoftwareEdition() should return same builder when error exists")
+	}
+
+	result = builder.TargetSoftware("linux")
+	if result != builder {
+		t.Error("TargetSoftware() should return same builder when error exists")
+	}
+
+	result = builder.TargetHardware("x86")
+	if result != builder {
+		t.Error("TargetHardware() should return same builder when error exists")
+	}
+
+	result = builder.Other("custom")
+	if result != builder {
+		t.Error("Other() should return same builder when error exists")
+	}
+
+	// BuildWFN should also return error
+	_, err := builder.BuildWFN()
+	if err == nil {
+		t.Error("Expected BuildWFN() to return error")
+	}
+}
+
+func TestCPEBuilderMustBuildSuccess(t *testing.T) {
+	cpe := NewCPEBuilder().
+		Application().
+		Vendor("microsoft").
+		Product("windows").
+		Version("10").
+		MustBuild()
+
+	if cpe == nil {
+		t.Error("MustBuild() should return CPE on success")
+	}
+	if cpe.Vendor != "microsoft" {
+		t.Errorf("Vendor = %q, want %q", cpe.Vendor, "microsoft")
+	}
+}
+
+func TestCPEBuilderFluentReturns(t *testing.T) {
+	builder := NewCPEBuilder()
+
+	// Verify that fluent methods return the same builder instance
+	b := builder.Part("a")
+	if b != builder {
+		t.Error("Part() should return same builder")
+	}
+	b = builder.Vendor("microsoft")
+	if b != builder {
+		t.Error("Vendor() should return same builder")
+	}
+	b = builder.Product("windows")
+	if b != builder {
+		t.Error("Product() should return same builder")
+	}
+	b = builder.Version("10")
+	if b != builder {
+		t.Error("Version() should return same builder")
+	}
+}
+
+func TestCPEBuilderPartWithExistingError(t *testing.T) {
+	// Create builder with an error, then call Part - should skip
+	builder := NewCPEBuilder().Part("x") // creates error
+	result := builder.Part("a")          // should return early due to error
+	if result != builder {
+		t.Error("Part() with existing error should return same builder")
+	}
+	_, err := builder.Build()
+	if err == nil {
+		t.Error("Expected error from invalid part")
+	}
+}

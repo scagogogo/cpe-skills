@@ -223,3 +223,95 @@ func TestIsInvalidFormatError(t *testing.T) {
 		t.Errorf("IsInvalidFormatError() on nil returned true, want false")
 	}
 }
+
+// TestIsInvalidPartError 测试检查是否为无效Part错误
+func TestIsInvalidPartError(t *testing.T) {
+	partErr := NewInvalidPartError("x")
+	formatErr := NewInvalidFormatError("cpe:/a:microsoft")
+	genericErr := errors.New("generic error")
+
+	if !IsInvalidPartError(partErr) {
+		t.Errorf("IsInvalidPartError() on part error returned false, want true")
+	}
+
+	if IsInvalidPartError(formatErr) {
+		t.Errorf("IsInvalidPartError() on format error returned true, want false")
+	}
+
+	if IsInvalidPartError(genericErr) {
+		t.Errorf("IsInvalidPartError() on generic error returned true, want false")
+	}
+
+	if IsInvalidPartError(nil) {
+		t.Errorf("IsInvalidPartError() on nil returned true, want false")
+	}
+}
+
+// TestIsInvalidAttributeError 测试检查是否为无效属性错误
+func TestIsInvalidAttributeError(t *testing.T) {
+	attrErr := NewInvalidAttributeError("version", "@invalid")
+	formatErr := NewInvalidFormatError("cpe:/a:microsoft")
+	genericErr := errors.New("generic error")
+
+	if !IsInvalidAttributeError(attrErr) {
+		t.Errorf("IsInvalidAttributeError() on attribute error returned false, want true")
+	}
+
+	if IsInvalidAttributeError(formatErr) {
+		t.Errorf("IsInvalidAttributeError() on format error returned true, want false")
+	}
+
+	if IsInvalidAttributeError(genericErr) {
+		t.Errorf("IsInvalidAttributeError() on generic error returned true, want false")
+	}
+
+	if IsInvalidAttributeError(nil) {
+		t.Errorf("IsInvalidAttributeError() on nil returned true, want false")
+	}
+}
+
+// TestIsNotFoundError 测试检查是否为未找到错误
+func TestIsNotFoundError(t *testing.T) {
+	notFoundErr := NewNotFoundError("product")
+	formatErr := NewInvalidFormatError("cpe:/a:microsoft")
+	genericErr := errors.New("generic error")
+
+	if !IsNotFoundError(notFoundErr) {
+		t.Errorf("IsNotFoundError() on not found error returned false, want true")
+	}
+
+	if IsNotFoundError(formatErr) {
+		t.Errorf("IsNotFoundError() on format error returned true, want false")
+	}
+
+	if IsNotFoundError(genericErr) {
+		t.Errorf("IsNotFoundError() on generic error returned true, want false")
+	}
+
+	if IsNotFoundError(nil) {
+		t.Errorf("IsNotFoundError() on nil returned true, want false")
+	}
+}
+
+// TestIsOperationFailedError 测试检查是否为操作失败错误
+func TestIsOperationFailedError(t *testing.T) {
+	opErr := NewOperationFailedError("update", errors.New("db error"))
+	formatErr := NewInvalidFormatError("cpe:/a:microsoft")
+	genericErr := errors.New("generic error")
+
+	if !IsOperationFailedError(opErr) {
+		t.Errorf("IsOperationFailedError() on operation error returned false, want true")
+	}
+
+	if IsOperationFailedError(formatErr) {
+		t.Errorf("IsOperationFailedError() on format error returned true, want false")
+	}
+
+	if IsOperationFailedError(genericErr) {
+		t.Errorf("IsOperationFailedError() on generic error returned true, want false")
+	}
+
+	if IsOperationFailedError(nil) {
+		t.Errorf("IsOperationFailedError() on nil returned true, want false")
+	}
+}

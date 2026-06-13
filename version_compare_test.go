@@ -128,3 +128,29 @@ func TestVersionRangeContains(t *testing.T) {
 		t.Error("Expected 2.5 to not be in range 1.0-2.0")
 	}
 }
+
+func TestIsSubVersionEdgeCases(t *testing.T) {
+	// Same version with suffix - should return true when suffix matches
+	result := IsSubVersion("1.0", "1.0")
+	if !result {
+		t.Error("IsSubVersion('1.0', '1.0') should be true")
+	}
+
+	// Child with extra version numbers
+	result = IsSubVersion("1.0", "1.0.1")
+	if !result {
+		t.Error("IsSubVersion('1.0', '1.0.1') should be true")
+	}
+
+	// Different prefix
+	result = IsSubVersion("1.0", "2.0.1")
+	if result {
+		t.Error("IsSubVersion('1.0', '2.0.1') should be false")
+	}
+
+	// Child shorter than parent
+	result = IsSubVersion("1.0.1", "1.0")
+	if result {
+		t.Error("IsSubVersion('1.0.1', '1.0') should be false - child shorter")
+	}
+}

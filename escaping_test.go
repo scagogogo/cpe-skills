@@ -135,6 +135,23 @@ func TestEscapeForURI(t *testing.T) {
 		{"colon encoded", "product:name", "product%3aname"},
 		{"slash encoded", "a/b", "a%2fb"},
 		{"tilde encoded", "version~rc1", "version%7erc1"},
+		{"escaped sequence - backslash+dot", `\.`, "%5c%2e"},                      // backslash then dot - both encoded
+		{"escaped sequence - backslash+alpha", `\a`, "%5ca"},                       // backslash encoded, alpha stays
+		{"escaped sequence - backslash+special", `\:`, "%5c%3a"},                   // both encoded in URI
+		{"backslash at end", `test\`, "test%5c"},                                   // trailing backslash with no next char
+		{"non-quoted special char - space", "hello world", "hello%20world"},        // space is not in quotedCharToPercentEncode, uses toHex
+		{"non-quoted special char - tab", "hello\tworld", "hello%09world"},         // tab uses toHex
+		{"question mark", "what?", "what%3f"},                                       // question mark not in map? actually it's not
+		{"exclamation mark", "hello!", "hello%21"},
+		{"at sign", "user@host", "user%40host"},
+		{"equals sign", "key=value", "key%3dvalue"},
+		{"plus sign", "a+b", "a%2bb"},
+		{"comma", "a,b", "a%2cb"},
+		{"brackets", "a[b]c", "a%5bb%5dc"},
+		{"caret", "a^b", "a%5eb"},
+		{"backtick", "a`b", "a%60b"},
+		{"braces", "a{b}c", "a%7bb%7dc"},
+		{"pipe", "a|b", "a%7cb"},
 	}
 
 	for _, tt := range tests {
@@ -228,6 +245,10 @@ func TestQuoteForWFN(t *testing.T) {
 		{ValueNA, ValueNA},
 		{"windows", "windows"},
 		{`value"with"quotes`, `value\"with\"quotes`},
+		{`escaped\\backslash`, `escaped\\backslash`}, // backslash followed by another char stays as-is
+		{`just_a_value`, `just_a_value`},
+		{`value"only`, `value\"only`},
+		{"", ""}, // empty string is not a logical value, so it passes through
 	}
 
 	for _, tt := range tests {
@@ -352,5 +373,119 @@ func TestUnescapeCpe22ValueBackwardCompat(t *testing.T) {
 				t.Errorf("unescapeCpe22Value(%q) = %q, want %q", tt.value, got, tt.expected)
 			}
 		})
+	}
+}
+
+func TestToHex(t *testing.T) {
+	tests := []struct {
+		char     byte
+		expected string
+	}{
+		{' ', "20"},
+		{'\t', "09"},
+		{'\n', "0a"},
+		{0x00, "00"},
+		{0xff, "ff"},
+		{0x1f, "1f"},
+		{'?', "3f"},
+	}
+
+	for _, tt := range tests {
+		if got := toHex(tt.char); got != tt.expected {
+			t.Errorf("toHex(%d) = %q, want %q", tt.char, got, tt.expected)
+		}
+	}
+}
+
+func TestEscapeValueForCpe22(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"simple value", "windows", "windows"},
+		{"logical ANY", ValueANY, ValueANY},
+		{"logical NA", ValueNA, ValueNA},
+		{"empty string", "", ""},
+		{"dot encoded", "example.com", "example%2ecom"},
+		{"colon encoded", "product:name", "product%3aname"},
+		{"hyphen encoded", "service-pack", "service%2dpack"},
+		{"underscore encoded", "red_hat", "red%5fhat"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := escapeValueForCpe22(tt.value); got != tt.expected {
+				t.Errorf("escapeValueForCpe22(%q) = %q, want %q", tt.value, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestUnescapeValueForCpe22(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"simple value", "windows", "windows"},
+		{"logical ANY", ValueANY, ValueANY},
+		{"logical NA", ValueNA, ValueNA},
+		{"empty string", "", ""},
+		{"dot decoded", "example%2ecom", "example.com"},
+		{"colon decoded", "product%3aname", "product:name"},
+		{"hyphen decoded", "service%2dpack", "service-pack"},
+		{"underscore decoded", "red%5fhat", "red_hat"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := unescapeValueForCpe22(tt.value); got != tt.expected {
+				t.Errorf("unescapeValueForCpe22(%q) = %q, want %q", tt.value, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestUnescapeFromURIPercentUnknown(t *testing.T) {
+	// Test with a percent-encoding that is not in our known map
+	result := unescapeFromURI("test%zzvalue")
+	// %zz is not a known encoding, so it should be preserved as-is
+	if result != "test%zzvalue" {
+		t.Errorf("unescapeFromURI with unknown percent encoding = %q, want %q", result, "test%zzvalue")
+	}
+}
+
+func TestEscapeForFSWithBackslash(t *testing.T) {
+	// Test that backslash is passed through as-is in escapeForFS
+	result := escapeForFS(`test\value`)
+	if result != `test\value` {
+		t.Errorf("escapeForFS with backslash = %q, want %q", result, `test\value`)
+	}
+}
+
+func TestEscapeForFSWithUnknownSpecialChar(t *testing.T) {
+	// Test that a special character not in the quotedCharToPercentEncode map
+	// is passed through as-is (line 98 in escapeForFS)
+	// Space is not in the map
+	result := escapeForFS("hello world")
+	if result != "hello world" {
+		t.Errorf("escapeForFS with space = %q, want %q", result, "hello world")
+	}
+}
+
+func TestUnescapeFromFSWithTrailingBackslash(t *testing.T) {
+	// Test unescaping with a trailing backslash (incomplete escape)
+	result := unescapeFromFS(`test\`)
+	if result != `test\` {
+		t.Errorf("unescapeFromFS with trailing backslash = %q, want %q", result, `test\`)
+	}
+}
+
+func TestUnescapeFromFSWithUnknownPercent(t *testing.T) {
+	// Test unescaping with an unknown percent-encoding
+	result := unescapeFromFS("test%zzvalue")
+	if result != "test%zzvalue" {
+		t.Errorf("unescapeFromFS with unknown percent = %q, want %q", result, "test%zzvalue")
 	}
 }

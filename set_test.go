@@ -483,3 +483,242 @@ func BenchmarkCPESetOperations(b *testing.B) {
 		}
 	})
 }
+
+// TestCPESetToSlice 测试CPESet的ToSlice方法
+func TestCPESetToSlice(t *testing.T) {
+	set := NewCPESet("Test", "Test set")
+	cpe1, _ := ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpe2, _ := ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+	set.Add(cpe1)
+	set.Add(cpe2)
+
+	slice := set.ToSlice()
+	if len(slice) != 2 {
+		t.Errorf("ToSlice() length = %d, want 2", len(slice))
+	}
+
+	// Empty set
+	emptySet := NewCPESet("Empty", "Empty set")
+	emptySlice := emptySet.ToSlice()
+	if len(emptySlice) != 0 {
+		t.Errorf("Empty ToSlice() length = %d, want 0", len(emptySlice))
+	}
+}
+
+// TestCPESetSort 测试CPESet的Sort方法
+func TestCPESetSort(t *testing.T) {
+	set := NewCPESet("Test", "Test set")
+	cpe1, _ := ParseCpe23("cpe:2.3:a:adobe:reader:10:*:*:*:*:*:*:*")
+	cpe2, _ := ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpe3, _ := ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+	set.Add(cpe1)
+	set.Add(cpe2)
+	set.Add(cpe3)
+
+	// Sort by vendor ascending
+	sorted := set.Sort("vendor", true)
+	if len(sorted) != 3 {
+		t.Errorf("Sort() length = %d, want 3", len(sorted))
+	}
+	if string(sorted[0].Vendor) != "adobe" {
+		t.Errorf("Sort by vendor ascending first = %q, want %q", sorted[0].Vendor, "adobe")
+	}
+
+	// Sort by vendor descending
+	sortedDesc := set.Sort("vendor", false)
+	if string(sortedDesc[0].Vendor) != "microsoft" {
+		t.Errorf("Sort by vendor descending first = %q, want %q", sortedDesc[0].Vendor, "microsoft")
+	}
+
+	// Sort by product
+	sortedProduct := set.Sort("product", true)
+	if string(sortedProduct[0].ProductName) == "" {
+		t.Error("Sort by product should not return empty")
+	}
+
+	// Sort by part
+	sortedPart := set.Sort("part", true)
+	if len(sortedPart) != 3 {
+		t.Errorf("Sort by part length = %d, want 3", len(sortedPart))
+	}
+
+	// Sort by version
+	sortedVersion := set.Sort("version", true)
+	if len(sortedVersion) != 3 {
+		t.Errorf("Sort by version length = %d, want 3", len(sortedVersion))
+	}
+
+	// Sort by default (cpe23)
+	sortedDefault := set.Sort("unknown", true)
+	if len(sortedDefault) != 3 {
+		t.Errorf("Sort by default length = %d, want 3", len(sortedDefault))
+	}
+}
+
+// TestCPESetEquals 测试CPESet的Equals方法
+func TestCPESetEquals(t *testing.T) {
+	set1 := NewCPESet("Set1", "First set")
+	set2 := NewCPESet("Set2", "Second set")
+
+	cpe1, _ := ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpe2, _ := ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+
+	set1.Add(cpe1)
+	set1.Add(cpe2)
+	set2.Add(cpe1)
+	set2.Add(cpe2)
+
+	if !set1.Equals(set2) {
+		t.Error("Expected sets with same CPEs to be equal")
+	}
+
+	// Add different CPE to set2
+	cpe3, _ := ParseCpe23("cpe:2.3:a:apple:macos:11:*:*:*:*:*:*:*")
+	set2.Add(cpe3)
+
+	if set1.Equals(set2) {
+		t.Error("Expected sets with different sizes to not be equal")
+	}
+}
+
+// TestCPESetIsSubsetOf 测试CPESet的IsSubsetOf方法
+func TestCPESetIsSubsetOf(t *testing.T) {
+	set1 := NewCPESet("Set1", "First set")
+	set2 := NewCPESet("Set2", "Second set")
+
+	cpe1, _ := ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpe2, _ := ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+	cpe3, _ := ParseCpe23("cpe:2.3:a:apple:macos:11:*:*:*:*:*:*:*")
+
+	set1.Add(cpe1)
+	set2.Add(cpe1)
+	set2.Add(cpe2)
+	set2.Add(cpe3)
+
+	if !set1.IsSubsetOf(set2) {
+		t.Error("Expected set1 to be subset of set2")
+	}
+	if set2.IsSubsetOf(set1) {
+		t.Error("Expected set2 not to be subset of set1")
+	}
+}
+
+// TestCPESetIsSupersetOf 测试CPESet的IsSupersetOf方法
+func TestCPESetIsSupersetOf(t *testing.T) {
+	set1 := NewCPESet("Set1", "First set")
+	set2 := NewCPESet("Set2", "Second set")
+
+	cpe1, _ := ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpe2, _ := ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+	cpe3, _ := ParseCpe23("cpe:2.3:a:apple:macos:11:*:*:*:*:*:*:*")
+
+	set1.Add(cpe1)
+	set1.Add(cpe2)
+	set1.Add(cpe3)
+	set2.Add(cpe1)
+
+	if !set1.IsSupersetOf(set2) {
+		t.Error("Expected set1 to be superset of set2")
+	}
+	if set2.IsSupersetOf(set1) {
+		t.Error("Expected set2 not to be superset of set1")
+	}
+}
+
+// TestCPESetToString 测试CPESet的ToString方法
+func TestCPESetToString(t *testing.T) {
+	set := NewCPESet("TestSet", "Test description")
+	cpe1, _ := ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	set.Add(cpe1)
+
+	result := set.ToString()
+	if result == "" {
+		t.Error("ToString() should not return empty string")
+	}
+	if !contains(result, "TestSet") {
+		t.Error("ToString() should contain set name")
+	}
+	if !contains(result, "Test description") {
+		t.Error("ToString() should contain set description")
+	}
+}
+
+// TestCPESetLen 测试cpeSorter的Len方法
+func TestCPESetLen(t *testing.T) {
+	set := NewCPESet("Test", "Test")
+	cpe1, _ := ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpe2, _ := ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+	set.Add(cpe1)
+	set.Add(cpe2)
+
+	sorted := set.Sort("vendor", true)
+	sorter := &cpeSorter{cpes: sorted, sortBy: "vendor", ascending: true}
+	if sorter.Len() != 2 {
+		t.Errorf("Len() = %d, want 2", sorter.Len())
+	}
+}
+
+// TestCPESetSwap 测试cpeSorter的Swap方法
+func TestCPESetSwap(t *testing.T) {
+	cpe1, _ := ParseCpe23("cpe:2.3:a:adobe:reader:10:*:*:*:*:*:*:*")
+	cpe2, _ := ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpes := []*CPE{cpe1, cpe2}
+
+	sorter := &cpeSorter{cpes: cpes, sortBy: "vendor", ascending: true}
+	sorter.Swap(0, 1)
+
+	if cpes[0].Vendor != "microsoft" {
+		t.Errorf("After Swap, cpes[0].Vendor = %q, want %q", cpes[0].Vendor, "microsoft")
+	}
+	if cpes[1].Vendor != "adobe" {
+		t.Errorf("After Swap, cpes[1].Vendor = %q, want %q", cpes[1].Vendor, "adobe")
+	}
+}
+
+// TestCPESetLess 测试cpeSorter的Less方法
+func TestCPESetLess(t *testing.T) {
+	cpe1, _ := ParseCpe23("cpe:2.3:a:adobe:reader:10:*:*:*:*:*:*:*")
+	cpe2, _ := ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpes := []*CPE{cpe1, cpe2}
+
+	// Test ascending
+	sorter := &cpeSorter{cpes: cpes, sortBy: "vendor", ascending: true}
+	if !sorter.Less(0, 1) {
+		t.Error("Expected adobe < microsoft in ascending order")
+	}
+
+	// Test descending
+	sorterDesc := &cpeSorter{cpes: cpes, sortBy: "vendor", ascending: false}
+	if sorterDesc.Less(0, 1) {
+		t.Error("Expected adobe NOT < microsoft in descending order")
+	}
+}
+
+// TestCPESetAddNil 测试添加nil CPE
+func TestCPESetAddNil(t *testing.T) {
+	set := NewCPESet("Test", "Test")
+	sizeBefore := set.Size()
+	set.Add(nil)
+	// Adding nil should not increase the size
+	if set.Size() != sizeBefore {
+		t.Error("Add(nil) should not change set size")
+	}
+}
+
+// TestCPESetRemoveNil 测试删除nil CPE
+func TestCPESetRemoveNil(t *testing.T) {
+	set := NewCPESet("Test", "Test")
+	result := set.Remove(nil)
+	if result {
+		t.Error("Remove(nil) should return false")
+	}
+}
+
+// TestCPESetContainsNil 测试包含nil CPE
+func TestCPESetContainsNil(t *testing.T) {
+	set := NewCPESet("Test", "Test")
+	result := set.Contains(nil)
+	if result {
+		t.Error("Contains(nil) should return false")
+	}
+}

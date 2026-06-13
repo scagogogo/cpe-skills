@@ -189,3 +189,198 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerateFromTemplateNil(t *testing.T) {
+	// nil template should use empty CPE
+	cpe := GenerateFromTemplate(nil, map[string]string{
+		AttrPart:    "a",
+		AttrVendor:  "microsoft",
+		AttrProduct: "windows",
+		AttrVersion: "10",
+	})
+
+	if cpe == nil {
+		t.Fatal("GenerateFromTemplate with nil template should not return nil")
+	}
+	// Since nil template creates empty CPE and FromCPE with empty CPE, the part shortname is ""
+	// which converts to empty. The override should set the values though.
+	if cpe.Vendor != "microsoft" {
+		t.Errorf("Vendor = %q, want %q", cpe.Vendor, "microsoft")
+	}
+}
+
+func TestGenerateFromTemplateNoOverrides(t *testing.T) {
+	template := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+
+	cpe := GenerateFromTemplate(template, nil)
+	if cpe.Vendor != "microsoft" {
+		t.Errorf("Vendor = %q, want %q", cpe.Vendor, "microsoft")
+	}
+	if cpe.Version != "10" {
+		t.Errorf("Version = %q, want %q", cpe.Version, "10")
+	}
+}
+
+func TestMergeCPEsNilSecondary(t *testing.T) {
+	primary := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+	}
+
+	result := MergeCPEs(primary, nil)
+
+	if result.Vendor != "microsoft" {
+		t.Errorf("Vendor = %q, want %q", result.Vendor, "microsoft")
+	}
+	if result.ProductName != "windows" {
+		t.Errorf("ProductName = %q, want %q", result.ProductName, "windows")
+	}
+}
+
+func TestMergeCPEsBothNil(t *testing.T) {
+	result := MergeCPEs(nil, nil)
+
+	if result == nil {
+		t.Fatal("MergeCPEs(nil, nil) should not return nil")
+	}
+	// Should be filled with defaults
+	if result.Part.ShortName != "a" {
+		t.Errorf("Part = %q, want %q", result.Part.ShortName, "a")
+	}
+}
+
+func TestMergeCPEsAllFieldsPrimary(t *testing.T) {
+	primary := &CPE{
+		Part:            *PartApplication,
+		Vendor:          "microsoft",
+		ProductName:     "windows",
+		Version:         "10",
+		Update:          "sp1",
+		Edition:         "pro",
+		Language:        "en",
+		SoftwareEdition: "enterprise",
+		TargetSoftware:  "linux",
+		TargetHardware:  "x86",
+		Other:           "custom",
+	}
+
+	secondary := &CPE{
+		Part:            *PartOperationSystem,
+		Vendor:          "adobe",
+		ProductName:     "reader",
+		Version:         "11",
+		Update:          "sp2",
+		Edition:         "home",
+		Language:        "de",
+		SoftwareEdition: "standard",
+		TargetSoftware:  "windows",
+		TargetHardware:  "arm",
+		Other:           "other2",
+	}
+
+	result := MergeCPEs(primary, secondary)
+
+	// Primary values should take precedence for all fields
+	if result.Vendor != "microsoft" {
+		t.Errorf("Vendor = %q, want %q", result.Vendor, "microsoft")
+	}
+	if result.ProductName != "windows" {
+		t.Errorf("ProductName = %q, want %q", result.ProductName, "windows")
+	}
+	if result.Version != "10" {
+		t.Errorf("Version = %q, want %q", result.Version, "10")
+	}
+	if result.Update != "sp1" {
+		t.Errorf("Update = %q, want %q", result.Update, "sp1")
+	}
+	if result.Edition != "pro" {
+		t.Errorf("Edition = %q, want %q", result.Edition, "pro")
+	}
+	if result.Language != "en" {
+		t.Errorf("Language = %q, want %q", result.Language, "en")
+	}
+	if result.SoftwareEdition != "enterprise" {
+		t.Errorf("SoftwareEdition = %q, want %q", result.SoftwareEdition, "enterprise")
+	}
+	if result.TargetSoftware != "linux" {
+		t.Errorf("TargetSoftware = %q, want %q", result.TargetSoftware, "linux")
+	}
+	if result.TargetHardware != "x86" {
+		t.Errorf("TargetHardware = %q, want %q", result.TargetHardware, "x86")
+	}
+	if result.Other != "custom" {
+		t.Errorf("Other = %q, want %q", result.Other, "custom")
+	}
+	if result.Part.ShortName != "a" {
+		t.Errorf("Part = %q, want %q", result.Part.ShortName, "a")
+	}
+}
+
+func TestMergeCPEsSecondaryFillsEmpty(t *testing.T) {
+	primary := &CPE{
+		Part: *PartApplication,
+		// all other fields empty
+	}
+
+	secondary := &CPE{
+		Part:            *PartOperationSystem,
+		Vendor:          "microsoft",
+		ProductName:     "windows",
+		Version:         "10",
+		Update:          "sp1",
+		Edition:         "pro",
+		Language:        "en",
+		SoftwareEdition: "enterprise",
+		TargetSoftware:  "linux",
+		TargetHardware:  "x86",
+		Other:           "custom",
+	}
+
+	result := MergeCPEs(primary, secondary)
+
+	// Part from primary (application) but others from secondary since primary is empty
+	if result.Part.ShortName != "a" {
+		t.Errorf("Part = %q, want %q", result.Part.ShortName, "a")
+	}
+	if result.Vendor != "microsoft" {
+		t.Errorf("Vendor = %q, want %q", result.Vendor, "microsoft")
+	}
+	if result.ProductName != "windows" {
+		t.Errorf("ProductName = %q, want %q", result.ProductName, "windows")
+	}
+	if result.Version != "10" {
+		t.Errorf("Version = %q, want %q", result.Version, "10")
+	}
+}
+
+func TestFillDefaultsAllSet(t *testing.T) {
+	cpe := &CPE{
+		Part:            *PartApplication,
+		Vendor:          "microsoft",
+		ProductName:     "windows",
+		Version:         "10",
+		Update:          "sp1",
+		Edition:         "pro",
+		Language:        "en",
+		SoftwareEdition: "enterprise",
+		TargetSoftware:  "linux",
+		TargetHardware:  "x86",
+		Other:           "custom",
+	}
+
+	result := FillDefaults(cpe)
+
+	// Existing values should not be changed
+	if result.Vendor != "microsoft" {
+		t.Errorf("Vendor = %q, want %q", result.Vendor, "microsoft")
+	}
+	if result.Update != "sp1" {
+		t.Errorf("Update = %q, want %q", result.Update, "sp1")
+	}
+}

@@ -240,11 +240,234 @@ func TestWildcardMatch(t *testing.T) {
 		{"windows", "linux", false},
 		{"*", "anything", true},
 		{"*", "", true},
+		{"*s", "windows", true},
+		{"win*s", "windows", true},
+		{"w*n*s", "windows", true},
+		{"abc", "xyz", false},
+		{"a?c", "abc", true},
+		{"a?c", "ac", false},
+		{"a?c", "abbc", false},
+		{`\*`, "*", true},    // escaped star should match literal star
+		{`\?`, "?", true},    // escaped question mark should match literal question mark
+		{`\*`, "a", false},   // escaped star should not match 'a'
+		{`\a`, "a", true},    // escaped 'a' matches 'a'
+		{`\a`, "b", false},   // escaped 'a' should not match 'b'
+		{"abc", "ab", false}, // source longer than target with no star
+		{"", "", true},       // empty matches empty
+		{"abc*", "abc", true}, // star at end matching nothing extra
 	}
 
 	for _, tt := range tests {
 		if got := wildcardMatch(tt.source, tt.target); got != tt.expected {
 			t.Errorf("wildcardMatch(%q, %q) = %v, want %v", tt.source, tt.target, got, tt.expected)
 		}
+	}
+}
+
+func TestCompareAttributesExtended(t *testing.T) {
+	tests := []struct {
+		name     string
+		source   string
+		target   string
+		expected int
+	}{
+		{"both ANY", ValueANY, ValueANY, 0},
+		{"source ANY", ValueANY, "windows", 1},
+		{"target ANY", "windows", ValueANY, -1},
+		{"both NA", ValueNA, ValueNA, 0},
+		{"source NA", ValueNA, "windows", -2},
+		{"target NA", "windows", ValueNA, -2},
+		{"equal values", "windows", "windows", 0},
+		{"different values", "windows", "linux", -2},
+		{"both empty", "", "", 0},
+		{"source empty (treated as ANY)", "", "windows", 1},
+		{"target empty (treated as ANY)", "windows", "", -1},
+		{"source wildcard superset", "win*", "windows", 1},
+		{"target wildcard - source not matching target pattern", "windows", "win*", -2}, // "windows" as pattern does not match "win*" as value
+		{"both wildcard matching", "win*", "win*", 0},
+		{"wildcard not matching", "abc*", "xyz", -2},
+		{"source wildcard question mark", "win?ows", "windows", 1},
+		{"target wildcard question mark - no match as pattern", "windows", "win?ows", -2}, // "windows" as pattern doesn't match "win?ows"
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CompareAttributes(tt.source, tt.target); got != tt.expected {
+				t.Errorf("CompareAttributes(%q, %q) = %d, want %d", tt.source, tt.target, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestCompareWFNsExtended(t *testing.T) {
+	// Test with nil source
+	comparisons := CompareWFNs(nil, &WFN{Part: "a", Vendor: "microsoft"})
+	if comparisons[AttrPart] != 1 { // empty (ANY) vs "a" -> superset
+		t.Errorf("nil source Part comparison = %d, want 1", comparisons[AttrPart])
+	}
+
+	// Test with nil target
+	comparisons = CompareWFNs(&WFN{Part: "a", Vendor: "microsoft"}, nil)
+	if comparisons[AttrPart] != -1 { // "a" vs empty (ANY) -> subset
+		t.Errorf("nil target Part comparison = %d, want -1", comparisons[AttrPart])
+	}
+
+	// Test with both nil
+	comparisons = CompareWFNs(nil, nil)
+	if comparisons[AttrPart] != 0 { // ANY vs ANY -> equal
+		t.Errorf("both nil Part comparison = %d, want 0", comparisons[AttrPart])
+	}
+
+	// Test with full attributes
+	source := &WFN{
+		Part:            "a",
+		Vendor:          "microsoft",
+		Product:         "windows",
+		Version:         ValueANY,
+		Update:          "sp1",
+		Edition:         "pro",
+		Language:        "en",
+		SoftwareEdition: "enterprise",
+		TargetSoftware:  "linux",
+		TargetHardware:  "x86",
+		Other:           "custom",
+	}
+	target := &WFN{
+		Part:            "a",
+		Vendor:          "microsoft",
+		Product:         "windows",
+		Version:         "10",
+		Update:          "sp1",
+		Edition:         "pro",
+		Language:        "en",
+		SoftwareEdition: "enterprise",
+		TargetSoftware:  "linux",
+		TargetHardware:  "x86",
+		Other:           "custom",
+	}
+	comparisons = CompareWFNs(source, target)
+	if comparisons[AttrVersion] != 1 {
+		t.Errorf("ANY vs specific Version = %d, want 1", comparisons[AttrVersion])
+	}
+	if comparisons[AttrPart] != 0 {
+		t.Errorf("equal Part = %d, want 0", comparisons[AttrPart])
+	}
+}
+
+func TestCPESubsetExtended(t *testing.T) {
+	// nil cases
+	if CPESubset(nil, &CPE{}) {
+		t.Error("Expected nil source not to be subset")
+	}
+	if CPESubset(&CPE{}, nil) {
+		t.Error("Expected nil target not to allow subset")
+	}
+
+	// Equal CPEs are subsets of each other
+	a := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	b := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	if !CPESubset(a, b) {
+		t.Error("Expected equal CPEs to be subset")
+	}
+
+	// Disjoint CPEs are not subsets
+	c := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "adobe",
+		ProductName: "reader",
+		Version:     "10",
+	}
+	if CPESubset(a, c) {
+		t.Error("Expected disjoint CPEs not to be subset")
+	}
+}
+
+func TestCPESupersetExtended(t *testing.T) {
+	// nil cases
+	if CPESuperset(nil, &CPE{}) {
+		t.Error("Expected nil source not to be superset")
+	}
+	if CPESuperset(&CPE{}, nil) {
+		t.Error("Expected nil target not to allow superset")
+	}
+
+	// Equal CPEs are supersets of each other
+	a := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	b := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	if !CPESuperset(a, b) {
+		t.Error("Expected equal CPEs to be superset")
+	}
+
+	// Disjoint CPEs are not supersets
+	c := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "adobe",
+		ProductName: "reader",
+		Version:     "10",
+	}
+	if CPESuperset(a, c) {
+		t.Error("Expected disjoint CPEs not to be superset")
+	}
+}
+
+func TestHasWildcardPattern(t *testing.T) {
+	tests := []struct {
+		value    string
+		expected bool
+	}{
+		{"windows", false},
+		{"win*", true},
+		{"win?dows", true},
+		{`\*`, false}, // escaped wildcard is not a wildcard pattern
+		{`\?`, false}, // escaped question mark is not a wildcard pattern
+		{"", false},
+		{"*", true},
+		{"?", true},
+	}
+
+	for _, tt := range tests {
+		if got := hasWildcardPattern(tt.value); got != tt.expected {
+			t.Errorf("hasWildcardPattern(%q) = %v, want %v", tt.value, got, tt.expected)
+		}
+	}
+}
+
+func TestRelationStringExtended(t *testing.T) {
+	// Test the unknown/default case
+	unknownRelation := Relation(99)
+	if unknownRelation.String() != "unknown" {
+		t.Errorf("Relation(99).String() = %q, want %q", unknownRelation.String(), "unknown")
+	}
+}
+
+func TestCompareWFNRelationOverlap(t *testing.T) {
+	// Test overlap case: has both superset and subset but no disjoint
+	comparisons := map[string]int{
+		AttrPart:    0,  // equal
+		AttrVendor:  1,  // superset
+		AttrVersion: -1, // subset
+	}
+	if got := CompareWFNRelation(comparisons); got != RelationOverlap {
+		t.Errorf("CompareWFNRelation() = %v, want %v", got, RelationOverlap)
 	}
 }

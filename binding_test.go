@@ -239,3 +239,273 @@ func TestConvertCpe22ToCpe23Binding(t *testing.T) {
 		})
 	}
 }
+
+func TestBindToURIExtended(t *testing.T) {
+	tests := []struct {
+		name     string
+		wfn      *WFN
+		expected string
+	}{
+		{
+			name: "WFN with extended attributes",
+			wfn: &WFN{
+				Part:            "a",
+				Vendor:          "microsoft",
+				Product:         "windows",
+				Version:         "10",
+				Edition:         "pro",
+				Language:        "en",
+				SoftwareEdition: "enterprise",
+				TargetSoftware:  "linux",
+				TargetHardware:  "x86",
+				Other:           "custom",
+			},
+			expected: "cpe:/a:microsoft:windows:10:*:pro~en~enterprise~linux~x86~custom",
+		},
+		{
+			name: "WFN with only language",
+			wfn: &WFN{
+				Part:     "a",
+				Vendor:   "microsoft",
+				Product:  "windows",
+				Version:  "10",
+				Language: "en",
+			},
+			expected: "cpe:/a:microsoft:windows:10:*:~en",
+		},
+		{
+			name: "WFN with special characters",
+			wfn: &WFN{
+				Part:    "a",
+				Vendor:  "example.com",
+				Product: "product:name",
+				Version: "1.0",
+			},
+			expected: "cpe:/a:example%2ecom:product%3aname:1%2e0:*",
+		},
+		{
+			name: "WFN with NA update",
+			wfn: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+				Update:  ValueNA,
+			},
+			expected: "cpe:/a:microsoft:windows:10:-",
+		},
+		{
+			name: "WFN with all ANY (no extended)",
+			wfn: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+			},
+			expected: "cpe:/a:microsoft:windows:10:*",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := BindToURI(tt.wfn); got != tt.expected {
+				t.Errorf("BindToURI() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestUnbindURIExtended(t *testing.T) {
+	tests := []struct {
+		name    string
+		uri     string
+		wantErr bool
+		part    string
+		vendor  string
+		product string
+		version string
+		update  string
+	}{
+		{
+			name:    "basic URI",
+			uri:     "cpe:/a:microsoft:windows:10",
+			wantErr: false,
+			part:    "a",
+			vendor:  "microsoft",
+			product: "windows",
+			version: "10",
+		},
+		{
+			name:    "URI with update",
+			uri:     "cpe:/a:microsoft:windows:10:sp1",
+			wantErr: false,
+			part:    "a",
+			vendor:  "microsoft",
+			product: "windows",
+			version: "10",
+			update:  "sp1",
+		},
+		{
+			name:    "URI with extended attributes (tilde format)",
+			uri:     "cpe:/a:microsoft:windows:10:sp1:pro~~en~enterprise~linux~x86~custom",
+			wantErr: false,
+			part:    "a",
+			vendor:  "microsoft",
+			product: "windows",
+			version: "10",
+			update:  "sp1",
+		},
+		{
+			name:    "URI with percent-encoded values",
+			uri:     "cpe:/a:example%2ecom:product%3aname:1%2e0",
+			wantErr: false,
+			part:    "a",
+			vendor:  "example.com",
+			product: "product:name",
+			version: "1.0",
+		},
+		{
+			name:    "invalid prefix",
+			uri:     "invalid-uri",
+			wantErr: true,
+		},
+		{
+			name:    "empty content",
+			uri:     "cpe:/",
+			wantErr: true,
+		},
+		{
+			name:    "URI with edition only (no tilde)",
+			uri:     "cpe:/a:microsoft:windows:10:*:pro",
+			wantErr: false,
+			part:    "a",
+			vendor:  "microsoft",
+			product: "windows",
+			version: "10",
+		},
+		{
+			name:    "URI with edition and language (no tilde)",
+			uri:     "cpe:/a:microsoft:windows:10:*:pro:en",
+			wantErr: false,
+			part:    "a",
+			vendor:  "microsoft",
+			product: "windows",
+			version: "10",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wfn, err := UnbindURI(tt.uri)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UnbindURI() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil {
+				if wfn.Part != tt.part {
+					t.Errorf("UnbindURI().Part = %q, want %q", wfn.Part, tt.part)
+				}
+				if wfn.Vendor != tt.vendor {
+					t.Errorf("UnbindURI().Vendor = %q, want %q", wfn.Vendor, tt.vendor)
+				}
+				if wfn.Product != tt.product {
+					t.Errorf("UnbindURI().Product = %q, want %q", wfn.Product, tt.product)
+				}
+				if wfn.Version != tt.version {
+					t.Errorf("UnbindURI().Version = %q, want %q", wfn.Version, tt.version)
+				}
+				if tt.update != "" && wfn.Update != tt.update {
+					t.Errorf("UnbindURI().Update = %q, want %q", wfn.Update, tt.update)
+				}
+			}
+		})
+	}
+}
+
+func TestBindAttributeValueToFS(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"ANY value", ValueANY, ValueANY},
+		{"NA value", ValueNA, ValueNA},
+		{"empty string", "", ValueANY},
+		{"simple value", "windows", "windows"},
+		{"dot value", "example.com", "example\\.com"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := bindAttributeValueToFS(tt.value); got != tt.expected {
+				t.Errorf("bindAttributeValueToFS(%q) = %q, want %q", tt.value, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestUnbindFSComponent(t *testing.T) {
+	tests := []struct {
+		name     string
+		component string
+		expected  string
+	}{
+		{"ANY value", ValueANY, ValueANY},
+		{"NA value", ValueNA, ValueNA},
+		{"empty string", "", ValueANY},
+		{"simple value", "windows", "windows"},
+		{"escaped dot", `example\.com`, "example.com"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := unbindFSComponent(tt.component); got != tt.expected {
+				t.Errorf("unbindFSComponent(%q) = %q, want %q", tt.component, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestBindAttributeValueToURI(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{"ANY value", ValueANY, ValueANY},
+		{"NA value", ValueNA, ValueNA},
+		{"empty string", "", ValueANY},
+		{"simple value", "windows", "windows"},
+		{"dot value", "example.com", "example%2ecom"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := bindAttributeValueToURI(tt.value); got != tt.expected {
+				t.Errorf("bindAttributeValueToURI(%q) = %q, want %q", tt.value, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestUnbindURIComponent(t *testing.T) {
+	tests := []struct {
+		name      string
+		component string
+		expected  string
+	}{
+		{"ANY value", ValueANY, ValueANY},
+		{"NA value", ValueNA, ValueNA},
+		{"empty string", "", ValueANY},
+		{"simple value", "windows", "windows"},
+		{"percent-encoded", "example%2ecom", "example.com"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := unbindURIComponent(tt.component); got != tt.expected {
+				t.Errorf("unbindURIComponent(%q) = %q, want %q", tt.component, got, tt.expected)
+			}
+		})
+	}
+}

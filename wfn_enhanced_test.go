@@ -267,3 +267,265 @@ func TestAllAttributes(t *testing.T) {
 		}
 	}
 }
+
+func TestFromCPE22String(t *testing.T) {
+	tests := []struct {
+		name    string
+		cpe22   string
+		wantErr bool
+		part    string
+		vendor  string
+		product string
+		version string
+	}{
+		{
+			name:    "valid CPE 2.2",
+			cpe22:   "cpe:/a:microsoft:windows:10",
+			wantErr: false,
+			part:    "a",
+			vendor:  "microsoft",
+			product: "windows",
+			version: "10",
+		},
+		{
+			name:    "invalid CPE 2.2",
+			cpe22:   "not-a-cpe",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wfn, err := FromCPE22String(tt.cpe22)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("FromCPE22String() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil {
+				if wfn.Part != tt.part {
+					t.Errorf("Part = %q, want %q", wfn.Part, tt.part)
+				}
+				if wfn.Vendor != tt.vendor {
+					t.Errorf("Vendor = %q, want %q", wfn.Vendor, tt.vendor)
+				}
+				if wfn.Product != tt.product {
+					t.Errorf("Product = %q, want %q", wfn.Product, tt.product)
+				}
+				if wfn.Version != tt.version {
+					t.Errorf("Version = %q, want %q", wfn.Version, tt.version)
+				}
+			}
+		})
+	}
+}
+
+func TestToCPE22String(t *testing.T) {
+	tests := []struct {
+		name     string
+		wfn      *WFN
+		expected string
+	}{
+		{
+			name: "basic WFN - update defaults to empty (not ANY)",
+			wfn: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+			},
+			expected: "cpe:/a:microsoft:windows:10:",
+		},
+		{
+			name: "WFN with update set to ANY",
+			wfn: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+				Update:  ValueANY,
+			},
+			expected: "cpe:/a:microsoft:windows:10:*",
+		},
+		{
+			name: "WFN with edition and language",
+			wfn: &WFN{
+				Part:     "a",
+				Vendor:   "microsoft",
+				Product:  "windows",
+				Version:  "10",
+				Update:   "sp1",
+				Edition:  "pro",
+				Language: "en",
+			},
+			expected: "cpe:/a:microsoft:windows:10:sp1:pro~~~en",
+		},
+		{
+			name: "WFN with all extended attributes",
+			wfn: &WFN{
+				Part:            "a",
+				Vendor:          "microsoft",
+				Product:         "windows",
+				Version:         "10",
+				Update:          "sp1",
+				Edition:         "pro",
+				Language:        "en",
+				SoftwareEdition: "enterprise",
+				TargetSoftware:  "linux",
+				TargetHardware:  "x86",
+				Other:           "custom",
+			},
+			expected: "cpe:/a:microsoft:windows:10:sp1:pro~~~en~enterprise~linux~x86~custom",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.wfn.ToCPE22String(); got != tt.expected {
+				t.Errorf("ToCPE22String() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestWFNMatchExtended(t *testing.T) {
+	// Test with NA values
+	wfn1 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "-",
+	}
+	wfn2 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "-",
+	}
+	if !wfn1.Match(wfn2) {
+		t.Error("Expected NA versions to match")
+	}
+
+	// Test with different NA values
+	wfn3 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "-",
+	}
+	wfn4 := &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "10",
+	}
+	if wfn3.Match(wfn4) {
+		t.Error("Expected NA and specific version not to match")
+	}
+
+	// Test with extended attributes
+	wfn5 := &WFN{
+		Part:            "a",
+		Vendor:          "microsoft",
+		Product:         "windows",
+		Version:         "10",
+		Update:          "sp1",
+		Edition:         "pro",
+		Language:        "en",
+		SoftwareEdition: "enterprise",
+		TargetSoftware:  "linux",
+		TargetHardware:  "x86",
+		Other:           "custom",
+	}
+	wfn6 := &WFN{
+		Part:            "a",
+		Vendor:          "microsoft",
+		Product:         "windows",
+		Version:         "10",
+		Update:          "sp1",
+		Edition:         "pro",
+		Language:        "en",
+		SoftwareEdition: "enterprise",
+		TargetSoftware:  "linux",
+		TargetHardware:  "x86",
+		Other:           "custom",
+	}
+	if !wfn5.Match(wfn6) {
+		t.Error("Expected identical WFNs with all attributes to match")
+	}
+}
+
+func TestIsIdentifierNameExtended(t *testing.T) {
+	// NA vendor
+	wfn := &WFN{
+		Part:    "a",
+		Vendor:  ValueNA,
+		Product: "windows",
+	}
+	if wfn.IsIdentifierName() {
+		t.Error("NA vendor should not be identifier name")
+	}
+
+	// NA product
+	wfn = &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: ValueNA,
+	}
+	if wfn.IsIdentifierName() {
+		t.Error("NA product should not be identifier name")
+	}
+
+	// wildcard in vendor
+	wfn = &WFN{
+		Part:    "a",
+		Vendor:  "micro*",
+		Product: "windows",
+	}
+	if wfn.IsIdentifierName() {
+		t.Error("Wildcard in vendor should not be identifier name")
+	}
+
+	// wildcard in other attribute
+	wfn = &WFN{
+		Part:    "a",
+		Vendor:  "microsoft",
+		Product: "windows",
+		Version: "1?",
+	}
+	if wfn.IsIdentifierName() {
+		t.Error("Wildcard in version should not be identifier name")
+	}
+
+	// All set with no wildcards
+	wfn = &WFN{
+		Part:            "a",
+		Vendor:          "microsoft",
+		Product:         "windows",
+		Version:         "10",
+		Update:          "sp1",
+		Edition:         "pro",
+		Language:        "en",
+		SoftwareEdition: "enterprise",
+		TargetSoftware:  "linux",
+		TargetHardware:  "x86",
+		Other:           "custom",
+	}
+	if !wfn.IsIdentifierName() {
+		t.Error("Fully specified WFN should be identifier name")
+	}
+}
+
+func TestWFNStringWithQuotes(t *testing.T) {
+	// Test WFNString with values that contain quotes
+	wfn := &WFN{
+		Part:    "a",
+		Vendor:  `value"with"quotes`,
+		Product: "windows",
+	}
+	result := wfn.WFNString()
+	// quoteForWFN escapes " to \"
+	expected := `wfn:[part="a",vendor="value\"with\"quotes",product="windows"]`
+	if result != expected {
+		t.Errorf("WFNString() = %q, want %q", result, expected)
+	}
+}

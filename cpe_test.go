@@ -457,3 +457,480 @@ func TestCompareVersionsString(t *testing.T) {
 		})
 	}
 }
+
+// TestCPECompareTo 测试CPE的CompareTo方法
+func TestCPECompareTo(t *testing.T) {
+	tests := []struct {
+		name     string
+		a        *CPE
+		b        *CPE
+		expected Relation
+	}{
+		{
+			name: "equal CPEs",
+			a: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "microsoft",
+				ProductName: "windows",
+				Version:     "10",
+			},
+			b: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "microsoft",
+				ProductName: "windows",
+				Version:     "10",
+			},
+			expected: RelationEqual,
+		},
+		{
+			name: "superset - ANY version",
+			a: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "microsoft",
+				ProductName: "windows",
+				Version:     ValueANY,
+			},
+			b: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "microsoft",
+				ProductName: "windows",
+				Version:     "10",
+			},
+			expected: RelationSuperset,
+		},
+		{
+			name: "subset - specific version",
+			a: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "microsoft",
+				ProductName: "windows",
+				Version:     "10",
+			},
+			b: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "microsoft",
+				ProductName: "windows",
+				Version:     ValueANY,
+			},
+			expected: RelationSubset,
+		},
+		{
+			name: "disjoint - different vendors",
+			a: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "microsoft",
+				ProductName: "windows",
+				Version:     "10",
+			},
+			b: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "adobe",
+				ProductName: "reader",
+				Version:     "10",
+			},
+			expected: RelationDisjoint,
+		},
+		{
+			name:     "nil source",
+			a:        nil,
+			b:        &CPE{Part: *PartApplication, Vendor: "microsoft", ProductName: "windows"},
+			expected: RelationDisjoint,
+		},
+		{
+			name:     "nil target",
+			a:        &CPE{Part: *PartApplication, Vendor: "microsoft", ProductName: "windows"},
+			b:        nil,
+			expected: RelationDisjoint,
+		},
+		{
+			name:     "both nil",
+			a:        nil,
+			b:        nil,
+			expected: RelationDisjoint,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.a.CompareTo(tt.b); got != tt.expected {
+				t.Errorf("CompareTo() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+// TestCPEIsSupersetOf 测试CPE的IsSupersetOf方法
+func TestCPEIsSupersetOf(t *testing.T) {
+	a := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     ValueANY,
+	}
+	b := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+
+	if !a.IsSupersetOf(b) {
+		t.Error("Expected ANY version to be superset of specific version")
+	}
+	if b.IsSupersetOf(a) {
+		t.Error("Expected specific version not to be superset of ANY version")
+	}
+
+	// Equal CPEs are also superset of each other
+	c := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	if !c.IsSupersetOf(b) {
+		t.Error("Expected equal CPEs to be superset of each other")
+	}
+
+	// Nil cases
+	if a.IsSupersetOf(nil) {
+		t.Error("Expected not superset with nil")
+	}
+}
+
+// TestCPEIsSubsetOf 测试CPE的IsSubsetOf方法
+func TestCPEIsSubsetOf(t *testing.T) {
+	a := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	b := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     ValueANY,
+	}
+
+	if !a.IsSubsetOf(b) {
+		t.Error("Expected specific version to be subset of ANY version")
+	}
+	if b.IsSubsetOf(a) {
+		t.Error("Expected ANY version not to be subset of specific version")
+	}
+
+	// Equal CPEs are also subset of each other
+	c := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	if !c.IsSubsetOf(a) {
+		t.Error("Expected equal CPEs to be subset of each other")
+	}
+
+	// Nil cases
+	if a.IsSubsetOf(nil) {
+		t.Error("Expected not subset with nil")
+	}
+}
+
+// TestCPEIsDisjointWith 测试CPE的IsDisjointWith方法
+func TestCPEIsDisjointWith(t *testing.T) {
+	a := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	b := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "adobe",
+		ProductName: "reader",
+		Version:     "10",
+	}
+
+	if !a.IsDisjointWith(b) {
+		t.Error("Expected disjoint CPEs")
+	}
+
+	c := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	if a.IsDisjointWith(c) {
+		t.Error("Expected equal CPEs not to be disjoint")
+	}
+
+	// Nil is disjoint with anything
+	if !a.IsDisjointWith(nil) {
+		t.Error("Expected nil to be disjoint")
+	}
+}
+
+// TestCPEIsEqualTo 测试CPE的IsEqualTo方法
+func TestCPEIsEqualTo(t *testing.T) {
+	a := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	b := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+
+	if !a.IsEqualTo(b) {
+		t.Error("Expected equal CPEs")
+	}
+
+	c := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "11",
+	}
+	if a.IsEqualTo(c) {
+		t.Error("Expected different version CPEs not to be equal")
+	}
+
+	// Nil cases
+	if a.IsEqualTo(nil) {
+		t.Error("Expected not equal with nil")
+	}
+	if (&CPE{}).IsEqualTo(nil) {
+		t.Error("Expected not equal with nil")
+	}
+}
+
+// TestMatchCPEExtended 测试MatchCPE的更多边界情况
+func TestMatchCPEExtended(t *testing.T) {
+	// nil criteria
+	if MatchCPE(nil, &CPE{}, DefaultMatchOptions()) {
+		t.Error("Expected false for nil criteria")
+	}
+	// nil target
+	if MatchCPE(&CPE{}, nil, DefaultMatchOptions()) {
+		t.Error("Expected false for nil target")
+	}
+	// nil options should still work
+	criteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	target := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+	if !MatchCPE(criteria, target, nil) {
+		t.Error("Expected match with nil options")
+	}
+	// criteria with wildcard product
+	wildcardCriteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "*",
+		Version:     "10",
+	}
+	if !MatchCPE(wildcardCriteria, target, DefaultMatchOptions()) {
+		t.Error("Expected wildcard product to match")
+	}
+}
+
+// TestMatchAttributeExtended 测试matchAttribute的更多边界情况
+func TestMatchAttributeExtended(t *testing.T) {
+	tests := []struct {
+		name     string
+		a        string
+		b        string
+		expected bool
+	}{
+		{"both ANY", "*", "*", true},
+		{"a ANY", "*", "value", true},
+		{"b ANY", "value", "*", true},
+		{"both NA", "-", "-", true},
+		{"a NA", "-", "value", false},
+		{"b NA", "value", "-", false},
+		{"exact match", "value", "value", true},
+		{"no match", "value1", "value2", false},
+		{"empty strings", "", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := matchAttribute(tt.a, tt.b); got != tt.expected {
+				t.Errorf("matchAttribute(%q, %q) = %v, want %v", tt.a, tt.b, got, tt.expected)
+			}
+		})
+	}
+}
+
+// TestCPEMatchExtended 测试CPE Match的更多属性覆盖
+func TestCPEMatchExtended(t *testing.T) {
+	// Test matching with Update, Edition, Language
+	cpe1 := &CPE{
+		Cpe23:           "cpe:2.3:a:microsoft:windows:10:sp1:pro:en:*:*:*:*",
+		Part:            *PartApplication,
+		Vendor:          "microsoft",
+		ProductName:     "windows",
+		Version:         "10",
+		Update:          "sp1",
+		Edition:         "pro",
+		Language:        "en",
+		SoftwareEdition: "*",
+		TargetSoftware:  "*",
+		TargetHardware:  "*",
+		Other:           "*",
+	}
+	cpe2 := &CPE{
+		Cpe23:           "cpe:2.3:a:microsoft:windows:10:sp1:pro:en:*:*:*:*",
+		Part:            *PartApplication,
+		Vendor:          "microsoft",
+		ProductName:     "windows",
+		Version:         "10",
+		Update:          "sp1",
+		Edition:         "pro",
+		Language:        "en",
+		SoftwareEdition: "*",
+		TargetSoftware:  "*",
+		TargetHardware:  "*",
+		Other:           "*",
+	}
+	if !cpe1.Match(cpe2) {
+		t.Error("Expected identical CPEs to match")
+	}
+
+	// Test mismatch on Update
+	cpe3 := &CPE{
+		Part:    *PartApplication,
+		Vendor:  "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+		Update:      "sp2",
+	}
+	if cpe1.Match(cpe3) {
+		t.Error("Expected mismatch on Update")
+	}
+
+	// Test mismatch on Edition
+	cpe4 := &CPE{
+		Part:    *PartApplication,
+		Vendor:  "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+		Update:      "sp1",
+		Edition:     "home",
+	}
+	if cpe1.Match(cpe4) {
+		t.Error("Expected mismatch on Edition")
+	}
+
+	// Test mismatch on Language
+	cpe5 := &CPE{
+		Part:    *PartApplication,
+		Vendor:  "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+		Update:      "sp1",
+		Edition:     "pro",
+		Language:    "de",
+	}
+	if cpe1.Match(cpe5) {
+		t.Error("Expected mismatch on Language")
+	}
+
+	// Test mismatch on SoftwareEdition (both specific, different values)
+	cpe6a := &CPE{
+		Cpe23:           "cpe:2.3:a:microsoft:windows:10:*:*:*:enterprise:*:*:*",
+		Part:            *PartApplication,
+		Vendor:          "microsoft",
+		ProductName:     "windows",
+		Version:         "10",
+		SoftwareEdition: "enterprise",
+	}
+	cpe6b := &CPE{
+		Cpe23:           "cpe:2.3:a:microsoft:windows:10:*:*:*:standard:*:*:*",
+		Part:            *PartApplication,
+		Vendor:          "microsoft",
+		ProductName:     "windows",
+		Version:         "10",
+		SoftwareEdition: "standard",
+	}
+	if cpe6a.Match(cpe6b) {
+		t.Error("Expected mismatch on SoftwareEdition")
+	}
+
+	// Test mismatch on TargetSoftware (both specific, different values)
+	cpe7a := &CPE{
+		Cpe23:          "cpe:2.3:a:microsoft:windows:10:*:*:*:*:linux:*:*",
+		Part:           *PartApplication,
+		Vendor:         "microsoft",
+		ProductName:    "windows",
+		Version:        "10",
+		TargetSoftware: "linux",
+	}
+	cpe7b := &CPE{
+		Cpe23:          "cpe:2.3:a:microsoft:windows:10:*:*:*:*:windows:*:*",
+		Part:           *PartApplication,
+		Vendor:         "microsoft",
+		ProductName:    "windows",
+		Version:        "10",
+		TargetSoftware: "windows",
+	}
+	if cpe7a.Match(cpe7b) {
+		t.Error("Expected mismatch on TargetSoftware")
+	}
+
+	// Test mismatch on TargetHardware (both specific, different values)
+	cpe8a := &CPE{
+		Cpe23:          "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:x86:*",
+		Part:           *PartApplication,
+		Vendor:         "microsoft",
+		ProductName:    "windows",
+		Version:        "10",
+		TargetHardware: "x86",
+	}
+	cpe8b := &CPE{
+		Cpe23:          "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:arm:*",
+		Part:           *PartApplication,
+		Vendor:         "microsoft",
+		ProductName:    "windows",
+		Version:        "10",
+		TargetHardware: "arm",
+	}
+	if cpe8a.Match(cpe8b) {
+		t.Error("Expected mismatch on TargetHardware")
+	}
+
+	// Test mismatch on Other (both specific, different values)
+	cpe9a := &CPE{
+		Cpe23:       "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:custom1",
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+		Other:       "custom1",
+	}
+	cpe9b := &CPE{
+		Cpe23:       "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:custom2",
+		Part:        *PartApplication,
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+		Other:       "custom2",
+	}
+	if cpe9a.Match(cpe9b) {
+		t.Error("Expected mismatch on Other")
+	}
+}
