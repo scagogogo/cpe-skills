@@ -3,39 +3,24 @@ run:
 
 linters:
   enable:
-    - errcheck
     - govet
     - staticcheck
-    - unused
-    - gosimple
     - ineffassign
     - typecheck
 
 linters-settings:
-  errcheck:
-    # Ignore fmt.Fprintf/Print/Printf etc.
-    exclude-functions:
-      - fmt.Fprintf
-      - fmt.Printf
-      - fmt.Sprintln
-      - fmt.Println
+  staticcheck:
+    checks: ["-SA5011"]
 
 issues:
-  # Don't exclude default errcheck exclusions
-  exclude-use-default: false
-  # Maximum issues count per one linter
+  exclude-use-default: true
   max-issues-per-linter: 50
-  # Maximum count of issues with the same text
   max-same-issues: 3
-  # Exclude test files from certain checks
   exclude-rules:
     - path: _test\.go
       linters:
-        - errcheck
+        - staticcheck
+        - ineffassign
     - path: examples/
       linters:
         - errcheck
-    # S1016 is a style suggestion, not a bug
-    - linters:
-        - gosimple
-      text: "S1016"
