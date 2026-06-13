@@ -180,7 +180,7 @@ func (ds *VulnDataSource) FetchData(endpoint string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("请求失败: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 检查响应状态
 	if resp.StatusCode != http.StatusOK {

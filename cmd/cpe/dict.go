@@ -44,7 +44,7 @@ func runDictParse(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("opening dictionary file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	dict, err := cpe.ParseDictionary(f)
 	if err != nil {
@@ -79,7 +79,7 @@ func runDictSearch(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("opening dictionary file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	dict, err := cpe.ParseDictionary(f)
 	if err != nil {
@@ -99,7 +99,7 @@ func runDictSearch(cmd *cobra.Command, args []string) error {
 		if item.Title != "" {
 			fmt.Fprintf(cmd.OutOrStdout(), " - %s", item.Title)
 		}
-		fmt.Fprintln(cmd.OutOrStdout())
+		_, _ = fmt.Fprintln(cmd.OutOrStdout())
 	}
 	return nil
 }

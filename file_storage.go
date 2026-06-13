@@ -81,7 +81,7 @@ func NewFileStorage(baseDir string, useCache bool) (*FileStorage, error) {
 
 	// 如果使用缓存，初始化缓存
 	if useCache {
-		fs.cache.Initialize() // MemoryStorage.Initialize() never returns error
+		_ = fs.cache.Initialize() // MemoryStorage.Initialize() never returns error
 	}
 
 	return fs, nil
@@ -94,7 +94,7 @@ func (fs *FileStorage) Initialize() error {
 
 	// 如果使用缓存，初始化缓存
 	if fs.useCache {
-		fs.cache.Initialize() // MemoryStorage.Initialize() never returns error
+		_ = fs.cache.Initialize() // MemoryStorage.Initialize() never returns error
 	}
 
 	// 记录初始化时间
@@ -108,7 +108,7 @@ func (fs *FileStorage) Close() error {
 
 	// 如果使用缓存，关闭缓存
 	if fs.useCache {
-		fs.cache.Close() // MemoryStorage.Close() never returns error
+		_ = fs.cache.Close() // MemoryStorage.Close() never returns error
 	}
 
 	return nil

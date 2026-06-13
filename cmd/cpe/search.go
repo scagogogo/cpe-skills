@@ -50,7 +50,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("opening input file: %w", err)
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		scanner = bufio.NewScanner(f)
 	} else {
 		scanner = bufio.NewScanner(os.Stdin)

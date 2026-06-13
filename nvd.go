@@ -350,7 +350,7 @@ func DownloadAndParseCPEDict(options *NVDFeedOptions) (*CPEDictionary, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to download CPE dictionary: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("failed to download CPE dictionary, status code: %d", resp.StatusCode)
@@ -361,7 +361,7 @@ func DownloadAndParseCPEDict(options *NVDFeedOptions) (*CPEDictionary, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to decompress CPE dictionary: %w", err)
 		}
-		defer gzipReader.Close()
+		defer func() { _ = gzipReader.Close() }()
 
 		// 保存到缓存
 		cacheContent, err := ioutil.ReadAll(gzipReader)
@@ -481,7 +481,7 @@ func DownloadAndParseCPEMatch(options *NVDFeedOptions) (*CPEMatchData, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to download CPE match data: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("failed to download CPE match data, status code: %d", resp.StatusCode)
@@ -492,7 +492,7 @@ func DownloadAndParseCPEMatch(options *NVDFeedOptions) (*CPEMatchData, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to decompress CPE match data: %w", err)
 		}
-		defer gzipReader.Close()
+		defer func() { _ = gzipReader.Close() }()
 
 		// 读取内容
 		matchFile, err = ioutil.ReadAll(gzipReader)
