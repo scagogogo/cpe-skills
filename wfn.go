@@ -2,9 +2,51 @@ package cpe
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 )
+
+// WFN 逻辑值常量
+const (
+	ValueANY = "*" // 逻辑值 ANY
+	ValueNA  = "-" // 逻辑值 NA
+)
+
+// WFN 属性名常量
+const (
+	AttrPart            = "part"
+	AttrVendor          = "vendor"
+	AttrProduct         = "product"
+	AttrVersion         = "version"
+	AttrUpdate          = "update"
+	AttrEdition         = "edition"
+	AttrLanguage        = "language"
+	AttrSoftwareEdition = "sw_edition"
+	AttrTargetSoftware  = "target_sw"
+	AttrTargetHardware  = "target_hw"
+	AttrOther           = "other"
+)
+
+// Part 属性的有效短名称值
+const (
+	PartApplicationShort = "a"
+	PartOSShort          = "o"
+	PartHardwareShort    = "h"
+)
+
+// ValidPartValues 是 Part 属性允许的值集合
+var ValidPartValues = map[string]bool{
+	PartApplicationShort: true,
+	PartOSShort:          true,
+	PartHardwareShort:    true,
+	ValueANY:             true,
+}
+
+// 所有 WFN 属性名列表，按规范顺序排列
+var allAttributes = []string{
+	AttrPart, AttrVendor, AttrProduct, AttrVersion, AttrUpdate,
+	AttrEdition, AttrLanguage, AttrSoftwareEdition, AttrTargetSoftware,
+	AttrTargetHardware, AttrOther,
+}
 
 // WFN (Well-Formed Name) 表示CPE的规范化内部表示
 // WFN是CPE的内部规范表示形式，用于存储CPE各个组成部分的值
@@ -314,137 +356,6 @@ func (w *WFN) ToCPE22String() string {
 	return result
 }
 
-// escapeValue 对CPE 2.3格式的值进行转义
-// 本函数处理CPE 2.3格式中特殊字符的转义
-//
-// 参数:
-//   - value: 需要转义的原始字符串值
-//
-// 返回值:
-//   - string: 转义后的字符串
-//
-// 示例:
-//
-//	escaped := escapeValue("windows.server")
-//	fmt.Println(escaped) // 输出: "windows\.server"
-//
-//	// 版本号中的点号不进行转义
-//	escaped = escapeValue("2.0.1")
-//	fmt.Println(escaped) // 输出: "2.0.1"
-//
-// 转义规则:
-//   - 特殊值 "*"(ANY), "-"(NA) 和空字符串保持不变
-//   - 点号(.)会被转义为"\."，除非出现在符合版本格式的字符串中
-//   - 冒号(:)会被转义为"\:"
-//
-// 注意:
-//   - 函数会识别版本号格式(如1.2.3)，在这种情况下点号不做转义
-//   - 这是为了保持版本号的可读性和一致性
-func escapeValue(value string) string {
-	// 如果是特殊值或空值，不需要转义
-	if value == "*" || value == "-" || value == "" {
-		return value
-	}
-
-	// 检查是否是版本字段，版本字段中的点不做双重转义
-	// 通常版本字段的格式为数字.数字.数字
-	isVersion := false
-	if len(value) >= 3 {
-		versionPattern := regexp.MustCompile(`^\d+(\.\d+)+$`)
-		isVersion = versionPattern.MatchString(value)
-	}
-
-	// 转义值
-	escaped := value
-
-	if !isVersion {
-		// 转义点号，除非在版本号中
-		escaped = strings.ReplaceAll(escaped, ".", "\\.")
-	}
-
-	// 转义其他特殊字符
-	escaped = strings.ReplaceAll(escaped, ":", "\\:")
-
-	return escaped
-}
-
-// unescapeValue 对CPE 2.3格式的值进行反转义
-// 本函数处理CPE 2.3格式中特殊字符的反转义，是escapeValue的逆操作
-//
-// 参数:
-//   - value: 需要反转义的字符串
-//
-// 返回值:
-//   - string: 反转义后的原始字符串
-//
-// 示例:
-//
-//	original := unescapeValue("windows\\.server")
-//	fmt.Println(original) // 输出: "windows.server"
-//
-//	original = unescapeValue("2\\.0\\.1")
-//	fmt.Println(original) // 输出: "2.0.1"
-//
-// 反转义规则:
-//   - 特殊值 "*"(ANY), "-"(NA) 和空字符串保持不变
-//   - 所有形如"\x"的字符序列会被替换为"x"，其中x可以是任何字符
-//
-// 注意:
-//   - 使用正则表达式识别和替换所有转义序列
-//   - 这个函数可以处理所有通过escapeValue函数转义的字符串
-func unescapeValue(value string) string {
-	if value == "*" || value == "-" || value == "" {
-		return value
-	}
-
-	// 使用正则表达式识别转义序列
-	re := regexp.MustCompile(`\\(.)`)
-	return re.ReplaceAllString(value, "$1")
-}
-
-// escapeValueForCpe22 对CPE 2.2格式的值进行转义
-// 本函数处理CPE 2.2格式中特殊字符的转义，其规则与CPE 2.3不同
-//
-// 参数:
-//   - value: 需要转义的原始字符串值
-//
-// 返回值:
-//   - string: 转义后的字符串，符合CPE 2.2格式要求
-//
-// 示例:
-//
-//	escaped := escapeValueForCpe22("windows/server")
-//	fmt.Println(escaped) // 输出: "windows%2fserver"
-//
-//	escaped = escapeValueForCpe22("demo:test")
-//	fmt.Println(escaped) // 输出: "demo%3atest"
-//
-// 转义规则:
-//   - 特殊值 "*"(ANY), "-"(NA) 和空字符串保持不变
-//   - 反斜杠(\)转义为"\\"
-//   - 冒号(:)转义为"%3a"
-//   - 斜杠(/)转义为"%2f"
-//   - 波浪线(~)转义为"%7e"
-//
-// 注意:
-//   - CPE 2.2使用百分号编码(percent-encoding)来表示特殊字符，而不是反斜杠转义
-//   - 这种格式更接近URI编码，使CPE更容易嵌入到URL中
-func escapeValueForCpe22(value string) string {
-	if value == "*" || value == "-" || value == "" {
-		return value
-	}
-
-	// 替换特殊字符
-	replacer := strings.NewReplacer(
-		"\\", "\\\\",
-		":", "%3a",
-		"/", "%2f",
-		"~", "%7e",
-	)
-
-	return replacer.Replace(value)
-}
-
 // Match 比较两个WFN是否匹配
 // 本方法检查当前WFN与另一个WFN是否匹配，匹配规则遵循CPE规范
 //
@@ -537,4 +448,106 @@ func matchWFNAttribute(a, b string) bool {
 
 	// 精确匹配
 	return a == b
+}
+
+// NewWFN creates an empty WFN with all attributes defaulting to ANY
+func NewWFN() *WFN { return &WFN{} }
+
+func (w *WFN) Get(attr string) string {
+	switch attr {
+	case AttrPart:
+		return w.defaultToANY(w.Part)
+	case AttrVendor:
+		return w.defaultToANY(w.Vendor)
+	case AttrProduct:
+		return w.defaultToANY(w.Product)
+	case AttrVersion:
+		return w.defaultToANY(w.Version)
+	case AttrUpdate:
+		return w.defaultToANY(w.Update)
+	case AttrEdition:
+		return w.defaultToANY(w.Edition)
+	case AttrLanguage:
+		return w.defaultToANY(w.Language)
+	case AttrSoftwareEdition:
+		return w.defaultToANY(w.SoftwareEdition)
+	case AttrTargetSoftware:
+		return w.defaultToANY(w.TargetSoftware)
+	case AttrTargetHardware:
+		return w.defaultToANY(w.TargetHardware)
+	case AttrOther:
+		return w.defaultToANY(w.Other)
+	default:
+		return ValueANY
+	}
+}
+
+func (w *WFN) Set(attr string, value string) {
+	switch attr {
+	case AttrPart:
+		w.Part = value
+	case AttrVendor:
+		w.Vendor = value
+	case AttrProduct:
+		w.Product = value
+	case AttrVersion:
+		w.Version = value
+	case AttrUpdate:
+		w.Update = value
+	case AttrEdition:
+		w.Edition = value
+	case AttrLanguage:
+		w.Language = value
+	case AttrSoftwareEdition:
+		w.SoftwareEdition = value
+	case AttrTargetSoftware:
+		w.TargetSoftware = value
+	case AttrTargetHardware:
+		w.TargetHardware = value
+	case AttrOther:
+		w.Other = value
+	}
+}
+
+func (w *WFN) WFNString() string {
+	var parts []string
+	for _, attr := range allAttributes {
+		value := w.Get(attr)
+		if value != ValueANY {
+			parts = append(parts, attr+"=\""+quoteForWFN(value)+"\"")
+		}
+	}
+	if len(parts) == 0 {
+		return "wfn:[]"
+	}
+	return "wfn:[" + strings.Join(parts, ",") + "]"
+}
+
+func (w *WFN) IsIdentifierName() bool {
+	part := w.Get(AttrPart)
+	if part == ValueANY || part == ValueNA {
+		return false
+	}
+	vendor := w.Get(AttrVendor)
+	if vendor == ValueANY || vendor == ValueNA {
+		return false
+	}
+	product := w.Get(AttrProduct)
+	if product == ValueANY || product == ValueNA {
+		return false
+	}
+	for _, attr := range allAttributes {
+		value := w.Get(attr)
+		if value != ValueANY && value != ValueNA && hasUnquotedWildcard(value) {
+			return false
+		}
+	}
+	return true
+}
+
+func (w *WFN) defaultToANY(value string) string {
+	if value == "" {
+		return ValueANY
+	}
+	return value
 }

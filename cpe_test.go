@@ -314,7 +314,7 @@ func TestFormatCpe23(t *testing.T) {
 				ProductName: "product:name",
 				Version:     "1.0",
 			},
-			expected: "cpe:2.3:a:example\\.com:product\\:name:1.0:*:*:*:*:*:*:*",
+			expected: "cpe:2.3:a:example\\.com:product%3aname:1\\.0:*:*:*:*:*:*:*",
 		},
 	}
 

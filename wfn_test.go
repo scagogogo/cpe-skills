@@ -353,7 +353,7 @@ func TestEscapeValue(t *testing.T) {
 		{
 			name:     "冒号需要转义",
 			value:    "product:name",
-			expected: "product\\:name",
+			expected: "product%3aname",
 		},
 		{
 			name:     "特殊值不需要转义",

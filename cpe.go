@@ -377,3 +377,15 @@ func MatchCPE(criteria *CPE, target *CPE, options *MatchOptions) bool {
 	// 使用现有的Match方法，它已经实现了CPE匹配逻辑
 	return criteria.Match(target)
 }
+
+func (x *CPE) CompareTo(other *CPE) Relation {
+	if x == nil || other == nil {
+		return RelationDisjoint
+	}
+	return CompareWFNRelation(CompareWFNs(FromCPE(x), FromCPE(other)))
+}
+
+func (x *CPE) IsSupersetOf(other *CPE) bool  { return CPESuperset(x, other) }
+func (x *CPE) IsSubsetOf(other *CPE) bool    { return CPESubset(x, other) }
+func (x *CPE) IsDisjointWith(other *CPE) bool { return CPEDisjoint(x, other) }
+func (x *CPE) IsEqualTo(other *CPE) bool      { return CPEEqual(x, other) }

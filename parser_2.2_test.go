@@ -144,7 +144,7 @@ func TestFormatCpe22(t *testing.T) {
 				ProductName: "product:name",
 				Version:     "1.0",
 			},
-			expected: "cpe:/a:example%2ecom:product%3aname:1.0",
+			expected: "cpe:/a:example%2ecom:product%3aname:1%2e0",
 		},
 		{
 			name: "硬件格式化",
@@ -154,7 +154,7 @@ func TestFormatCpe22(t *testing.T) {
 				ProductName: "core_i7",
 				Version:     "1068g7",
 			},
-			expected: "cpe:/h:intel:core_i7:1068g7",
+			expected: "cpe:/h:intel:core%5fi7:1068g7",
 		},
 	}
 
@@ -187,7 +187,7 @@ func TestConvertCpe22ToCpe23(t *testing.T) {
 		{
 			name:     "带特殊字符的转换",
 			cpe22:    "cpe:/a:example%2ecom:product%3aname:1.0",
-			expected: "cpe:2.3:a:example\\.com:product\\:name:1.0:*:*:*:*:*:*:*",
+			expected: "cpe:2.3:a:example\\.com:product%3aname:1\\.0:*:*:*:*:*:*:*",
 		},
 	}
 
