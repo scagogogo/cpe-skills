@@ -70,13 +70,13 @@ type Part struct {
 ## Installation
 
 ```bash
-go get github.com/scagogogo/cpe
+go get github.com/scagogogo/cpe-skills
 ```
 
 ## Import
 
 ```go
-import "github.com/scagogogo/cpe"
+import "github.com/scagogogo/cpe-skills"
 ```
 
 ## Basic Usage
@@ -87,7 +87,7 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {

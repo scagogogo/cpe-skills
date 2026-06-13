@@ -11,7 +11,7 @@ hero:
       link: /zh/api/
     - theme: alt
       text: 查看GitHub
-      link: https://github.com/scagogogo/cpe
+      link: https://github.com/scagogogo/cpe-skills
 
 features:
   - title: CPE 2.2 & 2.3 支持
@@ -33,7 +33,7 @@ features:
 安装库：
 
 ```bash
-go get github.com/scagogogo/cpe
+go get github.com/scagogogo/cpe-skills
 ```
 
 解析CPE字符串：
@@ -44,7 +44,7 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -98,4 +98,4 @@ func main() {
 
 - [API 参考文档](/zh/api/) - 完整的API文档
 - [使用示例](/zh/examples/) - 实用的代码示例
-- [GitHub 仓库](https://github.com/scagogogo/cpe) - 源代码和问题反馈
+- [GitHub 仓库](https://github.com/scagogogo/cpe-skills) - 源代码和问题反馈

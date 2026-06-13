@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 )
 
 // outputCPE 按指定格式输出单个 CPE 信息

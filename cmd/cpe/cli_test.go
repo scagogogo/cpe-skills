@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 )
 
 func TestParseCPEString_CPE23(t *testing.T) {

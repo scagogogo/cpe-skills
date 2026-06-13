@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 

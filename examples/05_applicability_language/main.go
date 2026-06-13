@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 )
 
 func main() {

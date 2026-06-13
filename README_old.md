@@ -113,7 +113,7 @@ CPE库中的数据流遵循以下路径：
 Install using Go modules:
 
 ```bash
-go get github.com/scagogogo/cpe
+go get github.com/scagogogo/cpe-skills
 ```
 
 ### 🔍 Quick Start
@@ -125,7 +125,7 @@ package main
 
 import (
     "fmt"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -158,7 +158,7 @@ package main
 
 import (
     "fmt"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -768,7 +768,7 @@ import (
     "log"
     "time"
     
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -858,7 +858,7 @@ import (
     "os"
     "time"
     
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 // 资产类型枚举
@@ -1038,7 +1038,7 @@ import (
     "strings"
     "time"
     
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 // 安全公告结构
@@ -1778,7 +1778,7 @@ func (ds *DatabaseStorage) RetrieveCPE(id string) (*cpe.CPE, error) {
 
 ### 贡献流程
 
-1. 查看 [Issues](https://github.com/scagogogo/cpe/issues) 中的待处理任务
+1. 查看 [Issues](https://github.com/scagogogo/cpe-skills/issues) 中的待处理任务
 2. Fork仓库并创建您的特性分支
 3. 提交更改并确保测试通过
 4. 推送到您的分支并提交Pull Request
@@ -1788,7 +1788,7 @@ func (ds *DatabaseStorage) RetrieveCPE(id string) (*cpe.CPE, error) {
 
 ## 📄 开源协议
 
-本项目采用 [MIT 协议](https://github.com/scagogogo/cpe/blob/main/LICENSE) 进行许可。
+本项目采用 [MIT 协议](https://github.com/scagogogo/cpe-skills/blob/main/LICENSE) 进行许可。
 
 ## 🤝 贡献指南
 

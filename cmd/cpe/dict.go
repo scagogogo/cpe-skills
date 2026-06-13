@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 

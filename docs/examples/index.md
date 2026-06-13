@@ -30,7 +30,7 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -78,7 +78,7 @@ All examples are complete, standalone programs. To run them:
 
 1. **Install the library:**
    ```bash
-   go get github.com/scagogogo/cpe
+   go get github.com/scagogogo/cpe-skills
    ```
 
 2. **Create a new Go file** with the example code
@@ -218,7 +218,7 @@ If you need help with the examples:
 1. Check the [API Reference](/api/) for detailed function documentation
 2. Look at the complete example code for context
 3. Review the error handling patterns
-4. Check the [GitHub repository](https://github.com/scagogogo/cpe) for issues and discussions
+4. Check the [GitHub repository](https://github.com/scagogogo/cpe-skills) for issues and discussions
 
 ## Contributing Examples
 

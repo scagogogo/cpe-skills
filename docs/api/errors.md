@@ -402,7 +402,7 @@ package main
 import (
     "errors"
     "fmt"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {

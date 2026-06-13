@@ -11,7 +11,7 @@ hero:
       link: /api/
     - theme: alt
       text: View on GitHub
-      link: https://github.com/scagogogo/cpe
+      link: https://github.com/scagogogo/cpe-skills
 
 features:
   - title: CPE 2.2 & 2.3 Support
@@ -33,7 +33,7 @@ features:
 Install the library:
 
 ```bash
-go get github.com/scagogogo/cpe
+go get github.com/scagogogo/cpe-skills
 ```
 
 Parse a CPE string:
@@ -44,7 +44,7 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -98,7 +98,7 @@ func main() {
 
 - [API Reference](/api/) - Complete API documentation
 - [Examples](/examples/) - Practical usage examples
-- [GitHub Repository](https://github.com/scagogogo/cpe) - Source code and issues
+- [GitHub Repository](https://github.com/scagogogo/cpe-skills) - Source code and issues
 
 ---
 

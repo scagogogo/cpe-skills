@@ -420,7 +420,7 @@ package main
 
 import (
     "fmt"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {

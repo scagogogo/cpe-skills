@@ -15,7 +15,7 @@ import (
     "fmt"
     "log"
     "strings"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {

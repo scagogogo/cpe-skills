@@ -45,7 +45,7 @@ The library also includes integration with CVE (Common Vulnerabilities and Expos
 Install using Go modules:
 
 ```bash
-go get github.com/scagogogo/cpe
+go get github.com/scagogogo/cpe-skills
 ```
 
 ### 🔍 Quick Start
@@ -56,7 +56,7 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {

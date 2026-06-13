@@ -30,7 +30,7 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/scagogogo/cpe"
+    "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -78,7 +78,7 @@ func main() {
 
 1. **安装库：**
    ```bash
-   go get github.com/scagogogo/cpe
+   go get github.com/scagogogo/cpe-skills
    ```
 
 2. **创建新的Go文件** 包含示例代码
@@ -218,7 +218,7 @@ for _, cpe := range cpes {
 1. 查看[API参考](/zh/api/)获取详细的函数文档
 2. 查看完整的示例代码以获取上下文
 3. 查看错误处理模式
-4. 查看[GitHub仓库](https://github.com/scagogogo/cpe)的问题和讨论
+4. 查看[GitHub仓库](https://github.com/scagogogo/cpe-skills)的问题和讨论
 
 ## 贡献示例
 

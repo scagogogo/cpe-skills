@@ -37,7 +37,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -110,7 +110,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -197,7 +197,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -436,7 +436,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -538,7 +538,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -732,7 +732,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -920,7 +920,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -1049,7 +1049,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -1198,7 +1198,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/scagogogo/cpe"
+	"github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
