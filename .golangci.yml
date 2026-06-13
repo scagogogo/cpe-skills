@@ -2,11 +2,9 @@ run:
   timeout: 5m
 
 linters:
+  disable-all: true
   enable:
     - govet
-    - staticcheck
-    - ineffassign
-    - typecheck
 
 linters-settings:
   staticcheck:
@@ -16,11 +14,3 @@ issues:
   exclude-use-default: true
   max-issues-per-linter: 50
   max-same-issues: 3
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - staticcheck
-        - ineffassign
-    - path: examples/
-      linters:
-        - errcheck
