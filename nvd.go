@@ -334,7 +334,7 @@ func DownloadAndParseCPEDict(options *NVDFeedOptions) (*CPEDictionary, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to open cache file: %w", err)
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		dictFile = f
 
 		if options.ShowProgress {

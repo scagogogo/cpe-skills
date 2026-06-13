@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/scagogogo/cpe-skills"
 )
@@ -35,7 +34,3 @@ func outputCPEJSON(w io.Writer, c *cpe.CPE) error {
 	return encoder.Encode(c)
 }
 
-// outputError 按统一格式输出错误
-func outputError(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
-}

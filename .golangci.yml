@@ -35,3 +35,7 @@ issues:
     - path: examples/
       linters:
         - errcheck
+    # S1016 is a style suggestion, not a bug
+    - linters:
+        - gosimple
+      text: "S1016"

@@ -21,8 +21,6 @@ type mockStorage struct {
 	initErr          error
 	closeErr         error
 	deleteCPEErr     error
-	dictErr          error
-	timestampErr     error
 	retrieveDictErr  error
 	retrieveTSErr    error
 	updateCVEErr     error
