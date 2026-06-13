@@ -460,6 +460,59 @@ func TestRelationStringExtended(t *testing.T) {
 	}
 }
 
+func TestCompareAttributesWithWildcards(t *testing.T) {
+	tests := []struct {
+		name     string
+		source   string
+		target   string
+		expected int
+	}{
+		{"source wildcard matches target", "win*", "windows", 1},
+		{"target wildcard - source doesn't match pattern", "windows", "win*", -2},
+		{"both wildcards matching", "win*", "win*", 0},
+		{"wildcard not matching", "abc*", "xyz", -2},
+		{"source question mark", "win?ows", "windows", 1},
+		{"target question mark mismatch", "windows", "win?ows", -2},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CompareAttributes(tt.source, tt.target); got != tt.expected {
+				t.Errorf("CompareAttributes(%q, %q) = %d, want %d", tt.source, tt.target, got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestWildcardMatchExtended(t *testing.T) {
+	tests := []struct {
+		source   string
+		target   string
+		expected bool
+	}{
+		// Multiple stars
+		{"*x*", "xyz", true},
+		// Star at beginning
+		{"*ows", "windows", true},
+		// Source longer than target no star at end
+		{"windows10", "windows", false},
+		// Escaped backslash followed by escaped char at end
+		{`test\\`, "test\\", true},
+		// Empty source matches empty target
+		{"", "", true},
+		// Non-empty source doesn't match empty target
+		{"abc", "", false},
+		// Escaped backslash with next char
+		{`\\a`, `\a`, true},
+	}
+
+	for _, tt := range tests {
+		if got := wildcardMatch(tt.source, tt.target); got != tt.expected {
+			t.Errorf("wildcardMatch(%q, %q) = %v, want %v", tt.source, tt.target, got, tt.expected)
+		}
+	}
+}
+
 func TestCompareWFNRelationOverlap(t *testing.T) {
 	// Test overlap case: has both superset and subset but no disjoint
 	comparisons := map[string]int{

@@ -456,6 +456,29 @@ func TestUnescapeFromURIPercentUnknown(t *testing.T) {
 	}
 }
 
+func TestEscapeForURIUnknownCharNotInMap(t *testing.T) {
+	// Test the else branch in escapeForURI where a character is not alphanumeric
+	// and not in the quotedCharToPercentEncode map - it uses toHex
+	// Space character is not in the map, so it should be percent-encoded via toHex
+	result := escapeForURI("hello world")
+	if result != "hello%20world" {
+		t.Errorf("escapeForURI with space = %q, want %q", result, "hello%20world")
+	}
+
+	// Tab character
+	result = escapeForURI("hello\tworld")
+	if result != "hello%09world" {
+		t.Errorf("escapeForURI with tab = %q, want %q", result, "hello%09world")
+	}
+
+	// Backslash followed by non-alphanumeric not in map (space)
+	result = escapeForURI(`\ `)
+	// Backslash encoded as %5c, then space uses toHex -> %20
+	if result != "%5c%20" {
+		t.Errorf("escapeForURI with backslash+space = %q, want %q", result, "%5c%20")
+	}
+}
+
 func TestEscapeForFSWithBackslash(t *testing.T) {
 	// Test that backslash is passed through as-is in escapeForFS
 	result := escapeForFS(`test\value`)

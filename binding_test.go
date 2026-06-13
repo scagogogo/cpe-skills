@@ -422,6 +422,33 @@ func TestUnbindURIExtended(t *testing.T) {
 	}
 }
 
+func TestUnbindURIWithExtendedAttributes(t *testing.T) {
+	// Test UnbindURI with extended attributes in tilde format
+	// The tilde-separated part at index 5 is split by "~":
+	// extParts[0]=edition, extParts[3]=language, extParts[4]=sw_edition,
+	// extParts[5]=target_sw, extParts[6]=target_hw, extParts[7]=other
+	// Format: cpe:/part:vendor:product:version:update:~[sw_edition]~[target_sw]~[target_hw]~[other]
+	wfn, err := UnbindURI("cpe:/a:vendor:product:1.0:*:~~~~enterprise~~")
+	if err != nil {
+		t.Fatalf("UnbindURI() error = %v", err)
+	}
+	if wfn.Part != "a" {
+		t.Errorf("Part = %q, want %q", wfn.Part, "a")
+	}
+	if wfn.Vendor != "vendor" {
+		t.Errorf("Vendor = %q, want %q", wfn.Vendor, "vendor")
+	}
+	if wfn.Product != "product" {
+		t.Errorf("Product = %q, want %q", wfn.Product, "product")
+	}
+	if wfn.Version != "1.0" {
+		t.Errorf("Version = %q, want %q", wfn.Version, "1.0")
+	}
+	if wfn.SoftwareEdition != "enterprise" {
+		t.Errorf("SoftwareEdition = %q, want %q", wfn.SoftwareEdition, "enterprise")
+	}
+}
+
 func TestBindAttributeValueToFS(t *testing.T) {
 	tests := []struct {
 		name     string

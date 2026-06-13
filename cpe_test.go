@@ -749,6 +749,133 @@ func TestMatchCPEExtended(t *testing.T) {
 }
 
 // TestMatchAttributeExtended 测试matchAttribute的更多边界情况
+func TestParseCpe23Extended(t *testing.T) {
+	tests := []struct {
+		name     string
+		cpeStr   string
+		wantErr  bool
+		expected *CPE
+	}{
+		{
+			name:    "wildcard part",
+			cpeStr:  "cpe:2.3:*:microsoft:windows:10:*:*:*:*:*:*:*",
+			wantErr: false,
+			expected: &CPE{
+				Cpe23:       "cpe:2.3:*:microsoft:windows:10:*:*:*:*:*:*:*",
+				Vendor:      "microsoft",
+				ProductName: "windows",
+				Version:     "10",
+			},
+		},
+		{
+			name:    "invalid part",
+			cpeStr:  "cpe:2.3:x:microsoft:windows:10:*:*:*:*:*:*:*",
+			wantErr: true,
+		},
+		{
+			name:    "wrong header",
+			cpeStr:  "cpp:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
+			wantErr: true,
+		},
+		{
+			name:    "wrong version",
+			cpeStr:  "cpe:2.2:a:microsoft:windows:10:*:*:*:*:*:*:*",
+			wantErr: true,
+		},
+		{
+			name:    "too few parts",
+			cpeStr:  "cpe:2.3:a:microsoft:windows",
+			wantErr: true,
+		},
+		{
+			name:    "with special characters in vendor",
+			cpeStr:  "cpe:2.3:a:example\\.com:product:1.0:*:*:*:*:*:*:*",
+			wantErr: false,
+			expected: &CPE{
+				Vendor:      "example.com",
+				ProductName: "product",
+				Version:     "1.0",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseCpe23(tt.cpeStr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseCpe23() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if err == nil && tt.expected != nil {
+				if tt.expected.Vendor != "" && got.Vendor != tt.expected.Vendor {
+					t.Errorf("ParseCpe23() Vendor = %v, want %v", got.Vendor, tt.expected.Vendor)
+				}
+				if tt.expected.ProductName != "" && got.ProductName != tt.expected.ProductName {
+					t.Errorf("ParseCpe23() ProductName = %v, want %v", got.ProductName, tt.expected.ProductName)
+				}
+				if tt.expected.Version != "" && got.Version != tt.expected.Version {
+					t.Errorf("ParseCpe23() Version = %v, want %v", got.Version, tt.expected.Version)
+				}
+			}
+		})
+	}
+}
+
+func TestFormatCpe23Extended(t *testing.T) {
+	tests := []struct {
+		name     string
+		cpe      *CPE
+		expected string
+	}{
+		{
+			name: "empty Cpe23 generates from fields",
+			cpe: &CPE{
+				Part:            *PartApplication,
+				Vendor:          "microsoft",
+				ProductName:     "windows",
+				Version:         "10",
+				Update:          "sp1",
+				Edition:         "pro",
+				Language:        "en",
+				SoftwareEdition: "enterprise",
+				TargetSoftware:  "linux",
+				TargetHardware:  "x86",
+				Other:           "custom",
+			},
+			expected: "cpe:2.3:a:microsoft:windows:10:sp1:pro:en:enterprise:linux:x86:custom",
+		},
+		{
+			name: "existing Cpe23 takes precedence",
+			cpe: &CPE{
+				Cpe23:           "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
+				Part:            *PartApplication,
+				Vendor:          "microsoft",
+				ProductName:     "windows",
+				Version:         "11",
+			},
+			expected: "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
+		},
+		{
+			name: "empty part defaults to wildcard",
+			cpe: &CPE{
+				Vendor:      "microsoft",
+				ProductName: "windows",
+				Version:     "10",
+			},
+			expected: "cpe:2.3:*:microsoft:windows:10:*:*:*:*:*:*:*",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FormatCpe23(tt.cpe); got != tt.expected {
+				t.Errorf("FormatCpe23() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
 func TestMatchAttributeExtended(t *testing.T) {
 	tests := []struct {
 		name     string

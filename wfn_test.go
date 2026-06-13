@@ -359,6 +359,121 @@ func TestWFNMatch(t *testing.T) {
 	}
 }
 
+// TestWFNMatchEdgeCases tests additional edge cases for WFN Match
+func TestWFNMatchEdgeCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		wfn1     *WFN
+		wfn2     *WFN
+		expected bool
+	}{
+		{
+			name: "mismatch on Part",
+			wfn1: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+			},
+			wfn2: &WFN{
+				Part:    "o",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+			},
+			expected: false,
+		},
+		{
+			name: "match with wildcard Part",
+			wfn1: &WFN{
+				Part:    "*",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+			},
+			wfn2: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+			},
+			expected: true,
+		},
+		{
+			name: "mismatch on empty Part vs specific",
+			wfn1: &WFN{
+				Part:    "",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+			},
+			wfn2: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+			},
+			expected: false,
+		},
+		{
+			name: "match with all ANY in wfn1",
+			wfn1: &WFN{
+				Part:    "*",
+				Vendor:  "*",
+				Product: "*",
+				Version: "*",
+			},
+			wfn2: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+			},
+			expected: true,
+		},
+		{
+			name: "match with both NA version",
+			wfn1: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "-",
+			},
+			wfn2: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "-",
+			},
+			expected: true,
+		},
+		{
+			name: "no match with NA version vs specific version",
+			wfn1: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "-",
+			},
+			wfn2: &WFN{
+				Part:    "a",
+				Vendor:  "microsoft",
+				Product: "windows",
+				Version: "10",
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.wfn1.Match(tt.wfn2); got != tt.expected {
+				t.Errorf("WFN.Match() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
 // TestEscapeValue 测试WFN值转义
 func TestEscapeValue(t *testing.T) {
 	tests := []struct {

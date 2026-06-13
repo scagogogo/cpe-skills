@@ -714,6 +714,184 @@ func TestCPESetRemoveNil(t *testing.T) {
 	}
 }
 
+// TestCPESetIntersectionExtended tests Intersection with smaller/larger set optimization
+func TestCPESetIntersectionExtended(t *testing.T) {
+	set1 := NewCPESet("Set1", "First set")
+	set2 := NewCPESet("Set2", "Second set")
+
+	cpe1 := createTestCPE("cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*", *PartApplication, "vendor", "product", "1.0")
+	cpe2 := createTestCPE("cpe:2.3:a:vendor:product:2.0:*:*:*:*:*:*:*", *PartApplication, "vendor", "product", "2.0")
+	cpe3 := createTestCPE("cpe:2.3:a:vendor:other:1.0:*:*:*:*:*:*:*", *PartApplication, "vendor", "other", "1.0")
+
+	// set2 has more items, testing the smaller/larger optimization
+	set2.Add(cpe1)
+	set2.Add(cpe2)
+	set2.Add(cpe3)
+	set1.Add(cpe1) // set1 is smaller
+
+	intersection := set1.Intersection(set2)
+	if intersection.Size() != 1 {
+		t.Errorf("Intersection size should be 1, got %d", intersection.Size())
+	}
+	if !intersection.Contains(cpe1) {
+		t.Errorf("Intersection should contain cpe1")
+	}
+
+	// Empty intersection
+	emptySet := NewCPESet("Empty", "Empty set")
+	intersection2 := emptySet.Intersection(set2)
+	if intersection2.Size() != 0 {
+		t.Errorf("Intersection with empty set should be 0, got %d", intersection2.Size())
+	}
+}
+
+// TestCPESetAdvancedFilter tests AdvancedFilter
+func TestCPESetAdvancedFilter(t *testing.T) {
+	set := NewCPESet("TestSet", "Test set")
+
+	cpe1 := createTestCPE("cpe:2.3:a:vendor1:product:1.0:*:*:*:*:*:*:*", *PartApplication, "vendor1", "product", "1.0")
+	cpe2 := createTestCPE("cpe:2.3:a:vendor2:product:2.0:*:*:*:*:*:*:*", *PartApplication, "vendor2", "product", "2.0")
+	cpe3 := createTestCPE("cpe:2.3:a:vendor3:other:1.0:*:*:*:*:*:*:*", *PartApplication, "vendor3", "other", "1.0")
+
+	set.Add(cpe1)
+	set.Add(cpe2)
+	set.Add(cpe3)
+
+	// Filter by product with partial match (allows empty fields to match any)
+	criteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("*"),
+		ProductName: "product",
+		Version:     "*",
+	}
+
+	filtered := set.AdvancedFilter(criteria, nil)
+	if filtered.Size() != 2 {
+		t.Errorf("AdvancedFilter by product should return 2 CPEs, got %d", filtered.Size())
+	}
+
+	// Filter by vendor with regex
+	criteria2 := &CPE{
+		Part:        *PartApplication,
+		Vendor:      "vendor.*",
+		ProductName: "*",
+		Version:     "*",
+	}
+	filtered2 := set.AdvancedFilter(criteria2, &AdvancedMatchOptions{
+		UseRegex: true,
+	})
+	if filtered2.Size() != 3 {
+		t.Errorf("AdvancedFilter by regex vendor should return 3 CPEs, got %d", filtered2.Size())
+	}
+}
+
+// TestCPESetEqualsExtended tests Equals with different sizes and contents
+func TestCPESetEqualsExtended(t *testing.T) {
+	set1 := NewCPESet("Set1", "First set")
+	set2 := NewCPESet("Set2", "Second set")
+
+	cpe1 := createTestCPE("cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*", *PartApplication, "vendor", "product", "1.0")
+	cpe2 := createTestCPE("cpe:2.3:a:vendor:product:2.0:*:*:*:*:*:*:*", *PartApplication, "vendor", "product", "2.0")
+
+	// Same size (0), same contents (empty)
+	if !set1.Equals(set2) {
+		t.Error("Empty sets should be equal")
+	}
+
+	set1.Add(cpe1)
+	set2.Add(cpe2)
+
+	// Same size, different contents
+	if set1.Equals(set2) {
+		t.Error("Sets with same size but different contents should not be equal")
+	}
+
+	// Different sizes
+	set1.Add(cpe2)
+	if set1.Equals(set2) {
+		t.Error("Sets with different sizes should not be equal")
+	}
+
+	// Make them equal by adding cpe1 to set2
+	set2.Add(cpe1)
+	if !set1.Equals(set2) {
+		t.Error("Sets with same contents should be equal")
+	}
+}
+
+// TestCPESetIsSubsetOfExtended tests IsSubsetOf with edge cases
+func TestCPESetIsSubsetOfExtended(t *testing.T) {
+	set1 := NewCPESet("Set1", "First set")
+	set2 := NewCPESet("Set2", "Second set")
+
+	// Empty set is subset of any set
+	if !set1.IsSubsetOf(set2) {
+		t.Error("Empty set should be subset of any set")
+	}
+
+	cpe1 := createTestCPE("cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*", *PartApplication, "vendor", "product", "1.0")
+	set1.Add(cpe1)
+
+	// Non-empty set is not subset of empty set
+	if set1.IsSubsetOf(set2) {
+		t.Error("Non-empty set should not be subset of empty set")
+	}
+
+	// Set with element not in other is not subset
+	cpe2 := createTestCPE("cpe:2.3:a:other:product:1.0:*:*:*:*:*:*:*", *PartApplication, "other", "product", "1.0")
+	set2.Add(cpe2)
+	if set1.IsSubsetOf(set2) {
+		t.Error("Set with element not in other should not be subset")
+	}
+}
+
+// TestCPESetToStringExtended tests ToString with empty set and items ordering
+func TestCPESetToStringExtended(t *testing.T) {
+	// Empty set
+	emptySet := NewCPESet("EmptySet", "Empty description")
+	result := emptySet.ToString()
+	if !strings.Contains(result, "EmptySet") {
+		t.Error("ToString() should contain set name even for empty set")
+	}
+	if !strings.Contains(result, "Size: 0") {
+		t.Error("ToString() should show Size: 0 for empty set")
+	}
+
+	// Set with items
+	set := NewCPESet("TestSet", "Test description")
+	cpe1, _ := ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpe2, _ := ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+	set.Add(cpe1)
+	set.Add(cpe2)
+
+	result = set.ToString()
+	if !strings.Contains(result, "Size: 2") {
+		t.Errorf("ToString() should show Size: 2, got: %s", result)
+	}
+	if !strings.Contains(result, "1.") || !strings.Contains(result, "2.") {
+		t.Errorf("ToString() should list items with numbers, got: %s", result)
+	}
+}
+
+// TestCPESetIsSupersetOfExtended tests IsSupersetOf with edge cases
+func TestCPESetIsSupersetOfExtended(t *testing.T) {
+	set1 := NewCPESet("Set1", "First set")
+	set2 := NewCPESet("Set2", "Second set")
+
+	// Empty set is superset of empty set
+	if !set1.IsSupersetOf(set2) {
+		t.Error("Empty set should be superset of empty set")
+	}
+
+	cpe1 := createTestCPE("cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*", *PartApplication, "vendor", "product", "1.0")
+	set1.Add(cpe1)
+
+	// Non-empty set is superset of empty set
+	if !set1.IsSupersetOf(set2) {
+		t.Error("Non-empty set should be superset of empty set")
+	}
+}
+
 // TestCPESetContainsNil 测试包含nil CPE
 func TestCPESetContainsNil(t *testing.T) {
 	set := NewCPESet("Test", "Test")

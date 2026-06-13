@@ -359,6 +359,39 @@ func TestMergeCPEsSecondaryFillsEmpty(t *testing.T) {
 	}
 }
 
+func TestMergeCPEsPrimaryEmptyPart(t *testing.T) {
+	// Test the branch where primary Part is empty and secondary is used
+	primary := &CPE{
+		Vendor:      "microsoft",
+		ProductName: "windows",
+		Version:     "10",
+	}
+
+	secondary := &CPE{
+		Part:        *PartOperationSystem,
+		Vendor:      "adobe",
+		ProductName: "reader",
+		Version:     "11",
+	}
+
+	result := MergeCPEs(primary, secondary)
+
+	// Primary Part is empty, so secondary Part should be used
+	if result.Part.ShortName != "o" {
+		t.Errorf("Part = %q, want %q", result.Part.ShortName, "o")
+	}
+	// Primary non-empty values take precedence
+	if result.Vendor != "microsoft" {
+		t.Errorf("Vendor = %q, want %q", result.Vendor, "microsoft")
+	}
+	if result.ProductName != "windows" {
+		t.Errorf("ProductName = %q, want %q", result.ProductName, "windows")
+	}
+	if result.Version != "10" {
+		t.Errorf("Version = %q, want %q", result.Version, "10")
+	}
+}
+
 func TestFillDefaultsAllSet(t *testing.T) {
 	cpe := &CPE{
 		Part:            *PartApplication,

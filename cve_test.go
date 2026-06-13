@@ -496,6 +496,136 @@ func TestCVEReferenceWithScagogoLibrary(t *testing.T) {
 	}
 }
 
+// TestAddAffectedCPEDuplicate tests that AddAffectedCPE does not add duplicates
+func TestAddAffectedCPEDuplicate(t *testing.T) {
+	cveRef := NewCVEReference("CVE-2021-44228")
+	cpeURI := "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"
+
+	cveRef.AddAffectedCPE(cpeURI)
+	if len(cveRef.AffectedCPEs) != 1 {
+		t.Errorf("Expected 1 CPE, got %d", len(cveRef.AffectedCPEs))
+	}
+
+	// Add same CPE again
+	cveRef.AddAffectedCPE(cpeURI)
+	if len(cveRef.AffectedCPEs) != 1 {
+		t.Errorf("Duplicate CPE should not be added, expected 1 CPE, got %d", len(cveRef.AffectedCPEs))
+	}
+
+	// Add different CPE
+	cveRef.AddAffectedCPE("cpe:2.3:a:apache:log4j:2.1:*:*:*:*:*:*:*")
+	if len(cveRef.AffectedCPEs) != 2 {
+		t.Errorf("Expected 2 CPEs, got %d", len(cveRef.AffectedCPEs))
+	}
+}
+
+// TestQueryByCVEExtended tests additional branches of QueryByCVE
+func TestQueryByCVEExtended(t *testing.T) {
+	// Test with CPE 2.2 format in affected CPEs
+	cveRef := NewCVEReference("CVE-2021-44228")
+	cveRef.AddAffectedCPE("cpe:/a:apache:log4j:2.0")
+	cves := []*CVEReference{cveRef}
+
+	cpes := QueryByCVE(cves, "CVE-2021-44228")
+	if len(cpes) != 1 {
+		t.Errorf("QueryByCVE with CPE 2.2 format returned %d results, want 1", len(cpes))
+	}
+
+	// Test with non-existent CVE ID
+	cpes = QueryByCVE(cves, "CVE-2099-99999")
+	if len(cpes) != 0 {
+		t.Errorf("QueryByCVE with non-existent CVE returned %d results, want 0", len(cpes))
+	}
+
+	// Test with empty CVE list
+	cpes = QueryByCVE([]*CVEReference{}, "CVE-2021-44228")
+	if len(cpes) != 0 {
+		t.Errorf("QueryByCVE with empty CVE list returned %d results, want 0", len(cpes))
+	}
+
+	// Test with invalid CPE format in affected CPEs
+	cveRef2 := NewCVEReference("CVE-2021-44229")
+	cveRef2.AddAffectedCPE("invalid-cpe-format")
+	cves2 := []*CVEReference{cveRef2}
+	cpes2 := QueryByCVE(cves2, "CVE-2021-44229")
+	if len(cpes2) != 0 {
+		t.Errorf("QueryByCVE with invalid CPE format returned %d results, want 0", len(cpes2))
+	}
+}
+
+// TestQueryByProductExtended tests additional branches of QueryByProduct
+func TestQueryByProductExtended(t *testing.T) {
+	// Test with CPE 2.2 format
+	cveRef := NewCVEReference("CVE-2021-44228")
+	cveRef.AddAffectedCPE("cpe:/a:apache:log4j:2.0")
+	cves := []*CVEReference{cveRef}
+
+	results := QueryByProduct(cves, "apache", "log4j", "")
+	if len(results) != 1 {
+		t.Errorf("QueryByProduct with CPE 2.2 format returned %d results, want 1", len(results))
+	}
+
+	// Test with invalid CPE format (should be skipped)
+	cveRef2 := NewCVEReference("CVE-2021-44229")
+	cveRef2.AddAffectedCPE("invalid-cpe-format")
+	cves2 := []*CVEReference{cveRef2}
+
+	results = QueryByProduct(cves2, "apache", "log4j", "")
+	if len(results) != 0 {
+		t.Errorf("QueryByProduct with invalid CPE format returned %d results, want 0", len(results))
+	}
+
+	// Test with empty vendor (matches any vendor)
+	cveRef3 := NewCVEReference("CVE-2021-44230")
+	cveRef3.AddAffectedCPE("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+	cves3 := []*CVEReference{cveRef3}
+
+	results = QueryByProduct(cves3, "", "log4j", "")
+	if len(results) != 1 {
+		t.Errorf("QueryByProduct with empty vendor returned %d results, want 1", len(results))
+	}
+
+	// Test with empty product (matches any product)
+	results = QueryByProduct(cves3, "apache", "", "")
+	if len(results) != 1 {
+		t.Errorf("QueryByProduct with empty product returned %d results, want 1", len(results))
+	}
+
+	// Test with specific version
+	results = QueryByProduct(cves3, "apache", "log4j", "2.0")
+	if len(results) != 1 {
+		t.Errorf("QueryByProduct with specific version returned %d results, want 1", len(results))
+	}
+
+	// Test with version mismatch
+	results = QueryByProduct(cves3, "apache", "log4j", "3.0")
+	if len(results) != 0 {
+		t.Errorf("QueryByProduct with version mismatch returned %d results, want 0", len(results))
+	}
+
+	// Test with wildcard version (version "*" is not treated as match-all in query)
+	results = QueryByProduct(cves3, "apache", "log4j", "*")
+	if len(results) != 0 {
+		t.Errorf("QueryByProduct with wildcard version returned %d results, want 0", len(results))
+	}
+
+	// Test with case-insensitive vendor and product
+	results = QueryByProduct(cves3, "Apache", "Log4J", "")
+	if len(results) != 1 {
+		t.Errorf("QueryByProduct with case-insensitive match returned %d results, want 1", len(results))
+	}
+
+	// Test with unrecognized CPE prefix (should be skipped)
+	cveRef4 := NewCVEReference("CVE-2021-44231")
+	cveRef4.AddAffectedCPE("something:weird")
+	cves4 := []*CVEReference{cveRef4}
+
+	results = QueryByProduct(cves4, "", "", "")
+	if len(results) != 0 {
+		t.Errorf("QueryByProduct with unrecognized CPE prefix returned %d results, want 0", len(results))
+	}
+}
+
 // TestGetRecentCVEs 测试获取最近几年的CVE
 func TestGetRecentCVEs(t *testing.T) {
 	currentYear := time.Now().Year()

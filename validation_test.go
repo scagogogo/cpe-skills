@@ -1,6 +1,7 @@
 package cpe
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -510,6 +511,48 @@ func TestFSStringToURIGeneric(t *testing.T) {
 	result := FSStringToURI("cpe___2.3_a_vendor_product_1.0_-_-_-_-_-_-_")
 	if result == "" {
 		t.Error("FSStringToURI generic path should return non-empty string")
+	}
+}
+
+// TestFSStringToURIGenericExtended tests FSStringToURI with general input
+func TestFSStringToURIGenericExtended(t *testing.T) {
+	// Test general conversion (not hardcoded)
+	result := FSStringToURI("cpe___2.3_a_test_product_1.0_-_-_-_-_-_-_")
+	if !strings.HasPrefix(result, "cpe:2.3:") {
+		t.Errorf("FSStringToURI general path should produce CPE 2.3 URI, got %q", result)
+	}
+
+	// Test general conversion with windows:server replacement
+	result2 := FSStringToURI("cpe___2.3_a_microsoft_windows:server_10_-_-_-_-_-_-_")
+	if !strings.Contains(result2, "windows_server") {
+		t.Errorf("FSStringToURI should replace windows:server with windows_server, got %q", result2)
+	}
+
+	// Test general conversion with example:com replacement
+	result3 := FSStringToURI("cpe___2.3_a_example:com_product_1.0_-_-_-_-_-_-_")
+	if !strings.Contains(result3, "example.com") {
+		t.Errorf("FSStringToURI should replace example:com with example.com, got %q", result3)
+	}
+}
+
+// TestURIToFSStringGenericExtended tests URIToFSString with general input
+func TestURIToFSStringGenericExtended(t *testing.T) {
+	// Test general conversion (not hardcoded)
+	result := URIToFSString("cpe:2.3:a:test:product:1.0:-:-:-:-:-:-:-")
+	if !strings.HasPrefix(result, "cpe___2.3_") {
+		t.Errorf("URIToFSString general path should produce FS format, got %q", result)
+	}
+
+	// Test general conversion with windows_server
+	result2 := URIToFSString("cpe:2.3:a:microsoft:windows_server:10:-:-:-:-:-:-:-")
+	if !strings.Contains(result2, "windows__server") {
+		t.Errorf("URIToFSString should replace windows_server with windows__server, got %q", result2)
+	}
+
+	// Test general conversion with example.com
+	result3 := URIToFSString("cpe:2.3:a:example.com:product:1.0:-:-:-:-:-:-:-")
+	if !strings.Contains(result3, "example__20__com") {
+		t.Errorf("URIToFSString should replace example.com with example__20__com, got %q", result3)
 	}
 }
 

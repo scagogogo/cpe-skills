@@ -320,6 +320,223 @@ func TestParseExpression(t *testing.T) {
 	}
 }
 
+// TestParseANDExpressionExtended tests additional branches of parseANDExpression
+func TestParseANDExpressionExtended(t *testing.T) {
+	tests := []struct {
+		name    string
+		expr    string
+		wantErr bool
+	}{
+		{
+			name:    "AND with invalid sub-expression",
+			expr:    "AND(INVALID(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*))",
+			wantErr: true,
+		},
+		{
+			name:    "AND with nested expressions",
+			expr:    "AND(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*, OR(cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*, cpe:2.3:a:adobe:reader:*:*:*:*:*:*:*:*))",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseANDExpression(tt.expr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseANDExpression() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestParseORExpressionExtended tests additional branches of parseORExpression
+func TestParseORExpressionExtended(t *testing.T) {
+	tests := []struct {
+		name    string
+		expr    string
+		wantErr bool
+	}{
+		{
+			name:    "OR with invalid sub-expression",
+			expr:    "OR(INVALID(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*))",
+			wantErr: true,
+		},
+		{
+			name:    "OR with CPE 2.2 format",
+			expr:    "OR(cpe:/a:microsoft:windows:10, cpe:/a:adobe:reader:dc)",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseORExpression(tt.expr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseORExpression() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestParseNOTExpressionExtended tests additional branches of parseNOTExpression
+func TestParseNOTExpressionExtended(t *testing.T) {
+	tests := []struct {
+		name    string
+		expr    string
+		wantErr bool
+	}{
+		{
+			name:    "NOT with invalid inner expression",
+			expr:    "NOT(INVALID(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*))",
+			wantErr: true,
+		},
+		{
+			name:    "NOT with CPE 2.2 format",
+			expr:    "NOT(cpe:/a:microsoft:windows:10)",
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseNOTExpression(tt.expr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseNOTExpression() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestParseCPEExpressionExtended tests additional branches of parseCPEExpression
+func TestParseCPEExpressionExtended(t *testing.T) {
+	tests := []struct {
+		name    string
+		expr    string
+		wantErr bool
+	}{
+		{
+			name:    "CPE 2.2 format",
+			expr:    "cpe:/a:microsoft:windows:10",
+			wantErr: false,
+		},
+		{
+			name:    "CPE 2.3 format",
+			expr:    "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
+			wantErr: false,
+		},
+		{
+			name:    "Invalid CPE format - no recognized prefix after cpe:",
+			expr:    "cpe:invalid:format",
+			wantErr: true,
+		},
+		{
+			name:    "Invalid CPE 2.2 format - parse error",
+			expr:    "cpe:/x:microsoft:windows:10",
+			wantErr: true,
+		},
+		{
+			name:    "Invalid CPE 2.3 format - wrong part count",
+			expr:    "cpe:2.3:a:microsoft:windows",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseCPEExpression(tt.expr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseCPEExpression() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestSplitExpressionsExtended tests additional branches of splitExpressions
+func TestSplitExpressionsExtended(t *testing.T) {
+	tests := []struct {
+		name    string
+		expr    string
+		wantErr bool
+		count   int
+	}{
+		{
+			name:    "empty expression returns no sub-expressions",
+			expr:    "",
+			wantErr: false,
+			count:   0,
+		},
+		{
+			name:    "single expression",
+			expr:    "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
+			wantErr: false,
+			count:   1,
+		},
+		{
+			name:    "unmatched parentheses",
+			expr:    "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*, OR(cpe:2.3:a:adobe:reader:dc:*:*:*:*:*:*:*",
+			wantErr: true,
+		},
+		{
+			name:    "comma inside nested parentheses",
+			expr:    "OR(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*, cpe:2.3:a:adobe:reader:dc:*:*:*:*:*:*:*), cpe:2.3:a:test:test:1:*:*:*:*:*:*:*",
+			wantErr: false,
+			count:   2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := splitExpressions(tt.expr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("splitExpressions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil && len(result) != tt.count {
+				t.Errorf("splitExpressions() returned %d sub-expressions, want %d", len(result), tt.count)
+			}
+		})
+	}
+}
+
+// TestParseExpressionExtended tests additional branches of ParseExpression
+func TestParseExpressionExtended(t *testing.T) {
+	tests := []struct {
+		name    string
+		expr    string
+		wantErr bool
+	}{
+		{
+			name:    "whitespace trimmed expression",
+			expr:    "  cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*  ",
+			wantErr: false,
+		},
+		{
+			name:    "AND prefix but no closing paren",
+			expr:    "AND(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
+			wantErr: true,
+		},
+		{
+			name:    "OR prefix but no closing paren",
+			expr:    "OR(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
+			wantErr: true,
+		},
+		{
+			name:    "NOT prefix but no closing paren",
+			expr:    "NOT(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := ParseExpression(tt.expr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseExpression() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 // TestFilterCPEs 测试过滤CPE
 func TestFilterCPEs(t *testing.T) {
 	// 创建一些CPE

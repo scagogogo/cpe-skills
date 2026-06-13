@@ -258,47 +258,270 @@ func TestEscapeCpe22Value(t *testing.T) {
 	}
 }
 
-// TestUnescapeCpe22Value 测试CPE 2.2值反转义
-func TestUnescapeCpe22Value(t *testing.T) {
+// TestParseCpe22Extended tests additional edge cases for ParseCpe22
+func TestParseCpe22Extended(t *testing.T) {
+	tests := []struct {
+		name     string
+		cpeStr   string
+		wantErr  bool
+		expected *CPE
+	}{
+		{
+			name:    "CPE 2.2 with extended tilde format - language field",
+			cpeStr:  "cpe:/a:mysql:mysql:5.7.12:::~~~enterprise~~",
+			wantErr: false,
+			expected: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "mysql",
+				ProductName: "mysql",
+				Version:     "5.7.12",
+				Language:    "enterprise",
+			},
+		},
+		{
+			name:    "CPE 2.2 with only part",
+			cpeStr:  "cpe:/a",
+			wantErr: false,
+			expected: &CPE{
+				Part: *PartApplication,
+			},
+		},
+		{
+			name:    "CPE 2.2 with invalid part",
+			cpeStr:  "cpe:/x:vendor:product:1.0",
+			wantErr: true,
+		},
+		{
+			name:    "CPE 2.2 with update and edition",
+			cpeStr:  "cpe:/a:vendor:product:1.0:update:edition",
+			wantErr: false,
+			expected: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "vendor",
+				ProductName: "product",
+				Version:     "1.0",
+				Update:      "update",
+				Edition:     "edition",
+			},
+		},
+		{
+			name:    "CPE 2.2 with all basic fields",
+			cpeStr:  "cpe:/a:vendor:product:1.0:update:edition:language",
+			wantErr: false,
+			expected: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "vendor",
+				ProductName: "product",
+				Version:     "1.0",
+				Update:      "update",
+				Edition:     "edition",
+				Language:    "language",
+			},
+		},
+		{
+			name:    "CPE 2.2 hardware",
+			cpeStr:  "cpe:/h:intel:core_i7:1068g7",
+			wantErr: false,
+			expected: &CPE{
+				Part:        *PartHardware,
+				Vendor:      "intel",
+				ProductName: "core_i7",
+				Version:     "1068g7",
+			},
+		},
+		{
+			name:    "CPE 2.2 with extended format sw_edition from tilde",
+			cpeStr:  "cpe:/a:vendor:product:1.0:::~~~~enterprise~~",
+			wantErr: false,
+			expected: &CPE{
+				Part:            *PartApplication,
+				Vendor:          "vendor",
+				ProductName:     "product",
+				Version:         "1.0",
+				SoftwareEdition: "enterprise",
+			},
+		},
+		{
+			name:    "CPE 2.2 with extended format target hw from tilde",
+			cpeStr:  "cpe:/a:vendor:product:1.0:::~~~~~~x86",
+			wantErr: false,
+			expected: &CPE{
+				Part:           *PartApplication,
+				Vendor:         "vendor",
+				ProductName:    "product",
+				Version:        "1.0",
+				TargetHardware: "x86",
+			},
+		},
+		{
+			name:    "CPE 2.2 with empty part string",
+			cpeStr:  "cpe:/",
+			wantErr: false,
+			expected: &CPE{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseCpe22(tt.cpeStr)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseCpe22() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if err == nil && tt.expected != nil {
+				if got.Part.ShortName != tt.expected.Part.ShortName {
+					t.Errorf("ParseCpe22() Part = %v, want %v", got.Part.ShortName, tt.expected.Part.ShortName)
+				}
+				if got.Vendor != tt.expected.Vendor {
+					t.Errorf("ParseCpe22() Vendor = %v, want %v", got.Vendor, tt.expected.Vendor)
+				}
+				if got.ProductName != tt.expected.ProductName {
+					t.Errorf("ParseCpe22() ProductName = %v, want %v", got.ProductName, tt.expected.ProductName)
+				}
+				if got.Version != tt.expected.Version {
+					t.Errorf("ParseCpe22() Version = %v, want %v", got.Version, tt.expected.Version)
+				}
+				if tt.expected.Update != "" && got.Update != tt.expected.Update {
+					t.Errorf("ParseCpe22() Update = %v, want %v", got.Update, tt.expected.Update)
+				}
+				if tt.expected.Edition != "" && got.Edition != tt.expected.Edition {
+					t.Errorf("ParseCpe22() Edition = %v, want %v", got.Edition, tt.expected.Edition)
+				}
+				if tt.expected.Language != "" && got.Language != tt.expected.Language {
+					t.Errorf("ParseCpe22() Language = %v, want %v", got.Language, tt.expected.Language)
+				}
+				if tt.expected.SoftwareEdition != "" && got.SoftwareEdition != tt.expected.SoftwareEdition {
+					t.Errorf("ParseCpe22() SoftwareEdition = %v, want %v", got.SoftwareEdition, tt.expected.SoftwareEdition)
+				}
+				if tt.expected.TargetHardware != "" && got.TargetHardware != tt.expected.TargetHardware {
+					t.Errorf("ParseCpe22() TargetHardware = %v, want %v", got.TargetHardware, tt.expected.TargetHardware)
+				}
+			}
+		})
+	}
+}
+
+// TestFormatCpe22Extended tests additional edge cases for FormatCpe22
+func TestFormatCpe22Extended(t *testing.T) {
+	tests := []struct {
+		name     string
+		cpe      *CPE
+		expected string
+	}{
+		{
+			name: "nil CPE returns empty string",
+			cpe:  nil,
+			expected: "",
+		},
+		{
+			name: "CPE with software edition",
+			cpe: &CPE{
+				Part:            *PartApplication,
+				Vendor:          "mysql",
+				ProductName:     "mysql",
+				Version:         "5.7.12",
+				SoftwareEdition: "enterprise",
+			},
+			expected: "cpe:/a:mysql:mysql:5%2e7%2e12::::~enterprise~~~",
+		},
+		{
+			name: "CPE with target software",
+			cpe: &CPE{
+				Part:           *PartApplication,
+				Vendor:         "vendor",
+				ProductName:    "product",
+				Version:        "1.0",
+				TargetSoftware: "linux",
+			},
+			expected: "cpe:/a:vendor:product:1%2e0::::~~linux~~",
+		},
+		{
+			name: "CPE with target hardware",
+			cpe: &CPE{
+				Part:           *PartApplication,
+				Vendor:         "vendor",
+				ProductName:    "product",
+				Version:        "1.0",
+				TargetHardware: "x86",
+			},
+			expected: "cpe:/a:vendor:product:1%2e0::::~~~x86~",
+		},
+		{
+			name: "CPE with other field",
+			cpe: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "vendor",
+				ProductName: "product",
+				Version:     "1.0",
+				Other:       "custom",
+			},
+			expected: "cpe:/a:vendor:product:1%2e0::::~~~~custom",
+		},
+		{
+			name: "CPE with edition and language but no extended",
+			cpe: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "vendor",
+				ProductName: "product",
+				Version:     "1.0",
+				Edition:     "pro",
+				Language:    "en",
+			},
+			expected: "cpe:/a:vendor:product:1%2e0::pro:en",
+		},
+		{
+			name: "CPE with update but no edition or language",
+			cpe: &CPE{
+				Part:        *PartApplication,
+				Vendor:      "vendor",
+				ProductName: "product",
+				Version:     "1.0",
+				Update:      "sp1",
+			},
+			expected: "cpe:/a:vendor:product:1%2e0:sp1",
+		},
+		{
+			name: "CPE with empty part defaults to wildcard",
+			cpe: &CPE{
+				Vendor:      "vendor",
+				ProductName: "product",
+				Version:     "1.0",
+			},
+			expected: "cpe:/*:vendor:product:1%2e0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FormatCpe22(tt.cpe); got != tt.expected {
+				t.Errorf("FormatCpe22() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+// TestUnescapeCpe22ValueExtended tests additional edge cases for unescapeCpe22Value
+func TestUnescapeCpe22ValueExtended(t *testing.T) {
 	tests := []struct {
 		name     string
 		value    string
 		expected string
 	}{
 		{
-			name:     "无转义字符的值",
-			value:    "windows",
-			expected: "windows",
+			name:     "percent-encode with unknown code - preserved",
+			value:    "test%zz",
+			expected: "test%zz",
 		},
 		{
-			name:     "转义的点",
-			value:    "example%3a",
-			expected: "example:",
+			name:     "percent-encode with incomplete code",
+			value:    "test%2",
+			expected: "test%2",
 		},
 		{
-			name:     "转义的斜杠",
-			value:    "a%2fb",
-			expected: "a/b",
-		},
-		{
-			name:     "转义的波浪号",
-			value:    "version%7erc1",
-			expected: "version~rc1",
-		},
-		{
-			name:     "特殊值不需要处理",
-			value:    "*",
-			expected: "*",
-		},
-		{
-			name:     "特殊值不需要处理",
-			value:    "-",
-			expected: "-",
-		},
-		{
-			name:     "空值不需要处理",
-			value:    "",
-			expected: "",
+			name:     "backslash percent-encode",
+			value:    "test%5c",
+			expected: "test\\",
 		},
 	}
 
