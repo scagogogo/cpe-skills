@@ -1,121 +1,246 @@
-# CPE - 通用平台枚举库
+# cpe-skills
+
+全面的 CPE（通用平台枚举）工具包 — 支持 **SKILLS**、**Go SDK**、**CLI** 和 **MCP** 接入，覆盖所有网络安全产品需求。
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Go Version](https://img.shields.io/badge/go-%3E%3D1.18-blue.svg)
+[![Go Reference](https://pkg.go.dev/badge/github.com/scagogogo/cpe-skills.svg)](https://pkg.go.dev/github.com/scagogogo/cpe-skills)
+[![Go Report Card](https://goreportcard.com/badge/github.com/scagogogo/cpe-skills)](https://goreportcard.com/report/github.com/scagogogo/cpe-skills)
+[![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/scagogogo/cpe-skills)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/scagogogo/cpe-skills?include_prereleases)](https://github.com/scagogogo/cpe-skills/releases)
 
-**[English](README.md) | [简体中文](README_zh.md)**
+**[English](README.md) | [简体中文](README_zh.md) | [SKILLS 文档](SKILLS.md)**
 
 </div>
 
-## 📚 文档
+---
 
-**完整的API文档和使用示例请访问：[https://scagogogo.github.io/cpe/zh/](https://scagogogo.github.io/cpe/zh/)**
+## 🚀 快速接入
 
-- [API 参考文档](https://scagogogo.github.io/cpe/zh/api/) - 完整的API文档
-- [使用示例](https://scagogogo.github.io/cpe/zh/examples/) - 实用的代码示例
-- [快速开始指南](https://scagogogo.github.io/cpe/zh/api/) - 快速上手教程
+### SKILLS（一键接入）
 
-## 📖 简介
+添加到你的 Claude Code skills 配置中：
 
-CPE (Common Platform Enumeration) 库是一个完整的Go语言实现，用于处理、解析、匹配和存储CPE (通用平台枚举)。CPE是一种结构化命名方案，用于标识IT系统、软件和软件包的类别。
+```
+https://github.com/scagogogo/cpe-skills
+```
 
-该库还包括与CVE (Common Vulnerabilities and Exposures) 集成的功能，使开发者能够将软件组件与已知的安全漏洞关联起来。
-
-## ✨ 功能特性
-
-- **CPE格式支持**：解析和生成CPE 2.2和2.3格式
-- **高级匹配**：支持通配符和特殊值的CPE名称匹配
-- **WFN支持**：Well-Formed Name格式及双向转换
-- **适用性语言**：CPE适用性语言支持
-- **版本比较**：语义化版本比较和范围匹配
-- **字典管理**：CPE字典及XML导入导出
-- **CVE集成**：将CPE与通用漏洞披露关联
-- **高级算法**：模糊匹配、子集/超集匹配
-- **集合操作**：CPE集合的并集、交集、差集操作
-- **NVD集成**：内置国家漏洞数据库集成
-- **错误处理**：结构化错误处理和详细错误类型
-- **存储后端**：多种存储后端及持久化支持
-- **缓存机制**：集成缓存机制优化性能
-
-## 🚀 安装
-
-使用Go模块安装：
+### Go SDK
 
 ```bash
 go get github.com/scagogogo/cpe-skills
 ```
 
-## 🔍 快速开始
+### CLI
+
+```bash
+go install github.com/scagogogo/cpe-skills/cmd/cpe@latest
+```
+
+### MCP
+
+作为 MCP 服务器用于 AI 驱动的 CPE 操作：
+
+```json
+{
+  "mcpServers": {
+    "cpe-skills": {
+      "command": "cpe",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+```
+
+---
+
+## 📖 简介
+
+**cpe-skills** 是一个全面的 CPE（通用平台枚举）工具包，提供 CPE 全生命周期支持 — 解析、匹配、生成、存储和 NVD 集成。它作为底层支撑 SDK，为各层网络安全产品提供能力。
+
+CPE 是一种标准化命名方案（NIST IR 7695/7696），用于标识 IT 系统、软件和软件包。本库实现了完整的 CPE 规范，包括 WFN 绑定、名称匹配、适用性语言和 CVE 关联。
+
+## ✨ 功能特性
+
+| 类别 | 描述 |
+|------|------|
+| **解析** | CPE 2.2 & 2.3 URI 解析，自动检测格式 |
+| **格式化** | CPE 2.2 和 2.3 格式的字符串生成 |
+| **匹配** | NISTIR 7696 名称匹配（精确、子集、超集、不相交） |
+| **WFN 绑定** | Well-Formed Name 格式双向转换 |
+| **生成** | CPE 创建、模糊生成、合并和随机生成 |
+| **构建器** | 流式 Builder 模式构建 CPE |
+| **转义** | NISTIR 7695 字符转义系统 |
+| **校验** | CPE 和组件校验 |
+| **版本比较** | 语义化版本比较和范围匹配 |
+| **适用性语言** | CPE 适用性语言（AND/OR 表达式） |
+| **存储** | 内存和文件存储，支持缓存 |
+| **NVD 集成** | 国家漏洞数据库集成 |
+| **CVE 映射** | CVE-CPE 关系查询 |
+| **集合操作** | CPE 集合的并集、交集、差集 |
+| **高级匹配** | 模糊、部分、正则、子集、距离匹配 |
+| **便捷 API** | MustParse、QuickMatch、Clone、FilterByPart 等 |
+
+## 📦 接入方式
+
+### 1. SKILLS（推荐用于 AI/LLM）
+
+SKILLS 提供自然语言接口用于 CPE 操作。添加到你的 AI skills 配置中：
+
+```
+https://github.com/scagogogo/cpe-skills
+```
+
+配置完成后，你可以让 AI 助手：
+- 解析和校验 CPE 字符串
+- 将 CPE 与模式匹配
+- 从产品信息生成 CPE
+- 查询 CVE-CPE 关系
+
+### 2. Go SDK
 
 ```go
 package main
 
 import (
     "fmt"
-    "log"
-    "github.com/scagogogo/cpe-skills"
+    cpe "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
-    // 解析CPE 2.3字符串
-    cpeObj, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    fmt.Printf("供应商: %s, 产品: %s, 版本: %s\n", 
-        cpeObj.Vendor, cpeObj.ProductName, cpeObj.Version)
-    
-    // 创建匹配模式
-    pattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
-    
-    // 测试匹配
-    if pattern.Match(cpeObj) {
-        fmt.Println("CPE匹配成功！")
-    }
+    // 解析任意 CPE 格式
+    c, _ := cpe.Parse("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    fmt.Printf("供应商: %s, 产品: %s\n", c.Vendor, c.ProductName)
+
+    // 快速匹配两个 CPE
+    matched, _ := cpe.QuickMatch(
+        "cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*",
+        "cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*",
+    )
+    fmt.Println("匹配结果:", matched)
+
+    // Builder 模式
+    built := cpe.NewBuilder().
+        PartApplication().
+        Vendor("apache").
+        Product("log4j").
+        Version("2.14.1").
+        Build()
+
+    // 便捷函数
+    c2 := cpe.MustParse("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    apps := cpe.FilterByPart(allCPEs, cpe.PartApplication)
 }
 ```
 
-## 🏗️ 系统架构
-
-该库采用模块化设计，包含以下核心组件：
-
-1. **CPE解析引擎**：处理CPE字符串的解析和格式化
-2. **匹配引擎**：实现各种CPE匹配策略
-3. **存储系统**：提供多种存储后端选项
-4. **CVE集成**：连接CPE数据与漏洞信息
-5. **NVD适配器**：与国家漏洞数据库集成
-
-## 📝 本地文档开发
-
-在本地运行和开发文档：
+### 3. CLI
 
 ```bash
-# 进入文档目录
-cd docs
+# 安装
+go install github.com/scagogogo/cpe-skills/cmd/cpe@latest
 
-# 安装依赖
-npm install
+# 或者从 https://github.com/scagogogo/cpe-skills/releases 下载二进制文件
 
-# 启动开发服务器
-npm run docs:dev
+# 解析 CPE
+cpe parse "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*"
 
-# 构建文档
-npm run docs:build
+# 匹配两个 CPE
+cpe match "cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*" \
+          "cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*"
 
-# 预览构建后的文档
-npm run docs:preview
+# 搜索 CPE
+cpe search --vendor apache --product log4j
 ```
 
-文档将在 `http://localhost:5173`（开发模式）或 `http://localhost:4173`（预览模式）上运行。
+### 4. MCP（模型上下文协议）
+
+将 cpe-skills 作为 MCP 服务器用于 AI 驱动的工作流：
+
+```json
+{
+  "mcpServers": {
+    "cpe-skills": {
+      "command": "cpe",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+```
+
+这使 AI 助手能够通过标准化的 MCP 协议执行 CPE 操作。
+
+## 🔍 API 参考
+
+### 解析与格式化
+
+```go
+c, _ := cpe.Parse("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")  // 自动检测
+c, _ := cpe.ParseCpe22("cpe:/a:microsoft:windows:10")                 // CPE 2.2
+c, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")  // CPE 2.3
+
+str := cpe.FormatCpe23(c)                    // → "cpe:2.3:a:..."
+str, _ := cpe.FormatCPE(c, "2.2")            // → "cpe:/a:..."
+```
+
+### 匹配
+
+```go
+matched := cpe1.Match(cpe2)
+matched, _ := cpe.QuickMatch(str1, str2)
+matched := cpe.AdvancedMatchCPE(criteria, target, opts)
+```
+
+### 生成
+
+```go
+c := cpe.GenerateCPE("a", "apache", "log4j", "2.14.1")
+c := cpe.FuzzyGenerateCPE("a", "apache", "log4j", "2.x")
+c := cpe.NewBuilder().PartApplication().Vendor("apache").Product("log4j").Build()
+c := cpe.RandomCPE()
+```
+
+### 存储
+
+```go
+ms := cpe.NewMemoryStorage()
+fs, _ := cpe.NewFileStorage("/data/cpes", true)
+```
+
+### 便捷函数
+
+```go
+c := cpe.MustParse(str)                              // 出错 panic
+c := cpe.ParseOr(str, defaultCPE)                    // 出错返回默认值
+apps := cpe.FilterByPart(cpes, cpe.PartApplication)  // 按 Part 筛选
+strs := cpe.CPEsToStrings(cpes)                      // 批量转换
+```
+
+## 🌍 支持平台
+
+| 操作系统 | 架构 |
+|----------|------|
+| Linux | 386, amd64, arm64, arm (5/6/7), mips, mips64, mipsle, mips64le, ppc64, ppc64le, riscv64, s390x, loong64 |
+| macOS | amd64, arm64 (Apple Silicon) |
+| Windows | 386, amd64, arm64 |
+| FreeBSD | 386, amd64, arm64, arm |
+| OpenBSD | 386, amd64, arm64, arm |
+| NetBSD | 386, amd64, arm64, arm |
+| Illumos | amd64 |
+| Solaris | amd64 |
+| AIX | ppc64 |
+
+## 📊 项目统计
+
+- **327+** 导出函数
+- **976+** 测试用例
+- **100%** 测试覆盖率
+- **44** 平台二进制文件（每次发布）
 
 ## 🤝 贡献
 
-欢迎贡献！请随时提交Pull Request。
+欢迎贡献！请随时提交 Pull Request。
 
 ## 📄 许可证
 
-本项目采用MIT许可证 - 详见 [LICENSE](LICENSE) 文件。
+本项目采用 MIT 许可证 — 详见 [LICENSE](LICENSE) 文件。
