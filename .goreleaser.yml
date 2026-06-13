@@ -1,0 +1,207 @@
+# GoReleaser configuration for cpe-skills
+# https://goreleaser.com
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: cpe
+    main: ./cmd/cpe
+    binary: cpe
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+      - freebsd
+      - openbsd
+      - netbsd
+      - illumos
+      - solaris
+      - aix
+    goarch:
+      - "386"
+      - amd64
+      - arm
+      - arm64
+      - loong64
+      - mips
+      - mips64
+      - mips64le
+      - mipsle
+      - ppc64
+      - ppc64le
+      - riscv64
+      - s390x
+    goarm:
+      - "5"
+      - "6"
+      - "7"
+    gomips:
+      - hardfloat
+      - softfloat
+    ignore:
+      # Windows on ARM is not well supported before Go 1.17
+      - goos: windows
+        goarch: arm
+      # AIX only supports ppc64
+      - goos: aix
+        goarch: "386"
+      - goos: aix
+        goarch: amd64
+      - goos: aix
+        goarch: arm
+      - goos: aix
+        goarch: arm64
+      - goos: aix
+        goarch: mips
+      - goos: aix
+        goarch: mips64
+      - goos: aix
+        goarch: mips64le
+      - goos: aix
+        goarch: mipsle
+      - goos: aix
+        goarch: ppc64le
+      - goos: aix
+        goarch: riscv64
+      - goos: aix
+        goarch: s390x
+      - goos: aix
+        goarch: loong64
+      # Illumos only supports amd64
+      - goos: illumos
+        goarch: "386"
+      - goos: illumos
+        goarch: arm
+      - goos: illumos
+        goarch: arm64
+      - goos: illumos
+        goarch: mips
+      - goos: illumos
+        goarch: mips64
+      - goos: illumos
+        goarch: mips64le
+      - goos: illumos
+        goarch: mipsle
+      - goos: illumos
+        goarch: ppc64
+      - goos: illumos
+        goarch: ppc64le
+      - goos: illumos
+        goarch: riscv64
+      - goos: illumos
+        goarch: s390x
+      - goos: illumos
+        goarch: loong64
+      # Solaris only supports amd64
+      - goos: solaris
+        goarch: "386"
+      - goos: solaris
+        goarch: arm
+      - goos: solaris
+        goarch: arm64
+      - goos: solaris
+        goarch: mips
+      - goos: solaris
+        goarch: mips64
+      - goos: solaris
+        goarch: mips64le
+      - goos: solaris
+        goarch: mipsle
+      - goos: solaris
+        goarch: ppc64
+      - goos: solaris
+        goarch: ppc64le
+      - goos: solaris
+        goarch: riscv64
+      - goos: solaris
+        goarch: s390x
+      - goos: solaris
+        goarch: loong64
+      # Darwin arm64 only (no arm 32-bit)
+      - goos: darwin
+        goarch: arm
+      # FreeBSD arm5/6 not common
+      - goos: freebsd
+        goarch: arm
+        goarm: "5"
+      # NetBSD limited support
+      - goos: netbsd
+        goarch: arm
+        goarm: "5"
+      # OpenBSD limited ARM support
+      - goos: openbsd
+        goarch: arm
+        goarm: "5"
+
+archives:
+  - id: cpe-archive
+    builds:
+      - cpe
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else if eq .Arch "arm64" }}aarch64
+      {{- else if eq .Arch "arm" }}armv{{ .Arm }}
+      {{- else }}{{ .Arch }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+      - "merge conflict"
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+
+release:
+  github:
+    owner: scagogogo
+    name: cpe-skills
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## cpe-skills - CPE SDK for Go
+
+    A comprehensive Go SDK for CPE (Common Platform Enumeration) operations,
+    providing parsing, matching, generation, storage, and NVD integration.
+  footer: |
+    ## Installation
+
+    ```bash
+    # Install via Go
+    go get github.com/scagogogo/cpe-skills
+
+    # Install CLI tool
+    go install github.com/scagogogo/cpe-skills/cmd/cpe@latest
+    ```
+
+    **Full Changelog**: https://github.com/scagogogo/cpe-skills/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+milestones:
+  - close: true

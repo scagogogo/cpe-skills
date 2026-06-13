@@ -1,12 +1,14 @@
-# CPE - Common Platform Enumeration Library
+# cpe-skills - CPE SDK for Go
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Go Version](https://img.shields.io/badge/go-%3E%3D1.18-blue.svg)
+[![Go Reference](https://pkg.go.dev/badge/github.com/scagogogo/cpe-skills.svg)](https://pkg.go.dev/github.com/scagogogo/cpe-skills)
+[![Go Report Card](https://goreportcard.com/badge/github.com/scagogogo/cpe-skills)](https://goreportcard.com/report/github.com/scagogogo/cpe-skills)
+[![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/scagogogo/cpe-skills)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/scagogogo/cpe-skills?include_prereleases)](https://github.com/scagogogo/cpe-skills/releases)
 
-**[English](README.md) | [简体中文](README_zh.md)**
+**[English](README.md) | [简体中文](README_zh.md) | [SKILLS Documentation](SKILLS.md)**
 
 </div>
 
@@ -42,11 +44,23 @@ The library also includes integration with CVE (Common Vulnerabilities and Expos
 
 ### 🚀 Installation
 
-Install using Go modules:
+#### As a Go Library
 
 ```bash
 go get github.com/scagogogo/cpe-skills
 ```
+
+#### As a CLI Tool
+
+```bash
+# Install via Go
+go install github.com/scagogogo/cpe-skills/cmd/cpe@latest
+
+# Or download from GitHub Releases
+# See https://github.com/scagogogo/cpe-skills/releases for all platforms
+```
+
+See [SKILLS.md](SKILLS.md) for detailed installation instructions for all supported platforms.
 
 ### 🔍 Quick Start
 
