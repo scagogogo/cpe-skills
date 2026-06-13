@@ -655,3 +655,60 @@ func TestGetRecentCVEs(t *testing.T) {
 			len(recentCVEs2Years))
 	}
 }
+
+// TestQueryByProduct_InvalidCPEFormat tests QueryByProduct with an invalid CPE string that fails parsing
+func TestQueryByProduct_InvalidCPEFormat(t *testing.T) {
+	cves := []*CVEReference{
+		{
+			CVEID:        "CVE-2021-0001",
+			AffectedCPEs: []string{"cpe:2.3:a:INVALID_FORMAT"},
+		},
+	}
+	// Should not match because the CPE string is invalid and parsing fails
+	results := QueryByProduct(cves, "apache", "log4j", "2.0")
+	if len(results) != 0 {
+		t.Errorf("QueryByProduct() with invalid CPE format returned %d results, want 0", len(results))
+	}
+}
+
+	// TestQueryByProduct_CoverageGap_VersionWildcardMatch tests QueryByProduct where CPE version is wildcard
+	func TestQueryByProduct_CoverageGap_VersionWildcardMatch(t *testing.T) {
+		cveRef := NewCVEReference("CVE-2021-44228")
+		cveRef.AddAffectedCPE("cpe:2.3:a:apache:log4j:*:*:*:*:*:*:*:*")
+		cves := []*CVEReference{cveRef}
+
+		// Wildcard version should match any specific version query
+		results := QueryByProduct(cves, "apache", "log4j", "2.0")
+		if len(results) != 1 {
+			t.Errorf("QueryByProduct with wildcard CPE version matching query version returned %d results, want 1", len(results))
+		}
+	}
+
+	// TestQueryByProduct_CoverageGap_MultipleCVEsOneMatches tests QueryByProduct with multiple CVEs
+	func TestQueryByProduct_CoverageGap_MultipleCVEsOneMatches(t *testing.T) {
+		cve1 := NewCVEReference("CVE-2021-11111")
+		cve1.AddAffectedCPE("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+
+		cve2 := NewCVEReference("CVE-2021-22222")
+		cve2.AddAffectedCPE("cpe:2.3:a:google:chrome:90:*:*:*:*:*:*:*")
+
+		cves := []*CVEReference{cve1, cve2}
+
+		results := QueryByProduct(cves, "apache", "log4j", "")
+		if len(results) != 1 {
+			t.Errorf("QueryByProduct returned %d results, want 1", len(results))
+		}
+	}
+
+	// TestQueryByProduct_CoverageGap_EmptyVersionMatchesSpecific tests QueryByProduct with empty version matching specific
+	func TestQueryByProduct_CoverageGap_EmptyVersionMatchesSpecific(t *testing.T) {
+		cveRef := NewCVEReference("CVE-2021-44228")
+		cveRef.AddAffectedCPE("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+		cves := []*CVEReference{cveRef}
+
+		// Empty version should match (no version filter)
+		results := QueryByProduct(cves, "apache", "log4j", "")
+		if len(results) != 1 {
+			t.Errorf("QueryByProduct with empty version returned %d results, want 1", len(results))
+		}
+	}

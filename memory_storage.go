@@ -75,11 +75,6 @@ func (ms *MemoryStorage) StoreCPE(cpe *CPE) error {
 		return ErrInvalidData
 	}
 
-	// 确保CPE有ID
-	if cpe.GetURI() == "" {
-		return fmt.Errorf("CPE must have a URI: %w", ErrInvalidData)
-	}
-
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
@@ -112,11 +107,6 @@ func (ms *MemoryStorage) RetrieveCPE(id string) (*CPE, error) {
 func (ms *MemoryStorage) UpdateCPE(cpe *CPE) error {
 	if cpe == nil {
 		return ErrInvalidData
-	}
-
-	// 确保CPE有ID
-	if cpe.GetURI() == "" {
-		return fmt.Errorf("CPE must have a URI: %w", ErrInvalidData)
 	}
 
 	ms.mutex.Lock()

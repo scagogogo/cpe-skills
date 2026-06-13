@@ -536,3 +536,81 @@ func TestUnbindURIComponent(t *testing.T) {
 		})
 	}
 }
+
+// TestUnbindURI_WithOtherField tests that UnbindURI correctly parses the Other field from extended format
+func TestUnbindURI_WithOtherField(t *testing.T) {
+	// CPE URI with extended format containing Other field (7th extension part)
+	// Format: edition~blank~blank~language~sw_ed~target_sw~target_hw~other
+	uri := "cpe:/a:vendor:product:1.0:update:edition~~~language~sw_ed~target_sw~target_hw~other_val"
+	result, err := UnbindURI(uri)
+	if err != nil {
+		t.Fatalf("UnbindURI() error = %v", err)
+	}
+	if result.Other != "other_val" {
+		t.Errorf("UnbindURI() Other = %q, want %q", result.Other, "other_val")
+	}
+}
+
+	// TestUnbindURI_CoverageGap_SoftwareEdition tests UnbindURI parsing sw_edition from extended tilde format
+	// Format: extParts[0]=edition, [1]=blank, [2]=blank, [3]=language, [4]=sw_edition, [5]=target_sw, [6]=target_hw, [7]=other
+	func TestUnbindURI_CoverageGap_SoftwareEdition(t *testing.T) {
+		// ~~~en~enterprise~~ => ["","","","en","enterprise","",""] => language at idx3, sw_edition at idx4
+		wfn, err := UnbindURI("cpe:/a:vendor:product:1.0:*:~~~en~enterprise~~")
+		if err != nil {
+			t.Fatalf("UnbindURI() error = %v", err)
+		}
+		if wfn.Language != "en" {
+			t.Errorf("Language = %q, want %q", wfn.Language, "en")
+		}
+		if wfn.SoftwareEdition != "enterprise" {
+			t.Errorf("SoftwareEdition = %q, want %q", wfn.SoftwareEdition, "enterprise")
+		}
+	}
+
+	// TestUnbindURI_CoverageGap_TargetSoftware tests UnbindURI parsing target_sw from extended tilde format
+	func TestUnbindURI_CoverageGap_TargetSoftware(t *testing.T) {
+		// ~~~~~linux~~ => ["","","","","","linux","",""] => target_sw at idx5
+		wfn, err := UnbindURI("cpe:/a:vendor:product:1.0:*:~~~~~linux~~")
+		if err != nil {
+			t.Fatalf("UnbindURI() error = %v", err)
+		}
+		if wfn.TargetSoftware != "linux" {
+			t.Errorf("TargetSoftware = %q, want %q", wfn.TargetSoftware, "linux")
+		}
+	}
+
+	// TestUnbindURI_CoverageGap_TargetHardware tests UnbindURI parsing target_hw from extended tilde format
+	func TestUnbindURI_CoverageGap_TargetHardware(t *testing.T) {
+		// ~~~~~~x86~ => ["","","","","","","x86",""] => target_hw at idx6
+		wfn, err := UnbindURI("cpe:/a:vendor:product:1.0:*:~~~~~~x86~")
+		if err != nil {
+			t.Fatalf("UnbindURI() error = %v", err)
+		}
+		if wfn.TargetHardware != "x86" {
+			t.Errorf("TargetHardware = %q, want %q", wfn.TargetHardware, "x86")
+		}
+	}
+
+	// TestUnbindURI_CoverageGap_Other tests UnbindURI parsing other from extended tilde format
+	func TestUnbindURI_CoverageGap_Other(t *testing.T) {
+		// ~~~~~~~custom => ["","","","","","","","custom"] => other at idx7
+		wfn, err := UnbindURI("cpe:/a:vendor:product:1.0:*:~~~~~~~custom")
+		if err != nil {
+			t.Fatalf("UnbindURI() error = %v", err)
+		}
+		if wfn.Other != "custom" {
+			t.Errorf("Other = %q, want %q", wfn.Other, "custom")
+		}
+	}
+
+	// TestUnbindURI_CoverageGap_EditionInTilde tests UnbindURI parsing edition from tilde at index 5
+	func TestUnbindURI_CoverageGap_EditionInTilde(t *testing.T) {
+		// professional~~~~~~~ => ["professional","","","","","","",""] => edition at idx0
+		wfn, err := UnbindURI("cpe:/a:vendor:product:1.0:*:professional~~~~~~~")
+		if err != nil {
+			t.Fatalf("UnbindURI() error = %v", err)
+		}
+		if wfn.Edition != "professional" {
+			t.Errorf("Edition = %q, want %q", wfn.Edition, "professional")
+		}
+	}

@@ -606,3 +606,39 @@ func TestFilterCPEs(t *testing.T) {
 		t.Errorf("FilterCPEs() with NOT expression returned %d results, want 1", len(filtered4))
 	}
 }
+
+// TestParseANDExpression_SplitError tests parseANDExpression when splitExpressions returns an error
+func TestParseANDExpression_SplitError(t *testing.T) {
+	// AND with unbalanced parentheses should cause splitExpressions to fail
+	_, err := parseANDExpression("AND(cpe:2.3:a:apache:log4j:2.0, cpe:2.3:a:apache:log4j:(2.0)")
+	if err == nil {
+		t.Error("parseANDExpression should return error when splitExpressions fails")
+	}
+}
+
+// TestParseORExpression_SplitError tests parseORExpression when splitExpressions returns an error
+func TestParseORExpression_SplitError(t *testing.T) {
+	// OR with unbalanced parentheses should cause splitExpressions to fail
+	_, err := parseORExpression("OR(cpe:2.3:a:apache:log4j:2.0, cpe:2.3:a:apache:log4j:(2.0)")
+	if err == nil {
+		t.Error("parseORExpression should return error when splitExpressions fails")
+	}
+}
+
+	// TestParseANDExpression_CoverageGap_SplitError tests parseANDExpression when splitExpressions fails
+	func TestParseANDExpression_CoverageGap_SplitError(t *testing.T) {
+		// Unmatched parentheses in the inner expression should cause splitExpressions to fail
+		_, err := parseANDExpression("AND(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*, OR(cpe:2.3:a:adobe:reader:*:*:*:*:*:*:*:*)")
+		if err == nil {
+			t.Error("parseANDExpression with unmatched parens should return error")
+		}
+	}
+
+	// TestParseORExpression_CoverageGap_SplitError tests parseORExpression when splitExpressions fails
+	func TestParseORExpression_CoverageGap_SplitError(t *testing.T) {
+		// Unmatched parentheses in the inner expression should cause splitExpressions to fail
+		_, err := parseORExpression("OR(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*, AND(cpe:2.3:a:adobe:reader:*:*:*:*:*:*:*:*)")
+		if err == nil {
+			t.Error("parseORExpression with unmatched parens should return error")
+		}
+	}

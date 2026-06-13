@@ -533,3 +533,94 @@ func TestUnescapeCpe22ValueExtended(t *testing.T) {
 		})
 	}
 }
+
+// TestParseCpe22_ExtendedEdition tests parsing CPE 2.2 with extended format edition field
+func TestParseCpe22_ExtendedEdition(t *testing.T) {
+	// CPE 2.2 with ~ extended format where i==5 and extParts[0] is edition
+	result, err := ParseCpe22("cpe:/a:vendor:product:1.0:update:edition~~~language~sw_ed~target_sw~target_hw~other")
+	if err != nil {
+		t.Fatalf("ParseCpe22() error = %v", err)
+	}
+	if string(result.Edition) != "edition" {
+		t.Errorf("ParseCpe22() Edition = %q, want %q", result.Edition, "edition")
+	}
+	if result.TargetSoftware != "target_sw" {
+		t.Errorf("ParseCpe22() TargetSoftware = %q, want %q", result.TargetSoftware, "target_sw")
+	}
+	if result.Other != "other" {
+		t.Errorf("ParseCpe22() Other = %q, want %q", result.Other, "other")
+	}
+}
+
+// TestFormatCpe22_EmptyFields tests FormatCpe22 with empty vendor, product, and version
+func TestFormatCpe22_EmptyFields(t *testing.T) {
+	cpe := &CPE{
+		Part: *PartApplication,
+	}
+	result := FormatCpe22(cpe)
+	if result != "cpe:/a:*:*:*" {
+		t.Errorf("FormatCpe22() with empty fields = %q, want %q", result, "cpe:/a:*:*:*")
+	}
+}
+
+	// TestParseCpe22_CoverageGap_TargetSoftwareFromTilde tests parsing target_sw from extended tilde format
+	func TestParseCpe22_CoverageGap_TargetSoftwareFromTilde(t *testing.T) {
+		cpe, err := ParseCpe22("cpe:/a:vendor:product:1.0:::~~~~~linux~~")
+		if err != nil {
+			t.Fatalf("ParseCpe22() error = %v", err)
+		}
+		if cpe.TargetSoftware != "linux" {
+			t.Errorf("TargetSoftware = %q, want %q", cpe.TargetSoftware, "linux")
+		}
+	}
+
+	// TestParseCpe22_CoverageGap_OtherFromTilde tests parsing other from extended tilde format
+	func TestParseCpe22_CoverageGap_OtherFromTilde(t *testing.T) {
+		cpe, err := ParseCpe22("cpe:/a:vendor:product:1.0:::~~~~~~~custom")
+		if err != nil {
+			t.Fatalf("ParseCpe22() error = %v", err)
+		}
+		if cpe.Other != "custom" {
+			t.Errorf("Other = %q, want %q", cpe.Other, "custom")
+		}
+	}
+
+	// TestFormatCpe22_CoverageGap_EditionOnlyNoExtended tests FormatCpe22 with edition only and no extended fields
+	func TestFormatCpe22_CoverageGap_EditionOnlyNoExtended(t *testing.T) {
+		cpe := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "vendor",
+			ProductName: "product",
+			Version:     "1.0",
+			Update:      "*",
+			Edition:     "pro",
+		}
+		result := FormatCpe22(cpe)
+		if !containsStr(result, "pro") {
+			t.Errorf("FormatCpe22() = %q, should contain edition 'pro'", result)
+		}
+	}
+
+	// TestFormatCpe22_CoverageGap_LanguageOnlyNoExtended tests FormatCpe22 with language but no extended fields
+	func TestFormatCpe22_CoverageGap_LanguageOnlyNoExtended(t *testing.T) {
+		cpe := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "vendor",
+			ProductName: "product",
+			Version:     "1.0",
+			Language:    "en",
+		}
+		result := FormatCpe22(cpe)
+		if !containsStr(result, "en") {
+			t.Errorf("FormatCpe22() = %q, should contain language 'en'", result)
+		}
+	}
+
+	func containsStr(s, substr string) bool {
+		for i := 0; i <= len(s)-len(substr); i++ {
+			if s[i:i+len(substr)] == substr {
+				return true
+			}
+		}
+		return false
+	}

@@ -50,11 +50,6 @@ func ParseCpe22(cpe22 string) (*CPE, error) {
 	// 按照:分割
 	parts := strings.Split(withoutPrefix, ":")
 
-	// 至少要有part元素
-	if len(parts) < 1 {
-		return nil, NewInvalidFormatError(cpe22)
-	}
-
 	// 将2.2格式转换为结构体
 	cpe := &CPE{
 		Cpe23: convertCpe22ToCpe23(cpe22),

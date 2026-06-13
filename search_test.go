@@ -485,3 +485,107 @@ func TestDefaultMatchOptionsSearch(t *testing.T) {
 		t.Errorf("DefaultMatchOptions().VersionRange = %v, want false", options.VersionRange)
 	}
 }
+
+// TestMatchCPE_ProductRegexMismatch tests matchCPE with UseRegex and non-matching product
+func TestMatchCPE_ProductRegexMismatch(t *testing.T) {
+	cpe := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+	}
+	criteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("^nginx$"),
+	}
+	options := &MatchOptions{UseRegex: true}
+	if matchCPE(cpe, criteria, options) {
+		t.Error("matchCPE with UseRegex and non-matching product should return false")
+	}
+}
+
+// TestMatchCPE_UpdateRegexMismatch tests matchCPE with UseRegex and non-matching update
+func TestMatchCPE_UpdateRegexMismatch(t *testing.T) {
+	cpe := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Update:      Update("sp1"),
+	}
+	criteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Update:      Update("^sp2$"),
+	}
+	options := &MatchOptions{UseRegex: true}
+	if matchCPE(cpe, criteria, options) {
+		t.Error("matchCPE with UseRegex and non-matching update should return false")
+	}
+}
+
+	// TestMatchCPE_CoverageGap_UpdateRegexMismatch tests matchCPE with regex update mismatch
+	func TestMatchCPE_CoverageGap_UpdateRegexMismatch(t *testing.T) {
+		cpe := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "10",
+			Update:      "sp1",
+		}
+		criteria := &CPE{
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "10",
+			Update:      "sp[0-9]0",
+		}
+		options := &MatchOptions{
+			UseRegex: true,
+		}
+		if matchCPE(cpe, criteria, options) {
+			t.Error("matchCPE with regex update mismatch should return false")
+		}
+	}
+
+	// TestMatchCPE_CoverageGap_VersionRangeWithMinAndMax tests matchCPE version range with both bounds
+	func TestMatchCPE_CoverageGap_VersionRangeWithMinAndMax(t *testing.T) {
+		cpe := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "10",
+		}
+		criteria := &CPE{
+			Vendor:      "microsoft",
+			ProductName: "windows",
+		}
+		options := &MatchOptions{
+			VersionRange: true,
+			MinVersion:   "9",
+			MaxVersion:   "11",
+		}
+		if !matchCPE(cpe, criteria, options) {
+			t.Error("matchCPE with version in range should return true")
+		}
+	}
+
+	// TestMatchCPE_CoverageGap_ExactVersionNoSubVersions tests matchCPE with exact version match (no sub-version)
+	func TestMatchCPE_CoverageGap_ExactVersionNoSubVersions(t *testing.T) {
+		cpe := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "10",
+		}
+		criteria := &CPE{
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "11",
+		}
+		options := &MatchOptions{
+			AllowSubVersions: false,
+		}
+		if matchCPE(cpe, criteria, options) {
+			t.Error("matchCPE with exact version mismatch should return false")
+		}
+	}

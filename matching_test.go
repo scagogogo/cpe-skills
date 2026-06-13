@@ -524,3 +524,88 @@ func TestCompareWFNRelationOverlap(t *testing.T) {
 		t.Errorf("CompareWFNRelation() = %v, want %v", got, RelationOverlap)
 	}
 }
+
+// TestCompareAttributes_OnlyTargetWildcard tests that when only target has a wildcard, wildcardMatch fails and result is -2
+func TestCompareAttributes_OnlyTargetWildcard(t *testing.T) {
+	// source="apache" (no wildcard), target="apac*" (has wildcard)
+	// wildcardMatch("apache", "apac*") returns false because source is literal pattern
+	// and 'h' != '*', so the overall result is -2
+	result := CompareAttributes("apache", "apac*")
+	if result != -2 {
+		t.Errorf("CompareAttributes() with only target wildcard = %d, want -2", result)
+	}
+}
+
+// TestCompareAttributes_EscapedWildcardSourceRealWildcardTarget tests the -1 return when source
+// has escaped wildcards (not a wildcard pattern) but target has real wildcards, and they match
+func TestCompareAttributes_EscapedWildcardSourceRealWildcardTarget(t *testing.T) {
+	// source has escaped star \* -> hasWildcardPattern returns false
+	// target has real star * -> hasWildcardPattern returns true
+	// wildcardMatch(\*, *) returns true (escaped star matches literal star)
+	// Result should be -1 (target has wildcard, source is subset)
+	result := CompareAttributes("\\*", "*")
+	if result != -1 {
+		t.Errorf("CompareAttributes() with escaped wildcard source and real wildcard target = %d, want -1", result)
+	}
+}
+
+// TestWildcardMatch_EscapedCharMismatch tests wildcardMatch with escaped char that doesn't match target
+func TestWildcardMatch_EscapedCharMismatch(t *testing.T) {
+	// Source has escaped char \a, target has different char
+	result := wildcardMatch("\\a", "b")
+	if result {
+		t.Error("wildcardMatch() escaped char mismatch should return false")
+	}
+}
+
+// TestWildcardMatch_EscapedCharInTrailingSource tests wildcardMatch with escaped char in trailing source
+func TestWildcardMatch_EscapedCharInTrailingSource(t *testing.T) {
+	// After target is consumed, source has escaped char followed by more - should break the loop
+	result := wildcardMatch("abc\\d", "abc")
+	if result {
+		t.Error("wildcardMatch() with trailing escaped char should return false")
+	}
+}
+
+// TestCompareWFNRelation_Equal tests CompareWFNRelation returning RelationEqual
+func TestCompareWFNRelation_Equal(t *testing.T) {
+	comparisons := map[string]int{
+		"part":    0,
+		"vendor":  0,
+		"product": 0,
+	}
+	result := CompareWFNRelation(comparisons)
+	if result != RelationEqual {
+		t.Errorf("CompareWFNRelation() all equal = %v, want %v", result, RelationEqual)
+	}
+}
+
+	// TestCompareAttributes_CoverageGap_TargetWildcardSubset tests CompareAttributes when only target has wildcard
+	func TestCompareAttributes_CoverageGap_BothWildcards(t *testing.T) {
+		// source is specific, target has wildcard -> source is subset
+		result := CompareAttributes("win*", "win*")
+		if result != 0 {
+			t.Errorf("CompareAttributes(windows, win*) = %d, want -1 (subset)", result)
+		}
+	}
+
+	// TestWildcardMatch_CoverageGap_EscapeAtEndOfSource tests wildcardMatch with escape at end of source (no next char)
+	func TestWildcardMatch_CoverageGap_EscapeAtEndOfSource(t *testing.T) {
+		// source ends with backslash but no next char - the escape handling branch at line 248
+		result := wildcardMatch(`test\`, "test\\")
+		if !result {
+			t.Errorf("wildcardMatch with backslash at end should match")
+		}
+	}
+
+	// TestCompareAttributes_CoverageGap_TargetWildcardOnly tests CompareAttributes when only target has wildcard but wildcardMatch succeeds
+	func TestCompareAttributes_CoverageGap_TargetWildcardOnly(t *testing.T) {
+		// When source has escaped wildcard "win\*" (literal asterisk) and target has "win*" (unquoted wildcard),
+		// hasWildcardPattern(source) is false (escaped * is not a wildcard), hasWildcardPattern(target) is true.
+		// wildcardMatch matches because the escaped * in source matches the literal * in target.
+		// Then !hasWildcardPattern(source) && hasWildcardPattern(target) -> return -1
+		result := CompareAttributes(`win\*`, "win*")
+		if result != -1 {
+			t.Errorf("CompareAttributes(win\\*, win*) = %d, want -1 (subset)", result)
+		}
+	}

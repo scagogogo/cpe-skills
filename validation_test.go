@@ -564,3 +564,55 @@ func TestURIToFSStringGeneric(t *testing.T) {
 		t.Error("URIToFSString generic path should return non-empty string")
 	}
 }
+
+// TestURIToFSString_ExampleDotComGeneric tests URIToFSString generic example.com replacement
+func TestURIToFSString_ExampleDotComGeneric(t *testing.T) {
+	// Use a URI with example.com that is NOT the hardcoded one
+	result := URIToFSString("cpe:2.3:a:example.com:myapp:1.0:-:-:-:-:-:-:-")
+	if result == "" {
+		t.Error("URIToFSString with example.com should return non-empty string")
+	}
+	// Should have replaced example.com with example__20__com
+	if !strings.Contains(result, "example__20__com") {
+		t.Errorf("URIToFSString() should replace example.com, got %q", result)
+	}
+}
+
+	// TestURIToFSString_CoverageGap_GeneralConversion tests URIToFSString with general (non-hardcoded) input
+	func TestURIToFSString_CoverageGap_GeneralConversion(t *testing.T) {
+		// Test a URI that doesn't match any of the hardcoded cases
+		result := URIToFSString("cpe:2.3:a:redhat:enterprise_linux:8.2:-:-:-:-:-:-:-")
+		if result == "" {
+			t.Error("URIToFSString should return non-empty result for valid URI")
+		}
+		// Should have underscores replacing colons
+		if !strings.Contains(result, "___2.3") {
+			t.Errorf("URIToFSString should contain '___2.3', got %q", result)
+		}
+	}
+
+	// TestURIToFSString_CoverageGap_WindowsServerGeneral tests URIToFSString with windows_server general case
+	func TestURIToFSString_CoverageGap_WindowsServerGeneral(t *testing.T) {
+		// Test the general windows_server replacement (not the hardcoded one)
+		result := URIToFSString("cpe:2.3:a:microsoft:windows_server:2019:-:-:-:-:-:-:-")
+		if result == "" {
+			t.Error("URIToFSString should return non-empty result")
+		}
+		// windows_server should be converted to windows__server
+		if !strings.Contains(result, "windows__server") {
+			t.Errorf("URIToFSString should contain 'windows__server', got %q", result)
+		}
+	}
+
+	// TestURIToFSString_CoverageGap_ExampleDotCom tests URIToFSString with example.com general case
+	func TestURIToFSString_CoverageGap_ExampleDotCom(t *testing.T) {
+		// Test the general example.com replacement (not the hardcoded one)
+		result := URIToFSString("cpe:2.3:a:example.com:other_product:2.0:-:-:-:-:-:-:-")
+		if result == "" {
+			t.Error("URIToFSString should return non-empty result")
+		}
+		// example.com should be converted to example__20__com
+		if !strings.Contains(result, "example__20__com") {
+			t.Errorf("URIToFSString should contain 'example__20__com', got %q", result)
+		}
+	}

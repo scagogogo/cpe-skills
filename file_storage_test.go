@@ -674,24 +674,6 @@ func TestFileStorage_StoreCPE_Nil(t *testing.T) {
 	}
 }
 
-func TestFileStorage_StoreCPE_EmptyURI(t *testing.T) {
-	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
-	defer os.RemoveAll(tempDir)
-	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
-
-	// CPE with empty Cpe23 but empty Part will still produce a URI like "cpe:2.3:::::::"
-	// The actual validation is that GetURI() returns something, so we test with a truly empty URI
-	// by creating a CPE where Cpe23 is empty and the formatted URI would also be empty
-	cpe := &CPE{Cpe23: ""} // GetURI() returns "cpe:2.3:::::::" which is not empty
-	// This actually tests that StoreCPE works with a CPE that has a generated URI
-	err := fs.StoreCPE(cpe)
-	// The URI won't be empty since FormatURI generates one, so this should succeed
-	if err != nil {
-		t.Logf("StoreCPE() with minimal CPE: %v", err)
-	}
-}
-
 func TestFileStorage_StoreCPE_WithoutCache(t *testing.T) {
 	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
 	defer os.RemoveAll(tempDir)
@@ -762,20 +744,6 @@ func TestFileStorage_UpdateCPE_Nil(t *testing.T) {
 	if err != ErrInvalidData {
 		t.Errorf("UpdateCPE(nil) error = %v, want ErrInvalidData", err)
 	}
-}
-
-func TestFileStorage_UpdateCPE_EmptyURI(t *testing.T) {
-	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
-	defer os.RemoveAll(tempDir)
-	fs, _ := NewFileStorage(tempDir, false)
-	fs.Initialize()
-
-	// Similar to StoreCPE, a minimal CPE will have a generated URI
-	cpe := &CPE{Cpe23: ""}
-	err := fs.UpdateCPE(cpe)
-	// The CPE won't exist so it will fail at the StoreCPE step or cache update
-	// This is expected behavior
-	t.Logf("UpdateCPE() with minimal CPE: %v", err)
 }
 
 func TestFileStorage_UpdateCPE_WithoutCache(t *testing.T) {
@@ -1752,5 +1720,396 @@ func TestFileStorage_SearchCVE_NilOptions(t *testing.T) {
 	}
 	if len(results) != 1 {
 		t.Errorf("SearchCVE() with nil options returned %d results, want 1", len(results))
+	}
+}
+
+// --- Additional coverage tests for remaining uncovered paths ---
+
+func TestFileStorage_DeleteCPE_StatNonNotExistErr(t *testing.T) {
+	// Test the os.Stat error path that is NOT os.IsNotExist
+	// by setting cpes subdirectory as a file (not a directory)
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+
+	// Create cpes as a file instead of a directory
+	cpeDirPath := filepath.Join(tempDir, "cpes")
+	os.WriteFile(cpeDirPath, []byte("not a directory"), 0644)
+
+	fs := &FileStorage{
+		baseDir:  tempDir,
+		cache:    NewMemoryStorage(),
+		useCache: false,
+	}
+
+	// DeleteCPE will try to Stat a file inside cpes/, but cpes is a file not a dir
+	err := fs.DeleteCPE("some_cpe_id")
+	if err == nil {
+		t.Errorf("DeleteCPE() should return error when stat fails with non-IsNotExist error")
+	}
+}
+
+func TestFileStorage_StoreCVE_MkdirAllErr(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping test that requires non-root user for permission errors")
+	}
+
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+	fs, _ := NewFileStorage(tempDir, false)
+	fs.Initialize()
+
+	// Remove the cves directory and replace it with a file so MkdirAll fails
+	cveDirPath := filepath.Join(tempDir, "cves")
+	os.RemoveAll(cveDirPath)
+	os.WriteFile(cveDirPath, []byte("not a directory"), 0644)
+
+	cve := NewCVEReference("CVE-2099-MKDIR2")
+	err := fs.StoreCVE(cve)
+	// Clean up so RemoveAll can work
+	os.Remove(cveDirPath)
+	os.MkdirAll(cveDirPath, 0755)
+
+	if err == nil {
+		t.Errorf("StoreCVE() should return error when MkdirAll fails")
+	}
+}
+
+func TestFileStorage_NewFileStorage_SubDirMkdirErr(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping test that requires non-root user for permission errors")
+	}
+
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+
+	// Create a file where "cpes" subdirectory would go
+	cpesPath := filepath.Join(tempDir, "cpes")
+	os.WriteFile(cpesPath, []byte("not a directory"), 0644)
+
+	_, err := NewFileStorage(tempDir, false)
+	if err == nil {
+		t.Errorf("NewFileStorage() should return error when subdirectory creation fails")
+	}
+}
+
+func TestFileStorage_SearchCPE_LoadAllErr(t *testing.T) {
+	// SearchCPE no longer returns error since loadAllCPEs never fails.
+	// This test just verifies it returns empty results gracefully
+	// when the cpes directory doesn't exist.
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+
+	// Create FileStorage manually with a nonexistent baseDir for cpes
+	fs := &FileStorage{
+		baseDir:  tempDir,
+		cache:    NewMemoryStorage(),
+		useCache: false,
+	}
+
+	// SearchCPE should return empty results, not error
+	results, err := fs.SearchCPE(nil, nil)
+	if err != nil {
+		t.Errorf("SearchCPE() should not return error, got %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("SearchCPE() should return empty results for missing dir, got %d", len(results))
+	}
+}
+
+func TestFileStorage_SearchCVE_LoadAllCVEsErr(t *testing.T) {
+	fs := &FileStorage{
+		baseDir:  "/nonexistent/path",
+		useCache: false,
+		cache:    NewMemoryStorage(),
+	}
+
+	_, err := fs.SearchCVE("query", NewSearchOptions())
+	if err == nil {
+		t.Errorf("SearchCVE() should return error when loadAllCVEs fails")
+	}
+}
+
+func TestFileStorage_FindCVEsByCPE_SearchErr(t *testing.T) {
+	// FindCVEsByCPE no longer fails on SearchCPE error since SearchCPE never errors.
+	// But it can still fail when loadAllCVEs fails (non-existent cves dir).
+	fs := &FileStorage{
+		baseDir:  "/nonexistent/path",
+		useCache: false,
+		cache:    NewMemoryStorage(),
+	}
+
+	cpe := &CPE{
+		Cpe23:       "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",
+		Part:        *PartApplication,
+		Vendor:      Vendor("vendor"),
+		ProductName: Product("product"),
+		Version:     Version("1.0"),
+	}
+	_, err := fs.FindCVEsByCPE(cpe)
+	if err == nil {
+		t.Errorf("FindCVEsByCPE() should return error when loadAllCVEs fails")
+	}
+}
+
+func TestFileStorage_FindCVEsByCPE_LoadCVEsErr(t *testing.T) {
+	fs := &FileStorage{
+		baseDir:  "/nonexistent/path",
+		useCache: false,
+		cache:    NewMemoryStorage(),
+	}
+
+	cpe := &CPE{
+		Cpe23:       "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",
+		Part:        *PartApplication,
+		Vendor:      Vendor("vendor"),
+		ProductName: Product("product"),
+		Version:     Version("1.0"),
+	}
+	_, err := fs.FindCVEsByCPE(cpe)
+	if err == nil {
+		t.Errorf("FindCVEsByCPE() should return error when loadAllCVEs fails")
+	}
+}
+
+func TestFileStorage_FindCPEsByCVE_SearchErr(t *testing.T) {
+	// FindCPEsByCVE no longer fails on SearchCPE error since SearchCPE never errors.
+	// But it can still fail when loadAllCVEs fails.
+	fs := &FileStorage{
+		baseDir:  "/nonexistent/path",
+		useCache: false,
+		cache:    NewMemoryStorage(),
+	}
+
+	_, err := fs.FindCPEsByCVE("CVE-2021-00001")
+	if err == nil {
+		t.Errorf("FindCPEsByCVE() should return error when loadAllCVEs fails")
+	}
+}
+
+func TestFileStorage_FindCPEsByCVE_LoadCVEsErr(t *testing.T) {
+	fs := &FileStorage{
+		baseDir:  "/nonexistent/path",
+		useCache: false,
+		cache:    NewMemoryStorage(),
+	}
+
+	_, err := fs.FindCPEsByCVE("CVE-2021-00001")
+	if err == nil {
+		t.Errorf("FindCPEsByCVE() should return error when loadAllCVEs fails")
+	}
+}
+
+func TestFileStorage_AdvancedSearchCPE_NonExistentDir(t *testing.T) {
+	fs := &FileStorage{
+		baseDir:  "/nonexistent/path/that/does/not/exist",
+		useCache: false,
+		cache:    NewMemoryStorage(),
+	}
+
+	criteria := &CPE{Vendor: Vendor("vendor")}
+	_, err := fs.AdvancedSearchCPE(criteria, &AdvancedMatchOptions{})
+	if err == nil {
+		t.Errorf("AdvancedSearchCPE() with non-existent directory should return error")
+	}
+}
+
+func TestFileStorage_AdvancedSearchCPE_InvalidJSONInWalk(t *testing.T) {
+	// Test AdvancedSearchCPE without cache when a file in cpes dir has invalid JSON
+	// This triggers the fmt.Printf error path in the Walk callback
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+	fs, _ := NewFileStorage(tempDir, false)
+	fs.Initialize()
+
+	// Store a valid CPE first
+	cpe := &CPE{
+		Cpe23:       "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",
+		Part:        *PartApplication,
+		Vendor:      Vendor("vendor"),
+		ProductName: Product("product"),
+		Version:     Version("1.0"),
+	}
+	fs.StoreCPE(cpe)
+
+	// Add an invalid JSON file in the cpes directory
+	cpeDir := filepath.Join(tempDir, "cpes")
+	os.WriteFile(filepath.Join(cpeDir, "bad_walk.json"), []byte("not valid json"), 0644)
+
+	// Use exact matching criteria to match the stored CPE
+	criteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("vendor"),
+		ProductName: Product("product"),
+		Version:     Version("1.0"),
+	}
+	results, err := fs.AdvancedSearchCPE(criteria, &AdvancedMatchOptions{})
+	if err != nil {
+		t.Errorf("AdvancedSearchCPE() error = %v", err)
+	}
+	// Should return the valid CPE (bad file is skipped)
+	if len(results) != 1 {
+		t.Errorf("AdvancedSearchCPE() returned %d results, want 1 (bad file skipped)", len(results))
+	}
+}
+
+func TestFileStorage_loadAllCVEs_UnreadableFile(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping test that requires non-root user for permission errors")
+	}
+
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+	fs, _ := NewFileStorage(tempDir, false)
+	fs.Initialize()
+
+	// Create a CVE file and then make it unreadable
+	cve := NewCVEReference("CVE-2099-UNREAD")
+	fs.StoreCVE(cve)
+
+	cveFilePath := fs.CVEFilePath(cve.CVEID)
+	os.Chmod(cveFilePath, 0000)
+
+	// loadAllCVEs should skip the unreadable file without erroring
+	cves, err := fs.loadAllCVEs()
+	os.Chmod(cveFilePath, 0644) // restore for cleanup
+
+	if err != nil {
+		t.Errorf("loadAllCVEs() should not return error for unreadable files, got %v", err)
+	}
+	if len(cves) != 0 {
+		t.Errorf("loadAllCVEs() should skip unreadable files, got %d cves", len(cves))
+	}
+}
+
+func TestFileStorage_loadAllCVEs_SubDirAndNonJSON(t *testing.T) {
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+	fs, _ := NewFileStorage(tempDir, false)
+	fs.Initialize()
+
+	// Create a subdirectory named "subdir.json" inside cves (should be skipped as dir)
+	cveDir := filepath.Join(tempDir, "cves")
+	os.MkdirAll(filepath.Join(cveDir, "subdir.json"), 0755)
+
+	// Create a non-JSON file (should be skipped)
+	os.WriteFile(filepath.Join(cveDir, "readme.txt"), []byte("not json"), 0644)
+
+	// Create a valid CVE
+	cve := NewCVEReference("CVE-2099-DIRENTRY2")
+	fs.StoreCVE(cve)
+
+	cves, err := fs.loadAllCVEs()
+	if err != nil {
+		t.Errorf("loadAllCVEs() error = %v", err)
+	}
+	if len(cves) != 1 {
+		t.Errorf("loadAllCVEs() returned %d cves, want 1", len(cves))
+	}
+}
+
+func TestFileStorage_loadAllCVEs_BadJSONFile(t *testing.T) {
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+	fs, _ := NewFileStorage(tempDir, false)
+	fs.Initialize()
+
+	// Write an invalid JSON file in the cves directory
+	cveDir := filepath.Join(tempDir, "cves")
+	os.WriteFile(filepath.Join(cveDir, "bad2.json"), []byte("invalid json"), 0644)
+
+	// loadAllCVEs should skip the invalid file
+	cves, err := fs.loadAllCVEs()
+	if err != nil {
+		t.Errorf("loadAllCVEs() should not return error for invalid JSON, got %v", err)
+	}
+	if len(cves) != 0 {
+		t.Errorf("loadAllCVEs() should skip invalid JSON files, got %d cves", len(cves))
+	}
+}
+
+func TestFileStorage_DeleteCPE_WithoutCacheSuccess(t *testing.T) {
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+	fs, _ := NewFileStorage(tempDir, false)
+	fs.Initialize()
+
+	cpe := &CPE{
+		Cpe23:       "cpe:2.3:a:vendor:delnocache2:1.0:*:*:*:*:*:*:*",
+		Part:        *PartApplication,
+		Vendor:      Vendor("vendor"),
+		ProductName: Product("delnocache2"),
+		Version:     Version("1.0"),
+	}
+	fs.StoreCPE(cpe)
+
+	err := fs.DeleteCPE(cpe.GetURI())
+	if err != nil {
+		t.Errorf("DeleteCPE() without cache error = %v", err)
+	}
+}
+
+func TestFileStorage_UpdateCPE_CacheEnabled2(t *testing.T) {
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+	fs, _ := NewFileStorage(tempDir, true)
+	fs.Initialize()
+
+	cpe := &CPE{
+		Cpe23:       "cpe:2.3:a:vendor:updcache2:1.0:*:*:*:*:*:*:*",
+		Part:        *PartApplication,
+		Vendor:      Vendor("vendor"),
+		ProductName: Product("updcache2"),
+		Version:     Version("1.0"),
+	}
+	fs.StoreCPE(cpe)
+
+	cpe.Version = Version("2.0")
+	cpe.Cpe23 = "cpe:2.3:a:vendor:updcache2:2.0:*:*:*:*:*:*:*"
+	err := fs.UpdateCPE(cpe)
+	if err != nil {
+		t.Errorf("UpdateCPE() with cache error = %v", err)
+	}
+}
+
+func TestFileStorage_StoreCVE_CacheEnabled2(t *testing.T) {
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+	fs, _ := NewFileStorage(tempDir, true)
+	fs.Initialize()
+
+	cve := NewCVEReference("CVE-2099-CACHE2")
+	cve.Description = "cache test 2"
+	err := fs.StoreCVE(cve)
+	if err != nil {
+		t.Errorf("StoreCVE() with cache error = %v", err)
+	}
+}
+
+func TestFileStorage_UpdateCVE_FileWriteErr(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("Skipping test that requires non-root user for permission errors")
+	}
+
+	tempDir, _ := os.MkdirTemp("", "cpe_test_*")
+	defer os.RemoveAll(tempDir)
+	fs, _ := NewFileStorage(tempDir, false)
+	fs.Initialize()
+
+	// Store a CVE first
+	cve := NewCVEReference("CVE-2099-UPDFILEERR")
+	cve.Description = "Original"
+	fs.StoreCVE(cve)
+
+	// Make the CVE file read-only so WriteFile will fail when trying to truncate
+	cveFilePath := fs.CVEFilePath(cve.CVEID)
+	os.Chmod(cveFilePath, 0444)
+
+	cve.Description = "Updated"
+	err := fs.UpdateCVE(cve)
+	// Restore permissions for cleanup
+	os.Chmod(cveFilePath, 0644)
+
+	if err == nil {
+		t.Errorf("UpdateCVE() should return error when file is read-only")
 	}
 }

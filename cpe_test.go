@@ -1061,3 +1061,25 @@ func TestCPEMatchExtended(t *testing.T) {
 		t.Error("Expected mismatch on Other")
 	}
 }
+
+	// TestFormatCpe23_CoverageGap_AllFieldsPopulated tests FormatCpe23 with all fields having specific values
+	func TestFormatCpe23_CoverageGap_AllFieldsPopulated(t *testing.T) {
+		cpe := &CPE{
+			Part:            *PartApplication,
+			Vendor:          "microsoft",
+			ProductName:     "windows",
+			Version:         "10",
+			Update:          "sp1",
+			Edition:         "pro",
+			Language:        "en",
+			SoftwareEdition: "enterprise",
+			TargetSoftware:  "linux",
+			TargetHardware:  "x86",
+			Other:           "custom",
+		}
+		result := FormatCpe23(cpe)
+		expected := "cpe:2.3:a:microsoft:windows:10:sp1:pro:en:enterprise:linux:x86:custom"
+		if result != expected {
+			t.Errorf("FormatCpe23() = %q, want %q", result, expected)
+		}
+	}

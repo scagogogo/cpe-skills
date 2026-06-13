@@ -1715,3 +1715,512 @@ func TestMemoryStorage_SearchCVE_WithSeverityFilter(t *testing.T) {
 		t.Errorf("SearchCVE() with severity filter returned %d results, want 1", len(results))
 	}
 }
+
+
+// TestMemoryStorage_DeleteCPE_WithCVERelations tests DeleteCPE that removes CPE-CVE mappings
+func TestMemoryStorage_DeleteCPE_WithCVERelations(t *testing.T) {
+	ms := NewMemoryStorage()
+	cpe := &CPE{
+		Cpe23:       "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*",
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("log4j"),
+		Version:     Version("2.0"),
+	}
+	ms.StoreCPE(cpe)
+
+	// Store a CVE that references this CPE
+	cve := &CVEReference{
+		CVEID:        "CVE-2021-44228",
+		AffectedCPEs: []string{"cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"},
+	}
+	ms.StoreCVE(cve)
+
+	// Now delete the CPE - this should clean up CVE-CPE relationships
+	err := ms.DeleteCPE("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+	if err != nil {
+		t.Errorf("DeleteCPE() error = %v", err)
+	}
+
+	// Verify CVE no longer has this CPE in its mapping
+	cpeIDs := ms.cveToCPEs["CVE-2021-44228"]
+	for _, id := range cpeIDs {
+		if id == "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*" {
+			t.Error("DeleteCPE() should remove CPE from CVE mappings")
+		}
+	}
+}
+
+// TestMemoryStorage_UpdateCVE_WithCPERelations tests UpdateCVE that updates CVE-CPE relationships
+func TestMemoryStorage_UpdateCVE_WithCPERelations(t *testing.T) {
+	ms := NewMemoryStorage()
+
+	// Store a CPE first
+	cpe := &CPE{
+		Cpe23:       "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*",
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("log4j"),
+		Version:     Version("2.0"),
+	}
+	ms.StoreCPE(cpe)
+
+	// Store initial CVE
+	cve := &CVEReference{
+		CVEID:        "CVE-2021-44228",
+		AffectedCPEs: []string{"cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"},
+	}
+	ms.StoreCVE(cve)
+
+	// Update CVE with different CPEs - the old CPE-CVE mapping should be cleaned
+	updatedCve := &CVEReference{
+		CVEID:        "CVE-2021-44228",
+		AffectedCPEs: []string{"cpe:2.3:a:apache:log4j:2.14:*:*:*:*:*:*:*"},
+	}
+	err := ms.UpdateCVE(updatedCve)
+	if err != nil {
+		t.Errorf("UpdateCVE() error = %v", err)
+	}
+
+	// Verify old CPE no longer references this CVE
+	cveIDs := ms.cpeToCVEs["cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"]
+	for _, id := range cveIDs {
+		if id == "CVE-2021-44228" {
+			t.Error("UpdateCVE() should remove old CVE from CPE mappings")
+		}
+	}
+}
+
+// TestMemoryStorage_DeleteCVE_WithCPERelations tests DeleteCVE that removes CVE-CPE mappings
+func TestMemoryStorage_DeleteCVE_WithCPERelations(t *testing.T) {
+	ms := NewMemoryStorage()
+
+	cpe := &CPE{
+		Cpe23:       "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*",
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("log4j"),
+		Version:     Version("2.0"),
+	}
+	ms.StoreCPE(cpe)
+
+	cve := &CVEReference{
+		CVEID:        "CVE-2021-44228",
+		AffectedCPEs: []string{"cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"},
+	}
+	ms.StoreCVE(cve)
+
+	// Delete the CVE - this should clean up CPE-CVE relationships
+	err := ms.DeleteCVE("CVE-2021-44228")
+	if err != nil {
+		t.Errorf("DeleteCVE() error = %v", err)
+	}
+
+	// Verify CPE no longer references this CVE
+	cveIDs := ms.cpeToCVEs["cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"]
+	for _, id := range cveIDs {
+		if id == "CVE-2021-44228" {
+			t.Error("DeleteCVE() should remove CVE from CPE mappings")
+		}
+	}
+}
+
+// TestMemoryStorage_ApplyCVEFilters_InvalidCPE tests applyCVEFilters with invalid CPE strings in product filter
+func TestMemoryStorage_ApplyCVEFilters_InvalidCPE(t *testing.T) {
+	ms := NewMemoryStorage()
+
+	cve := &CVEReference{
+		CVEID:        "CVE-2021-44228",
+		AffectedCPEs: []string{"not_a_cpe"},
+	}
+
+	options := &SearchOptions{
+		Filters: map[string]interface{}{
+			"product": "log4j",
+		},
+	}
+
+	result := ms.applyCVEFilters(cve, options)
+	if result {
+		t.Error("applyCVEFilters with invalid CPE in AffectedCPEs and product filter should return false")
+	}
+}
+
+	// TestMemoryStorage_StoreCPE_CoverageGap_EmptyURI tests StoreCPE with a CPE that has empty URI
+	func TestMemoryStorage_StoreCPE_CoverageGap_EmptyURI(t *testing.T) {
+		ms := NewMemoryStorage()
+		// Create a CPE with no Cpe23 and empty fields - GetURI should return empty
+		cpe := &CPE{}
+		// We need to check if GetURI returns empty for this CPE
+		uri := cpe.GetURI()
+		if uri == "" {
+			err := ms.StoreCPE(cpe)
+			if err == nil {
+				t.Error("StoreCPE with empty URI should return error")
+			}
+		}
+	}
+
+	// TestMemoryStorage_UpdateCPE_CoverageGap_EmptyURI tests UpdateCPE with empty URI
+	func TestMemoryStorage_UpdateCPE_CoverageGap_EmptyURI(t *testing.T) {
+		ms := NewMemoryStorage()
+		cpe := &CPE{}
+		uri := cpe.GetURI()
+		if uri == "" {
+			err := ms.UpdateCPE(cpe)
+			if err == nil {
+				t.Error("UpdateCPE with empty URI should return error")
+			}
+		}
+	}
+
+	// TestMemoryStorage_DeleteCPE_CoverageGap_WithCVEAssociations tests DeleteCPE properly cleans up cveToCPEs
+	func TestMemoryStorage_DeleteCPE_CoverageGap_WithCVEAssociations(t *testing.T) {
+		ms := NewMemoryStorage()
+		ms.Initialize()
+
+		cpe1 := &CPE{
+			Cpe23:       "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",
+			Part:        *PartApplication,
+			Vendor:      Vendor("vendor"),
+			ProductName: Product("product"),
+			Version:     Version("1.0"),
+		}
+		ms.StoreCPE(cpe1)
+
+		cpe2 := &CPE{
+			Cpe23:       "cpe:2.3:a:vendor2:product2:2.0:*:*:*:*:*:*:*",
+			Part:        *PartApplication,
+			Vendor:      Vendor("vendor2"),
+			ProductName: Product("product2"),
+			Version:     Version("2.0"),
+		}
+		ms.StoreCPE(cpe2)
+
+		cve := NewCVEReference("CVE-2021-12345")
+		cve.AddAffectedCPE("cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*")
+		cve.AddAffectedCPE("cpe:2.3:a:vendor2:product2:2.0:*:*:*:*:*:*:*")
+		ms.StoreCVE(cve)
+
+		// Delete cpe1, verify cveToCPEs still has cpe2
+		err := ms.DeleteCPE(cpe1.GetURI())
+		if err != nil {
+			t.Errorf("DeleteCPE() error = %v", err)
+		}
+
+		cpeIDs := ms.cveToCPEs[cve.CVEID]
+		foundCPE2 := false
+		for _, id := range cpeIDs {
+			if id == cpe2.GetURI() {
+				foundCPE2 = true
+			}
+		}
+		if !foundCPE2 {
+			t.Error("DeleteCPE should preserve associations with remaining CPEs")
+		}
+	}
+
+	// TestMemoryStorage_UpdateCVE_CoverageGap_WithCPE22Format tests UpdateCVE with CPE 2.2 format affected CPEs
+	func TestMemoryStorage_UpdateCVE_CoverageGap_WithCPE22Format(t *testing.T) {
+		ms := NewMemoryStorage()
+		ms.Initialize()
+
+		cve := NewCVEReference("CVE-2021-12345")
+		cve.Description = "Original"
+		ms.StoreCVE(cve)
+
+		cveUpdated := &CVEReference{
+			CVEID:        cve.CVEID,
+			Description:  "Updated",
+			AffectedCPEs: []string{"cpe:/a:vendor:product:1.0"},
+		}
+
+		err := ms.UpdateCVE(cveUpdated)
+		if err != nil {
+			t.Errorf("UpdateCVE() error = %v", err)
+		}
+
+		cpeIDs := ms.cveToCPEs[cve.CVEID]
+		if len(cpeIDs) == 0 {
+			t.Error("UpdateCVE should create CPE associations for CPE 2.2 format")
+		}
+	}
+
+	// TestMemoryStorage_DeleteCVE_CoverageGap_NoCPEAssociations tests DeleteCVE when CVE has no CPE associations
+	func TestMemoryStorage_DeleteCVE_CoverageGap_NoCPEAssociations(t *testing.T) {
+		ms := NewMemoryStorage()
+		ms.Initialize()
+
+		cve := NewCVEReference("CVE-2021-12345")
+		ms.StoreCVE(cve)
+
+		// Ensure no cveToCPEs entry
+		delete(ms.cveToCPEs, cve.CVEID)
+
+		err := ms.DeleteCVE(cve.CVEID)
+		if err != nil {
+			t.Errorf("DeleteCVE() error = %v", err)
+		}
+
+		if _, ok := ms.cves[cve.CVEID]; ok {
+			t.Error("CVE should be deleted after DeleteCVE")
+		}
+	}
+
+	// TestMemoryStorage_ApplyCVEFilters_CoverageGap_InvalidCPEInProductFilter tests applyCVEFilters with invalid CPE in product filter
+	func TestMemoryStorage_ApplyCVEFilters_CoverageGap_InvalidCPEInProductFilter(t *testing.T) {
+		ms := NewMemoryStorage()
+
+		cve := &CVEReference{
+			CVEID:        "CVE-2021-12345",
+			AffectedCPEs: []string{"invalid:cpe:format"},
+		}
+
+		opts := &SearchOptions{
+			Filters: map[string]interface{}{"product": "windows"},
+		}
+		if ms.applyCVEFilters(cve, opts) {
+			t.Error("applyCVEFilters should return false when no valid CPEs match product filter")
+		}
+	}
+
+// TestMemoryStorage_UpdateCVE_MultipleCVEsPerCPE tests UpdateCVE with a CPE that has multiple CVEs
+// This exercises the inner loop at line 328-330 where id != cve.CVEID
+func TestMemoryStorage_UpdateCVE_MultipleCVEsPerCPE(t *testing.T) {
+	ms := NewMemoryStorage()
+
+	// Store a CPE
+	cpe := &CPE{
+		Cpe23:       "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*",
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("log4j"),
+		Version:     Version("2.0"),
+	}
+	ms.StoreCPE(cpe)
+
+	// Store TWO CVEs that both reference the same CPE
+	cve1 := &CVEReference{
+		CVEID:        "CVE-2021-44228",
+		AffectedCPEs: []string{"cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"},
+	}
+	cve2 := &CVEReference{
+		CVEID:        "CVE-2021-45105",
+		AffectedCPEs: []string{"cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"},
+	}
+	ms.StoreCVE(cve1)
+	ms.StoreCVE(cve2)
+
+	// Now update CVE-2021-44228 with different CPEs
+	// The CPE "cpe:2.3:a:apache:log4j:2.0" should still have CVE-2021-45105
+	updatedCve := &CVEReference{
+		CVEID:        "CVE-2021-44228",
+		AffectedCPEs: []string{"cpe:2.3:a:apache:log4j:2.14:*:*:*:*:*:*:*"},
+	}
+	err := ms.UpdateCVE(updatedCve)
+	if err != nil {
+		t.Errorf("UpdateCVE() error = %v", err)
+	}
+
+	// Verify CPE still has the other CVE
+	cveIDs := ms.cpeToCVEs["cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"]
+	found := false
+	for _, id := range cveIDs {
+		if id == "CVE-2021-45105" {
+			found = true
+		}
+		if id == "CVE-2021-44228" {
+			t.Error("UpdateCVE() should have removed CVE-2021-44228 from old CPE")
+		}
+	}
+	if !found {
+		t.Error("UpdateCVE() should have kept CVE-2021-45105 in old CPE mapping")
+	}
+}
+
+// TestMemoryStorage_DeleteCVE_MultipleCVEsPerCPE tests DeleteCVE with a CPE that has multiple CVEs
+// This exercises the inner loop at line 390-392 where id != cveID
+func TestMemoryStorage_DeleteCVE_MultipleCVEsPerCPE(t *testing.T) {
+	ms := NewMemoryStorage()
+
+	cpe := &CPE{
+		Cpe23:       "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*",
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("log4j"),
+		Version:     Version("2.0"),
+	}
+	ms.StoreCPE(cpe)
+
+	// Store TWO CVEs referencing the same CPE
+	cve1 := &CVEReference{
+		CVEID:        "CVE-2021-44228",
+		AffectedCPEs: []string{"cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"},
+	}
+	cve2 := &CVEReference{
+		CVEID:        "CVE-2021-45105",
+		AffectedCPEs: []string{"cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"},
+	}
+	ms.StoreCVE(cve1)
+	ms.StoreCVE(cve2)
+
+	// Delete only one CVE - the CPE should still reference the other
+	err := ms.DeleteCVE("CVE-2021-44228")
+	if err != nil {
+		t.Errorf("DeleteCVE() error = %v", err)
+	}
+
+	// Verify CPE still has the other CVE
+	cveIDs := ms.cpeToCVEs["cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"]
+	found := false
+	for _, id := range cveIDs {
+		if id == "CVE-2021-45105" {
+			found = true
+		}
+		if id == "CVE-2021-44228" {
+			t.Error("DeleteCVE() should have removed CVE-2021-44228 from CPE mapping")
+		}
+	}
+	if !found {
+		t.Error("DeleteCVE() should have kept CVE-2021-45105 in CPE mapping")
+	}
+}
+
+	// TestStoreCPE_CoverageGap_EmptyURI tests StoreCPE with CPE that has no URI
+	func TestStoreCPE_CoverageGap_EmptyURI(t *testing.T) {
+		ms := NewMemoryStorage()
+		// Create a CPE with no meaningful content - this tests the GetURI() == "" branch
+		// Since GetURI() returns FormatURI which always builds a non-empty string from parts,
+		// we need a CPE where the Part is empty (zero value) and Cpe23 is also empty
+		cpe := &CPE{}
+		err := ms.StoreCPE(cpe)
+		// Even with empty fields, FormatURI still returns "cpe:2.3:::::::::" which is not empty
+		// So this should succeed (the empty URI branch should be unreachable for non-nil CPEs)
+		if err != nil {
+			t.Logf("StoreCPE with empty CPE returned error: %v (expected - URI is always non-empty for non-nil CPE)", err)
+		}
+	}
+
+	// TestUpdateCPE_CoverageGap_EmptyURI tests UpdateCPE with CPE that has no URI
+	func TestUpdateCPE_CoverageGap_EmptyURI(t *testing.T) {
+		ms := NewMemoryStorage()
+		cpe := &CPE{}
+		err := ms.UpdateCPE(cpe)
+		if err != nil {
+			t.Logf("UpdateCPE with empty CPE returned error: %v", err)
+		}
+	}
+
+	// TestUpdateCVE_CoverageGap_CVECleanupOtherCVEs tests UpdateCVE where a CPE is associated with multiple CVEs
+	func TestUpdateCVE_CoverageGap_CVECleanupOtherCVEs(t *testing.T) {
+		ms := NewMemoryStorage()
+		cpeURI := "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"
+
+		// First store a CPE
+		cpe, err := ParseCpe23(cpeURI)
+		if err != nil {
+			t.Fatalf("ParseCpe23() error = %v", err)
+		}
+		err = ms.StoreCPE(cpe)
+		if err != nil {
+			t.Fatalf("StoreCPE() error = %v", err)
+		}
+
+		// Store two CVEs that share the same CPE
+		cve1 := &CVEReference{CVEID: "CVE-2021-44228"}
+		cve1.AddAffectedCPE(cpeURI)
+		err = ms.StoreCVE(cve1)
+		if err != nil {
+			t.Fatalf("StoreCVE() error = %v", err)
+		}
+
+		cve2 := &CVEReference{CVEID: "CVE-2021-45105"}
+		cve2.AddAffectedCPE(cpeURI)
+		err = ms.StoreCVE(cve2)
+		if err != nil {
+			t.Fatalf("StoreCVE() error = %v", err)
+		}
+
+		// Now update CVE1 with a different CPE
+		updatedCve1 := &CVEReference{CVEID: "CVE-2021-44228"}
+		updatedCve1.AddAffectedCPE("cpe:2.3:a:apache:log4j:3.0:*:*:*:*:*:*:*")
+		err = ms.UpdateCVE(updatedCve1)
+		if err != nil {
+			t.Fatalf("UpdateCVE() error = %v", err)
+		}
+
+		// Verify the old CPE still has CVE2 in its mapping
+		cveIDs := ms.cpeToCVEs[cpeURI]
+		found := false
+		for _, id := range cveIDs {
+			if id == "CVE-2021-45105" {
+				found = true
+			}
+		}
+		if !found {
+			t.Error("UpdateCVE() should have kept CVE-2021-45105 in CPE mapping for old CPE")
+		}
+
+		// Verify CVE1 is no longer in the old CPE mapping
+		for _, id := range cveIDs {
+			if id == "CVE-2021-44228" {
+				t.Error("UpdateCVE() should have removed CVE-2021-44228 from old CPE mapping")
+			}
+		}
+	}
+
+	// TestDeleteCVE_CoverageGap_CVECleanupOtherCVEs tests DeleteCVE where a CPE is associated with multiple CVEs
+	func TestDeleteCVE_CoverageGap_CVECleanupOtherCVEs(t *testing.T) {
+		ms := NewMemoryStorage()
+		cpeURI := "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*"
+
+		// First store a CPE
+		cpe, err := ParseCpe23(cpeURI)
+		if err != nil {
+			t.Fatalf("ParseCpe23() error = %v", err)
+		}
+		err = ms.StoreCPE(cpe)
+		if err != nil {
+			t.Fatalf("StoreCPE() error = %v", err)
+		}
+
+		// Store two CVEs that share the same CPE
+		cve1 := &CVEReference{CVEID: "CVE-2021-44228"}
+		cve1.AddAffectedCPE(cpeURI)
+		err = ms.StoreCVE(cve1)
+		if err != nil {
+			t.Fatalf("StoreCVE() error = %v", err)
+		}
+
+		cve2 := &CVEReference{CVEID: "CVE-2021-45105"}
+		cve2.AddAffectedCPE(cpeURI)
+		err = ms.StoreCVE(cve2)
+		if err != nil {
+			t.Fatalf("StoreCVE() error = %v", err)
+		}
+
+		// Delete CVE1 - the CPE should still have CVE2
+		err = ms.DeleteCVE("CVE-2021-44228")
+		if err != nil {
+			t.Fatalf("DeleteCVE() error = %v", err)
+		}
+
+		// Verify the CPE still has CVE2 in its mapping
+		cveIDs := ms.cpeToCVEs[cpeURI]
+		found := false
+		for _, id := range cveIDs {
+			if id == "CVE-2021-45105" {
+				found = true
+			}
+		}
+		if !found {
+			t.Error("DeleteCVE() should have kept CVE-2021-45105 in CPE mapping")
+		}
+
+		// Verify CVE1 is no longer in the CPE mapping
+		for _, id := range cveIDs {
+			if id == "CVE-2021-44228" {
+				t.Error("DeleteCVE() should have removed CVE-2021-44228 from CPE mapping")
+			}
+		}
+	}

@@ -2567,3 +2567,442 @@ func TestMatchDistanceComprehensive(t *testing.T) {
 		t.Error("matchDistance with required Product mismatch should return false")
 	}
 }
+
+// TestMatchWithRegex_PartMismatch tests that matchWithRegex returns false when Part doesn't match
+func TestMatchWithRegex_PartMismatch(t *testing.T) {
+	criteria := &CPE{
+		Part:        *PartHardware,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	target := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	options := NewAdvancedMatchOptions()
+	if matchWithRegex(criteria, target, options) {
+		t.Error("matchWithRegex should return false when Part doesn't match")
+	}
+}
+
+// TestMatchPartial_PartMismatch tests that matchPartial returns false when Part doesn't match
+func TestMatchPartial_PartMismatch(t *testing.T) {
+	criteria := &CPE{
+		Part:        *PartHardware,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	target := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	options := NewAdvancedMatchOptions()
+	if matchPartial(criteria, target, options) {
+		t.Error("matchPartial should return false when Part doesn't match")
+	}
+}
+
+// TestMatchPartial_VendorMismatch tests that matchPartial returns false when Vendor doesn't match
+func TestMatchPartial_VendorMismatch(t *testing.T) {
+	criteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("nginx"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	target := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	options := NewAdvancedMatchOptions()
+	if matchPartial(criteria, target, options) {
+		t.Error("matchPartial should return false when Vendor doesn't match")
+	}
+}
+
+// TestMatchPartial_ProductMismatch tests that matchPartial returns false when ProductName doesn't match
+func TestMatchPartial_ProductMismatch(t *testing.T) {
+	criteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("httpd"),
+		Version:     Version("8"),
+	}
+	target := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	options := NewAdvancedMatchOptions()
+	if matchPartial(criteria, target, options) {
+		t.Error("matchPartial should return false when ProductName doesn't match")
+	}
+}
+
+// TestMatchPartial_VersionCompareMode tests matchPartial with non-exact VersionCompareMode
+func TestMatchPartial_VersionCompareMode(t *testing.T) {
+	criteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("9"),
+	}
+	target := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	options := NewAdvancedMatchOptions()
+	options.VersionCompareMode = "greater"
+	if matchPartial(criteria, target, options) {
+		t.Error("matchPartial with version compare mode 'greater' should return false when criteria version > target")
+	}
+}
+
+// TestMatchDistance_VersionMatchNonExact tests matchDistance with a version match in non-exact mode
+func TestMatchDistance_VersionMatchNonExact(t *testing.T) {
+	criteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	target := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	options := &AdvancedMatchOptions{
+		VersionCompareMode: "greater",
+		ScoreThreshold:     0.0,
+	}
+	// When versions match, the score should be > 0
+	result := matchDistance(criteria, target, options)
+	if !result {
+		t.Error("matchDistance should return true when all fields match in non-exact version mode")
+	}
+}
+
+	// TestMatchWithRegex_CoverageGap_RegexEditionMismatch tests matchWithRegex returning false on Edition mismatch
+	func TestMatchWithRegex_CoverageGap_RegexEditionMismatch(t *testing.T) {
+		criteria := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "10",
+			Edition:     "home",
+		}
+		target := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "10",
+			Edition:     "professional",
+		}
+		options := &AdvancedMatchOptions{
+			UseRegex:        true,
+			MatchCommonOnly: false,
+		}
+		if matchWithRegex(criteria, target, options) {
+			t.Error("matchWithRegex with Edition mismatch should return false")
+		}
+	}
+
+	// TestMatchWithRegex_CoverageGap_RegexLanguageMismatch tests matchWithRegex returning false on Language mismatch
+	func TestMatchWithRegex_CoverageGap_RegexLanguageMismatch(t *testing.T) {
+		criteria := &CPE{
+			Part:     *PartApplication,
+			Vendor:   "microsoft",
+			ProductName: "windows",
+			Version:  "10",
+			Update:   "*",
+			Edition:  "*",
+			Language: "fr",
+		}
+		target := &CPE{
+			Part:     *PartApplication,
+			Vendor:   "microsoft",
+			ProductName: "windows",
+			Version:  "10",
+			Update:   "sp1",
+			Edition:  "pro",
+			Language: "en",
+		}
+		options := &AdvancedMatchOptions{
+			UseRegex:        true,
+			MatchCommonOnly: false,
+		}
+		if matchWithRegex(criteria, target, options) {
+			t.Error("matchWithRegex with Language mismatch should return false")
+		}
+	}
+
+	// TestMatchWithRegex_CoverageGap_RegexSoftwareEditionMismatch tests matchWithRegex returning false on SoftwareEdition mismatch
+	func TestMatchWithRegex_CoverageGap_RegexSoftwareEditionMismatch(t *testing.T) {
+		criteria := &CPE{
+			Part:            *PartApplication,
+			Vendor:          "microsoft",
+			ProductName:     "windows",
+			Version:         "10",
+			Update:          "*",
+			Edition:         "*",
+			Language:        "*",
+			SoftwareEdition: "enterprise",
+		}
+		target := &CPE{
+			Part:            *PartApplication,
+			Vendor:          "microsoft",
+			ProductName:     "windows",
+			Version:         "10",
+			Update:          "sp1",
+			Edition:         "pro",
+			Language:        "en",
+			SoftwareEdition: "home",
+		}
+		options := &AdvancedMatchOptions{
+			UseRegex:        true,
+			MatchCommonOnly: false,
+		}
+		if matchWithRegex(criteria, target, options) {
+			t.Error("matchWithRegex with SoftwareEdition mismatch should return false")
+		}
+	}
+
+	// TestMatchWithRegex_CoverageGap_RegexTargetSoftwareMismatch tests matchWithRegex returning false on TargetSoftware mismatch
+	func TestMatchWithRegex_CoverageGap_RegexTargetSoftwareMismatch(t *testing.T) {
+		criteria := &CPE{
+			Part:            *PartApplication,
+			Vendor:          "microsoft",
+			ProductName:     "windows",
+			Version:         "10",
+			Update:          "*",
+			Edition:         "*",
+			Language:        "*",
+			SoftwareEdition: "*",
+			TargetSoftware:  "linux",
+		}
+		target := &CPE{
+			Part:            *PartApplication,
+			Vendor:          "microsoft",
+			ProductName:     "windows",
+			Version:         "10",
+			Update:          "sp1",
+			Edition:         "pro",
+			Language:        "en",
+			SoftwareEdition: "enterprise",
+			TargetSoftware:  "windows",
+		}
+		options := &AdvancedMatchOptions{
+			UseRegex:        true,
+			MatchCommonOnly: false,
+		}
+		if matchWithRegex(criteria, target, options) {
+			t.Error("matchWithRegex with TargetSoftware mismatch should return false")
+		}
+	}
+
+	// TestMatchWithRegex_CoverageGap_RegexTargetHardwareMismatch tests matchWithRegex returning false on TargetHardware mismatch
+	func TestMatchWithRegex_CoverageGap_RegexTargetHardwareMismatch(t *testing.T) {
+		criteria := &CPE{
+			Part:            *PartApplication,
+			Vendor:          "microsoft",
+			ProductName:     "windows",
+			Version:         "10",
+			Update:          "*",
+			Edition:         "*",
+			Language:        "*",
+			SoftwareEdition: "*",
+			TargetSoftware:  "*",
+			TargetHardware:  "arm",
+		}
+		target := &CPE{
+			Part:            *PartApplication,
+			Vendor:          "microsoft",
+			ProductName:     "windows",
+			Version:         "10",
+			Update:          "sp1",
+			Edition:         "pro",
+			Language:        "en",
+			SoftwareEdition: "enterprise",
+			TargetSoftware:  "linux",
+			TargetHardware:  "x86",
+		}
+		options := &AdvancedMatchOptions{
+			UseRegex:        true,
+			MatchCommonOnly: false,
+		}
+		if matchWithRegex(criteria, target, options) {
+			t.Error("matchWithRegex with TargetHardware mismatch should return false")
+		}
+	}
+
+	// TestMatchWithRegex_CoverageGap_RegexOtherMismatch tests matchWithRegex returning false on Other mismatch
+	func TestMatchWithRegex_CoverageGap_RegexOtherMismatch(t *testing.T) {
+		criteria := &CPE{
+			Part:            *PartApplication,
+			Vendor:          "microsoft",
+			ProductName:     "windows",
+			Version:         "10",
+			Update:          "*",
+			Edition:         "*",
+			Language:        "*",
+			SoftwareEdition: "*",
+			TargetSoftware:  "*",
+			TargetHardware:  "*",
+			Other:           "custom1",
+		}
+		target := &CPE{
+			Part:            *PartApplication,
+			Vendor:          "microsoft",
+			ProductName:     "windows",
+			Version:         "10",
+			Update:          "sp1",
+			Edition:         "pro",
+			Language:        "en",
+			SoftwareEdition: "enterprise",
+			TargetSoftware:  "linux",
+			TargetHardware:  "x86",
+			Other:           "custom2",
+		}
+		options := &AdvancedMatchOptions{
+			UseRegex:        true,
+			MatchCommonOnly: false,
+		}
+		if matchWithRegex(criteria, target, options) {
+			t.Error("matchWithRegex with Other mismatch should return false")
+		}
+	}
+
+	// TestMatchPartial_CoverageGap_VersionCompareFails tests matchPartial where version compare fails
+	func TestMatchPartial_CoverageGap_VersionCompareFails(t *testing.T) {
+		criteria := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "11",
+		}
+		target := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "10",
+		}
+		options := &AdvancedMatchOptions{
+			PartialMatch:       true,
+			VersionCompareMode: "greater",
+		}
+		if matchPartial(criteria, target, options) {
+			t.Error("matchPartial with version compare greater failing should return false")
+		}
+	}
+
+	// TestMatchPartial_CoverageGap_UpdateMismatchNonCommon tests matchPartial update mismatch in non-common fields
+	func TestMatchPartial_CoverageGap_UpdateMismatchNonCommon(t *testing.T) {
+		criteria := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "*",
+			Update:      "sp2",
+		}
+		target := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "10",
+			Update:      "sp1",
+		}
+		options := &AdvancedMatchOptions{
+			PartialMatch:    true,
+			MatchCommonOnly: false,
+		}
+		if matchPartial(criteria, target, options) {
+			t.Error("matchPartial with Update mismatch in non-common fields should return false")
+		}
+	}
+
+	// TestMatchDistance_CoverageGap_VersionCompareNonExactMatch tests matchDistance with non-exact version compare that matches
+	func TestMatchDistance_CoverageGap_VersionCompareNonExactMatch(t *testing.T) {
+		criteria := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "10",
+		}
+		target := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "11",
+		}
+		options := &AdvancedMatchOptions{
+			ScoreThreshold:     0.5,
+			VersionCompareMode: "greater",
+			MatchCommonOnly:    true,
+			FieldOptions:       make(map[string]FieldMatchOption),
+		}
+		if !matchDistance(criteria, target, options) {
+			t.Error("matchDistance with version compare greater should match when target version is greater")
+		}
+	}
+
+	// TestMatchDistance_CoverageGap_VersionCompareNonExactRequiredMismatch tests matchDistance with non-exact version compare that fails required
+	func TestMatchDistance_CoverageGap_VersionCompareNonExactRequiredMismatch(t *testing.T) {
+		criteria := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "11",
+		}
+		target := &CPE{
+			Part:        *PartApplication,
+			Vendor:      "microsoft",
+			ProductName: "windows",
+			Version:     "10",
+		}
+		options := &AdvancedMatchOptions{
+			ScoreThreshold:     0.0,
+			VersionCompareMode: "greater",
+			MatchCommonOnly:    true,
+			FieldOptions: map[string]FieldMatchOption{
+				"version": {Required: true, Weight: 0.8},
+			},
+		}
+		if matchDistance(criteria, target, options) {
+			t.Error("matchDistance with required version compare greater failing should return false")
+		}
+	}
+
+// TestMatchDistance_ExactVersionMatch tests matchDistance with VersionCompareMode="exact" and matching versions
+func TestMatchDistance_ExactVersionMatch(t *testing.T) {
+	criteria := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	target := &CPE{
+		Part:        *PartApplication,
+		Vendor:      Vendor("apache"),
+		ProductName: Product("tomcat"),
+		Version:     Version("8"),
+	}
+	options := NewAdvancedMatchOptions()
+	options.ScoreThreshold = 0.0
+	// Default VersionCompareMode is "exact" - this should cover the else-branch at line 739
+	result := matchDistance(criteria, target, options)
+	if !result {
+		t.Error("matchDistance with exact version mode and matching versions should return true")
+	}
+}
