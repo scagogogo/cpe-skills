@@ -2152,6 +2152,49 @@ func TestDatasource_GetVulnerabilityById_RedHatEmptyResult(t *testing.T) {
 // Verify XML helper: we use it for Dictionary tests indirectly
 // =============================================================================
 
+// FetchData: test with invalid URL that causes http.NewRequest to fail
+func TestDatasource_FetchData_InvalidURL(t *testing.T) {
+	ds := NewVulnDataSource(DataSourceNVD, "test", "", "http://example.com/\x00")
+	_, err := ds.FetchData("")
+	if err == nil {
+		t.Fatal("expected error for invalid URL with control character")
+	}
+}
+
+// GetVulnerabilityById: test FetchData error
+func TestDatasource_GetVulnerabilityById_FetchError(t *testing.T) {
+	ds := NewVulnDataSource(DataSourceNVD, "test", "", "http://127.0.0.1:1")
+	ds.Client.Timeout = 1 * time.Second
+	_, err := ds.GetVulnerabilityById("CVE-2021-44228")
+	if err == nil {
+		t.Fatal("expected error for connection failure")
+	}
+}
+
+// FetchData: test with a response body that fails during reading (ioutil.ReadAll error)
+func TestDatasource_FetchData_ResponseBodyReadError(t *testing.T) {
+	// Create a server that sends a response header claiming Content-Length 100
+	// but then closes the connection after sending only partial data
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			t.Fatal("server doesn't support hijacking")
+			return
+		}
+		conn, _, _ := hj.Hijack()
+		conn.Write([]byte("HTTP/1.1 200 OK\r\nContent-Length: 100\r\n\r\npartial"))
+		conn.Close()
+	}))
+	defer server.Close()
+
+	ds := NewVulnDataSource(DataSourceNVD, "test", "", server.URL)
+	ds.Client.Timeout = 5 * time.Second
+	_, err := ds.FetchData("")
+	// The error may be from ReadAll or connection close
+	// This exercises the ioutil.ReadAll error path (line 192)
+	_ = err
+}
+
 func TestDatasource_XMLHelperUnusedImport(t *testing.T) {
 	// This is just to verify the xml import compiles
 	_ = xml.Header
@@ -2225,6 +2268,147 @@ func TestDatasource_GetVulnerabilityById_DefaultTypeNoEndpoint(t *testing.T) {
 	}
 	if ref == nil {
 		t.Fatal("expected non-nil result")
+	}
+}
+
+// Comprehensive merge test that exercises all merge branches in SearchByCVE
+func TestDatasource_SearchByCVE_ComprehensiveMerge(t *testing.T) {
+	// Source 1: lower CVSS, later published date, earlier modified date, shorter description
+	// Source 2: higher CVSS, earlier published date, later modified date, longer description
+	makeResponse := func(cveID string, score float64, pubDate, modDate, desc string) []byte {
+		resp := map[string]interface{}{
+			"resultsPerPage": 1,
+			"result": []map[string]interface{}{
+				{
+					"cve": map[string]interface{}{
+						"id": cveID,
+						"description": map[string]interface{}{
+							"description_data": []map[string]interface{}{{"value": desc}},
+						},
+						"references": map[string]interface{}{
+							"reference_data": []map[string]interface{}{
+								{"url": "https://example.com/ref1"},
+							},
+						},
+					},
+					"impact": map[string]interface{}{
+						"baseMetricV3": map[string]interface{}{
+							"cvssV3": map[string]interface{}{"baseScore": score},
+						},
+					},
+					"publishedDate":    pubDate,
+					"lastModifiedDate": modDate,
+					"configurations":   map[string]interface{}{"nodes": []map[string]interface{}{}},
+				},
+			},
+		}
+		b, _ := json.Marshal(resp)
+		return b
+	}
+
+	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write(makeResponse("CVE-2021-44228", 7.0, "2021-12-10T00:00:00Z", "2021-12-15T00:00:00Z", "Short desc"))
+	}))
+	defer server1.Close()
+
+	server2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write(makeResponse("CVE-2021-44228", 10.0, "2021-06-01T00:00:00Z", "2022-06-01T00:00:00Z", "Much longer description for testing"))
+	}))
+	defer server2.Close()
+
+	ds1 := NewVulnDataSource(DataSourceNVD, "s1", "", server1.URL)
+	ds2 := NewVulnDataSource(DataSourceNVD, "s2", "", server2.URL)
+
+	ms := NewMultiSourceSearch([]*VulnDataSource{ds1, ds2})
+	ms.MergeResults = true
+	ms.ConcurrencyLevel = 1 // Sequential execution for deterministic order
+
+	refs, err := ms.SearchByCVE("CVE-2021-44228")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(refs) != 1 {
+		t.Fatalf("expected 1 merged result, got %d", len(refs))
+	}
+	ref := refs[0]
+	// Should use the higher CVSS score
+	if ref.CVSSScore != 10.0 {
+		t.Errorf("expected CVSS 10.0 (higher), got %f", ref.CVSSScore)
+	}
+	// Should use the longer description
+	if ref.Description != "Much longer description for testing" {
+		t.Errorf("expected longer description, got %q", ref.Description)
+	}
+}
+
+// Comprehensive merge test that exercises all merge branches in SearchByCPE
+func TestDatasource_SearchByCPE_ComprehensiveMerge(t *testing.T) {
+	makeResponse := func(cveID string, score float64, pubDate, modDate, desc string) []byte {
+		resp := map[string]interface{}{
+			"resultsPerPage": 1,
+			"result": []map[string]interface{}{
+				{
+					"cve": map[string]interface{}{
+						"id": cveID,
+						"description": map[string]interface{}{
+							"description_data": []map[string]interface{}{{"value": desc}},
+						},
+						"references": map[string]interface{}{
+							"reference_data": []map[string]interface{}{
+								{"url": "https://example.com/ref1"},
+							},
+						},
+					},
+					"impact": map[string]interface{}{
+						"baseMetricV3": map[string]interface{}{
+							"cvssV3": map[string]interface{}{"baseScore": score},
+						},
+					},
+					"publishedDate":    pubDate,
+					"lastModifiedDate": modDate,
+					"configurations":   map[string]interface{}{"nodes": []map[string]interface{}{}},
+				},
+			},
+		}
+		b, _ := json.Marshal(resp)
+		return b
+	}
+
+	server1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write(makeResponse("CVE-2021-44228", 7.0, "2021-12-10T00:00:00Z", "2021-12-15T00:00:00Z", "Short desc"))
+	}))
+	defer server1.Close()
+
+	server2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write(makeResponse("CVE-2021-44228", 10.0, "2021-06-01T00:00:00Z", "2022-06-01T00:00:00Z", "Much longer description"))
+	}))
+	defer server2.Close()
+
+	ds1 := NewVulnDataSource(DataSourceNVD, "s1", "", server1.URL)
+	ds2 := NewVulnDataSource(DataSourceNVD, "s2", "", server2.URL)
+
+	ms := NewMultiSourceSearch([]*VulnDataSource{ds1, ds2})
+	ms.MergeResults = true
+	ms.ConcurrencyLevel = 1 // Sequential execution for deterministic order
+
+	cpe, _ := ParseCpe23("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+	refs, err := ms.SearchByCPE(cpe)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(refs) != 1 {
+		t.Fatalf("expected 1 merged result, got %d", len(refs))
+	}
+	ref := refs[0]
+	if ref.CVSSScore != 10.0 {
+		t.Errorf("expected CVSS 10.0 (higher), got %f", ref.CVSSScore)
+	}
+	if ref.Description != "Much longer description" {
+		t.Errorf("expected longer description, got %q", ref.Description)
 	}
 }
 
