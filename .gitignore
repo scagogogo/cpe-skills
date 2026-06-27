@@ -1,5 +1,10 @@
 # Dependencies
 docs/node_modules/
+website/node_modules/
+
+# Build output
+docs/.vitepress/dist/
+website/dist/
 
 # Coverage
 coverage.out
