@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"regexp"
@@ -20,12 +20,12 @@ import (
  * 示例：
  *   ```go
  *   // 创建匹配选项，忽略版本匹配
- *   options := &cpe.MatchOptions{
+ *   options := &cpeskills.MatchOptions{
  *       IgnoreVersion: true,
  *   }
  *
  *   // 创建匹配选项，使用版本范围匹配
- *   options := &cpe.MatchOptions{
+ *   options := &cpeskills.MatchOptions{
  *       VersionRange: true,
  *       MinVersion: "2.0",
  *       MaxVersion: "3.5",
@@ -78,10 +78,10 @@ type MatchOptions struct {
  * 示例：
  *   ```go
  *   // 使用默认匹配选项
- *   options := cpe.DefaultMatchOptions()
+ *   options := cpeskills.DefaultMatchOptions()
  *
  *   // 在默认选项基础上修改
- *   options := cpe.DefaultMatchOptions()
+ *   options := cpeskills.DefaultMatchOptions()
  *   options.UseRegex = true
  *   ```
  *
@@ -112,29 +112,29 @@ func DefaultMatchOptions() *MatchOptions {
  * 示例：
  *   ```go
  *   // 示例1：查找所有Microsoft Windows产品
- *   criteria := &cpe.CPE{
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
+ *   criteria := &cpeskills.CPE{
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
  *   }
- *   results := cpe.Search(allCPEs, criteria, nil) // 使用默认匹配选项
+ *   results := cpeskills.Search(allCPEs, criteria, nil) // 使用默认匹配选项
  *
  *   // 示例2：查找所有2.0到3.0版本范围的Apache产品
- *   criteria := &cpe.CPE{
- *       Vendor: cpe.Vendor("apache"),
+ *   criteria := &cpeskills.CPE{
+ *       Vendor: cpeskills.Vendor("apache"),
  *   }
- *   options := cpe.DefaultMatchOptions()
+ *   options := cpeskills.DefaultMatchOptions()
  *   options.VersionRange = true
  *   options.MinVersion = "2.0"
  *   options.MaxVersion = "3.0"
- *   results := cpe.Search(allCPEs, criteria, options)
+ *   results := cpeskills.Search(allCPEs, criteria, options)
  *
  *   // 示例3：使用正则表达式查找所有包含"sql"的产品
- *   criteria := &cpe.CPE{
- *       ProductName: cpe.Product(".*sql.*"),
+ *   criteria := &cpeskills.CPE{
+ *       ProductName: cpeskills.Product(".*sql.*"),
  *   }
- *   options := cpe.DefaultMatchOptions()
+ *   options := cpeskills.DefaultMatchOptions()
  *   options.UseRegex = true
- *   results := cpe.Search(allCPEs, criteria, options)
+ *   results := cpeskills.Search(allCPEs, criteria, options)
  *   ```
  *
  * 注意事项：
@@ -279,7 +279,7 @@ func matchCPE(cpe, criteria *CPE, options *MatchOptions) bool {
  *   ```go
  *   // 查找受CVE-2021-44228和CVE-2021-45046漏洞影响的所有软件
  *   cveIds := []string{"CVE-2021-44228", "CVE-2021-45046"}
- *   vulnerableCPEs := cpe.FindVulnerableCPEs(allCPEs, cveIds)
+ *   vulnerableCPEs := cpeskills.FindVulnerableCPEs(allCPEs, cveIds)
  *
  *   // 打印受影响软件的数量和详情
  *   fmt.Printf("发现%d个受影响的软件\n", len(vulnerableCPEs))

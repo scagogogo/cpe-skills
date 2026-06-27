@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -15,13 +15,13 @@ func main() {
 	fmt.Println("========= 从CPE创建WFN =========")
 
 	// 解析CPE字符串
-	originalCpe, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	originalCpe, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析CPE失败: %v", err)
 	}
 
 	// 从CPE创建WFN
-	wfn := cpe.FromCPE(originalCpe)
+	wfn := cpeskills.FromCPE(originalCpe)
 
 	// 输出WFN信息
 	fmt.Printf("原始CPE: %s\n", originalCpe.GetURI())
@@ -66,7 +66,7 @@ func main() {
 
 	// 直接从CPE 2.3字符串创建WFN
 	cpe23Str := "cpe:2.3:a:apache:tomcat:9.0.50:*:*:*:*:*:*:*"
-	wfnFromStr, err := cpe.FromCPE23String(cpe23Str)
+	wfnFromStr, err := cpeskills.FromCPE23String(cpe23Str)
 	if err != nil {
 		log.Fatalf("从CPE 2.3字符串创建WFN失败: %v", err)
 	}
@@ -96,7 +96,7 @@ func main() {
 
 	// 从CPE 2.2字符串创建WFN
 	cpe22Str := "cpe:/a:nginx:nginx:1.20.1"
-	wfnFrom22, err := cpe.FromCPE22String(cpe22Str)
+	wfnFrom22, err := cpeskills.FromCPE22String(cpe22Str)
 	if err != nil {
 		log.Fatalf("从CPE 2.2字符串创建WFN失败: %v", err)
 	}
@@ -125,14 +125,14 @@ func main() {
 	fmt.Println("========= WFN匹配 =========")
 
 	// 创建两个WFN对象
-	wfn1 := &cpe.WFN{
+	wfn1 := &cpeskills.WFN{
 		Part:    "a",
 		Vendor:  "oracle",
 		Product: "java",
 		Version: "1.8.0",
 	}
 
-	wfn2 := &cpe.WFN{
+	wfn2 := &cpeskills.WFN{
 		Part:    "a",
 		Vendor:  "oracle",
 		Product: "java",

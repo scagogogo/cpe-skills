@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"errors"
@@ -170,31 +170,31 @@ func (e *NOTExpression) String() string {
  * 示例:
  *   ```go
  *   // 解析单个CPE表达式
- *   expr1, err := cpe.ParseExpression("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+ *   expr1, err := cpeskills.ParseExpression("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
  *   if err != nil {
  *       log.Fatalf("解析表达式失败: %v", err)
  *   }
  *
  *   // 解析OR表达式
- *   orExpr, err := cpe.ParseExpression("OR(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*, cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*)")
+ *   orExpr, err := cpeskills.ParseExpression("OR(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*, cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*)")
  *   if err != nil {
  *       log.Fatalf("解析OR表达式失败: %v", err)
  *   }
  *
  *   // 解析AND表达式
- *   andExpr, err := cpe.ParseExpression("AND(cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*, cpe:2.3:a:*:windows:*:*:*:*:*:*:*:*)")
+ *   andExpr, err := cpeskills.ParseExpression("AND(cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*, cpe:2.3:a:*:windows:*:*:*:*:*:*:*:*)")
  *   if err != nil {
  *       log.Fatalf("解析AND表达式失败: %v", err)
  *   }
  *
  *   // 解析NOT表达式
- *   notExpr, err := cpe.ParseExpression("NOT(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*)")
+ *   notExpr, err := cpeskills.ParseExpression("NOT(cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*)")
  *   if err != nil {
  *       log.Fatalf("解析NOT表达式失败: %v", err)
  *   }
  *
  *   // 评估表达式
- *   targetCPE, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
+ *   targetCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
  *   fmt.Println("Windows 11匹配OR表达式:", orExpr.Evaluate(targetCPE))
  *   // 输出: Windows 11匹配OR表达式: true
  *   ```

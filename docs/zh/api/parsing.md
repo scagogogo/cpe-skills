@@ -21,7 +21,7 @@ func ParseCpe23(cpe23 string) (*CPE, error)
 
 **示例：**
 ```go
-cpeObj, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpeObj, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 if err != nil {
     log.Fatal(err)
 }
@@ -45,7 +45,7 @@ func ParseCpe22(cpe22 string) (*CPE, error)
 
 **示例：**
 ```go
-cpeObj, err := cpe.ParseCpe22("cpe:/a:apache:tomcat:9.0.0")
+cpeObj, err := cpeskills.ParseCpe22("cpe:/a:apache:tomcat:9.0.0")
 if err != nil {
     log.Fatal(err)
 }
@@ -70,8 +70,8 @@ func ParseCPE(cpeString string) (*CPE, error)
 **示例：**
 ```go
 // 自动检测格式
-cpe23, _ := cpe.ParseCPE("cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*")
-cpe22, _ := cpe.ParseCPE("cpe:/a:oracle:java:11.0.12")
+cpe23, _ := cpeskills.ParseCPE("cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*")
+cpe22, _ := cpeskills.ParseCPE("cpe:/a:oracle:java:11.0.12")
 
 fmt.Printf("两个CPE是否相同: %t\n", cpe23.Match(cpe22))
 ```
@@ -101,7 +101,7 @@ cpeStrings := []string{
     "invalid-cpe-string",
 }
 
-cpes, errors := cpe.ParseCPEList(cpeStrings)
+cpes, errors := cpeskills.ParseCPEList(cpeStrings)
 fmt.Printf("成功解析: %d, 错误: %d\n", len(cpes), len(errors))
 ```
 
@@ -122,7 +122,7 @@ func ParseCPEFromFile(filename string) ([]*CPE, error)
 
 **示例：**
 ```go
-cpes, err := cpe.ParseCPEFromFile("cpe_list.txt")
+cpes, err := cpeskills.ParseCPEFromFile("cpe_list.txt")
 if err != nil {
     log.Fatal(err)
 }
@@ -155,13 +155,13 @@ func ParseWithOptions(cpeString string, options *ParseOptions) (*CPE, error)
 
 **示例：**
 ```go
-options := &cpe.ParseOptions{
+options := &cpeskills.ParseOptions{
     StrictMode:     true,
     NormalizeCase:  true,
     ValidateFormat: true,
 }
 
-cpeObj, err := cpe.ParseWithOptions(cpeString, options)
+cpeObj, err := cpeskills.ParseWithOptions(cpeString, options)
 if err != nil {
     log.Printf("严格模式解析失败: %v", err)
 }
@@ -185,7 +185,7 @@ func ValidateCPEFormat(cpeString string) error
 
 **示例：**
 ```go
-err := cpe.ValidateCPEFormat("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+err := cpeskills.ValidateCPEFormat("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 if err != nil {
     fmt.Printf("格式无效: %v\n", err)
 } else {
@@ -213,9 +213,9 @@ func IsCPE22Format(cpeString string) bool
 ```go
 cpeString := "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*"
 
-if cpe.IsCPE23Format(cpeString) {
+if cpeskills.IsCPE23Format(cpeString) {
     fmt.Println("这是CPE 2.3格式")
-} else if cpe.IsCPE22Format(cpeString) {
+} else if cpeskills.IsCPE22Format(cpeString) {
     fmt.Println("这是CPE 2.2格式")
 } else {
     fmt.Println("未知格式")
@@ -234,7 +234,7 @@ func ParsePart(partString string) (Part, error)
 
 **示例：**
 ```go
-part, err := cpe.ParsePart("a")
+part, err := cpeskills.ParsePart("a")
 if err != nil {
     log.Fatal(err)
 }
@@ -276,7 +276,7 @@ CPE解析器能够正确处理特殊值：
 
 ```go
 // 解析包含通配符的CPE
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
 fmt.Printf("产品: %s\n", cpeObj.ProductName) // 输出: *
 ```
 
@@ -286,7 +286,7 @@ fmt.Printf("产品: %s\n", cpeObj.ProductName) // 输出: *
 
 ```go
 // 包含特殊字符的CPE
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:vendor:product\\~name:1.0:*:*:*:*:*:*:*")
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:vendor:product\\~name:1.0:*:*:*:*:*:*:*")
 fmt.Printf("产品: %s\n", cpeObj.ProductName) // 输出: product~name
 ```
 
@@ -323,8 +323,8 @@ func IsValidationError(err error) bool
 
 **示例：**
 ```go
-_, err := cpe.ParseCpe23("invalid-cpe")
-if cpe.IsFormatError(err) {
+_, err := cpeskills.ParseCpe23("invalid-cpe")
+if cpeskills.IsFormatError(err) {
     fmt.Println("这是一个格式错误")
 }
 ```
@@ -337,14 +337,14 @@ if cpe.IsFormatError(err) {
 
 ```go
 // 启用解析缓存
-cpe.EnableParseCache(1000) // 缓存1000个解析结果
+cpeskills.EnableParseCache(1000) // 缓存1000个解析结果
 
 // 解析CPE（会被缓存）
-cpeObj1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpeObj2, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*") // 从缓存获取
+cpeObj1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpeObj2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*") // 从缓存获取
 
 // 清除缓存
-cpe.ClearParseCache()
+cpeskills.ClearParseCache()
 ```
 
 ### 批量解析优化
@@ -370,7 +370,7 @@ func main() {
     fmt.Println("=== 基本解析示例 ===")
     
     // 解析CPE 2.3
-    cpe23, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    cpe23, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }
@@ -382,7 +382,7 @@ func main() {
     fmt.Printf("  版本: %s\n", cpe23.Version)
     
     // 解析CPE 2.2
-    cpe22, err := cpe.ParseCpe22("cpe:/a:apache:tomcat:9.0.0")
+    cpe22, err := cpeskills.ParseCpe22("cpe:/a:apache:tomcat:9.0.0")
     if err != nil {
         log.Fatal(err)
     }
@@ -402,7 +402,7 @@ func main() {
         "invalid-cpe-format", // 这个会产生错误
     }
     
-    cpes, errors := cpe.ParseCPEList(cpeStrings)
+    cpes, errors := cpeskills.ParseCPEList(cpeStrings)
     
     fmt.Printf("成功解析: %d 个CPE\n", len(cpes))
     fmt.Printf("解析错误: %d 个\n", len(errors))
@@ -426,7 +426,7 @@ func main() {
     }
     
     for _, testStr := range testStrings {
-        err := cpe.ValidateCPEFormat(testStr)
+        err := cpeskills.ValidateCPEFormat(testStr)
         if err != nil {
             fmt.Printf("❌ %s - %v\n", testStr, err)
         } else {

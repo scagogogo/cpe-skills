@@ -76,7 +76,7 @@ func NewFileStorage(baseDir string, enableCache bool) (*FileStorage, error)
 
 **示例：**
 ```go
-storage, err := cpe.NewFileStorage("./cpe_data", true)
+storage, err := cpeskills.NewFileStorage("./cpe_data", true)
 if err != nil {
     log.Fatal(err)
 }
@@ -114,7 +114,7 @@ func (fs *FileStorage) Restore(backupPath string) error
 **示例：**
 ```go
 // 存储CPE
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 err = storage.Store(cpeObj)
 if err != nil {
     log.Printf("存储失败: %v", err)
@@ -150,10 +150,10 @@ func NewMemoryStorage() *MemoryStorage
 
 **示例：**
 ```go
-storage := cpe.NewMemoryStorage()
+storage := cpeskills.NewMemoryStorage()
 
 // 内存存储不需要初始化
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
 err := storage.Store(cpeObj)
 if err != nil {
     log.Printf("存储失败: %v", err)
@@ -198,13 +198,13 @@ func NewDatabaseStorage(driver, connStr string) (*DatabaseStorage, error)
 **示例：**
 ```go
 // SQLite存储
-storage, err := cpe.NewDatabaseStorage("sqlite3", "./cpe.db")
+storage, err := cpeskills.NewDatabaseStorage("sqlite3", "./cpe.db")
 if err != nil {
     log.Fatal(err)
 }
 
 // PostgreSQL存储
-storage, err := cpe.NewDatabaseStorage("postgres", 
+storage, err := cpeskills.NewDatabaseStorage("postgres", 
     "host=localhost user=cpe dbname=cpe_db sslmode=disable")
 if err != nil {
     log.Fatal(err)
@@ -232,7 +232,7 @@ type StorageConfig struct {
 ### 配置示例
 
 ```go
-config := &cpe.StorageConfig{
+config := &cpeskills.StorageConfig{
     Type:        "file",
     Path:        "./cpe_data",
     EnableCache: true,
@@ -244,7 +244,7 @@ config := &cpe.StorageConfig{
     },
 }
 
-storage, err := cpe.NewStorageFromConfig(config)
+storage, err := cpeskills.NewStorageFromConfig(config)
 ```
 
 ## 高级功能
@@ -268,7 +268,7 @@ func (s *Storage) ListIndexes() ([]IndexInfo, error)
 **示例：**
 ```go
 // 为供应商字段创建索引
-err = storage.CreateIndex("vendor", cpe.IndexTypeBTree)
+err = storage.CreateIndex("vendor", cpeskills.IndexTypeBTree)
 if err != nil {
     log.Printf("创建索引失败: %v", err)
 }
@@ -370,10 +370,10 @@ type Filter struct {
 
 ```go
 // 构建查询
-query := cpe.NewQuery().
-    Filter("vendor", cpe.OpEquals, "microsoft").
-    Filter("part", cpe.OpEquals, "a").
-    SortBy("product", cpe.SortAsc).
+query := cpeskills.NewQuery().
+    Filter("vendor", cpeskills.OpEquals, "microsoft").
+    Filter("part", cpeskills.OpEquals, "a").
+    SortBy("product", cpeskills.SortAsc).
     Limit(10)
 
 // 执行查询
@@ -412,11 +412,11 @@ const (
 
 **示例：**
 ```go
-cacheConfig := &cpe.CacheConfig{
+cacheConfig := &cpeskills.CacheConfig{
     Enabled:  true,
     Size:     1000,
     TTL:      30 * time.Minute,
-    Strategy: cpe.CacheLRU,
+    Strategy: cpeskills.CacheLRU,
 }
 
 storage.SetCacheConfig(cacheConfig)
@@ -445,10 +445,10 @@ type Migration interface {
 
 ```go
 // 从文件存储迁移到数据库存储
-sourceStorage, _ := cpe.NewFileStorage("./old_data", false)
-targetStorage, _ := cpe.NewDatabaseStorage("sqlite3", "./new_data.db")
+sourceStorage, _ := cpeskills.NewFileStorage("./old_data", false)
+targetStorage, _ := cpeskills.NewDatabaseStorage("sqlite3", "./new_data.db")
 
-migration := cpe.NewMigration()
+migration := cpeskills.NewMigration()
 err = migration.Migrate(sourceStorage, targetStorage)
 if err != nil {
     log.Printf("迁移失败: %v", err)
@@ -476,7 +476,7 @@ func main() {
     fmt.Println("=== 存储示例 ===")
     
     // 创建文件存储
-    storage, err := cpe.NewFileStorage("./cpe_storage", true)
+    storage, err := cpeskills.NewFileStorage("./cpe_storage", true)
     if err != nil {
         log.Fatal(err)
     }
@@ -489,7 +489,7 @@ func main() {
     }
     
     // 创建测试CPE
-    cpes := []*cpe.CPE{}
+    cpes := []*cpeskills.CPE{}
     cpeStrings := []string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
@@ -497,7 +497,7 @@ func main() {
     }
     
     for _, cpeStr := range cpeStrings {
-        cpeObj, err := cpe.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
             log.Printf("解析失败: %v", err)
             continue
@@ -551,9 +551,9 @@ func main() {
     
     // 演示查询功能
     fmt.Println("\n高级查询示例:")
-    query := cpe.NewQuery().
-        Filter("vendor", cpe.OpEquals, "apache").
-        SortBy("product", cpe.SortAsc).
+    query := cpeskills.NewQuery().
+        Filter("vendor", cpeskills.OpEquals, "apache").
+        SortBy("product", cpeskills.SortAsc).
         Limit(5)
     
     queryResults, err := storage.Query(query)
@@ -573,7 +573,7 @@ func main() {
         log.Printf("开始事务失败: %v", err)
     } else {
         // 在事务中添加新CPE
-        newCPE, _ := cpe.ParseCpe23("cpe:2.3:a:mozilla:firefox:95.0:*:*:*:*:*:*:*")
+        newCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:mozilla:firefox:95.0:*:*:*:*:*:*:*")
         err = tx.Store(newCPE)
         if err != nil {
             tx.Rollback()

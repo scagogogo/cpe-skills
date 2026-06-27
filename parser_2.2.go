@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"strings"
@@ -22,7 +22,7 @@ const CPE22Header = "cpe"
  * 示例:
  *   ```go
  *   // 解析基本格式的CPE 2.2
- *   tomcatCPE, err := cpe.ParseCpe22("cpe:/a:apache:tomcat:8.5.0")
+ *   tomcatCPE, err := cpeskills.ParseCpe22("cpe:/a:apache:tomcat:8.5.0")
  *   if err != nil {
  *       log.Fatalf("解析CPE失败: %v", err)
  *   }
@@ -30,7 +30,7 @@ const CPE22Header = "cpe"
  *   // 输出: 厂商: apache, 产品: tomcat, 版本: 8.5.0
  *
  *   // 解析带扩展的CPE 2.2
- *   mysqlCPE, err := cpe.ParseCpe22("cpe:/a:mysql:mysql:5.7.12:::~~~enterprise~")
+ *   mysqlCPE, err := cpeskills.ParseCpe22("cpe:/a:mysql:mysql:5.7.12:::~~~enterprise~")
  *   if err != nil {
  *       log.Fatalf("解析CPE失败: %v", err)
  *   }
@@ -153,25 +153,25 @@ func ParseCpe22(cpe22 string) (*CPE, error) {
  * 示例:
  *   ```go
  *   // 创建并格式化基本CPE
- *   cpe := &cpe.CPE{
- *       Part:        *cpe.PartApplication,
- *       Vendor:      cpe.Vendor("apache"),
- *       ProductName: cpe.Product("tomcat"),
- *       Version:     cpe.Version("8.5.0"),
+ *   cpe := &cpeskills.CPE{
+ *       Part:        *cpeskills.PartApplication,
+ *       Vendor:      cpeskills.Vendor("apache"),
+ *       ProductName: cpeskills.Product("tomcat"),
+ *       Version:     cpeskills.Version("8.5.0"),
  *   }
- *   cpe22String := cpe.FormatCpe22(cpe)
+ *   cpe22String := cpeskills.FormatCpe22(cpe)
  *   fmt.Println(cpe22String)
  *   // 输出: cpe:/a:apache:tomcat:8.5.0
  *
  *   // 创建并格式化带扩展字段的CPE
- *   cpe := &cpe.CPE{
- *       Part:           *cpe.PartApplication,
- *       Vendor:         cpe.Vendor("mysql"),
- *       ProductName:    cpe.Product("mysql"),
- *       Version:        cpe.Version("5.7.12"),
+ *   cpe := &cpeskills.CPE{
+ *       Part:           *cpeskills.PartApplication,
+ *       Vendor:         cpeskills.Vendor("mysql"),
+ *       ProductName:    cpeskills.Product("mysql"),
+ *       Version:        cpeskills.Version("5.7.12"),
  *       SoftwareEdition: "enterprise",
  *   }
- *   cpe22String := cpe.FormatCpe22(cpe)
+ *   cpe22String := cpeskills.FormatCpe22(cpe)
  *   fmt.Println(cpe22String)
  *   // 输出: cpe:/a:mysql:mysql:5.7.12:::~~~enterprise~~~
  *   ```

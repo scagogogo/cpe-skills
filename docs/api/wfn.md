@@ -43,8 +43,8 @@ Creates a WFN from a CPE object.
 **Example:**
 ```go
 // Create CPE and convert to WFN
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-wfn := cpe.FromCPE(cpeObj)
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+wfn := cpeskills.FromCPE(cpeObj)
 
 fmt.Printf("WFN Part: %s\n", wfn.Part)
 fmt.Printf("WFN Vendor: %s\n", wfn.Vendor)
@@ -69,7 +69,7 @@ Creates a WFN directly from a CPE 2.3 format string.
 
 **Example:**
 ```go
-wfn, err := cpe.FromCPE23String("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+wfn, err := cpeskills.FromCPE23String("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
 if err != nil {
     log.Fatal(err)
 }
@@ -95,7 +95,7 @@ Creates a WFN from a CPE 2.2 format string.
 
 **Example:**
 ```go
-wfn, err := cpe.FromCPE22String("cpe:/a:apache:tomcat:8.5.0")
+wfn, err := cpeskills.FromCPE22String("cpe:/a:apache:tomcat:8.5.0")
 if err != nil {
     log.Fatal(err)
 }
@@ -120,7 +120,7 @@ Converts a WFN to a CPE object.
 **Example:**
 ```go
 // Create WFN and convert to CPE
-wfn := &cpe.WFN{
+wfn := &cpeskills.WFN{
     Part:    "a",
     Vendor:  "microsoft",
     Product: "windows",
@@ -144,7 +144,7 @@ Converts a WFN to CPE 2.3 format string.
 
 **Example:**
 ```go
-wfn := &cpe.WFN{
+wfn := &cpeskills.WFN{
     Part:    "a",
     Vendor:  "apache",
     Product: "tomcat",
@@ -169,7 +169,7 @@ Converts a WFN to CPE 2.2 format string.
 
 **Example:**
 ```go
-wfn := &cpe.WFN{
+wfn := &cpeskills.WFN{
     Part:    "a",
     Vendor:  "apache",
     Product: "tomcat",
@@ -200,10 +200,10 @@ Performs WFN-level matching between two WFN objects.
 
 **Example:**
 ```go
-wfn1, _ := cpe.FromCPE23String("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-wfn2, _ := cpe.FromCPE23String("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+wfn1, _ := cpeskills.FromCPE23String("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+wfn2, _ := cpeskills.FromCPE23String("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
 
-if cpe.WFNMatch(wfn2, wfn1) {
+if cpeskills.WFNMatch(wfn2, wfn1) {
     fmt.Println("WFNs match")
 }
 ```
@@ -224,8 +224,8 @@ Instance method for WFN matching.
 
 **Example:**
 ```go
-pattern, _ := cpe.FromCPE23String("cpe:2.3:a:*:*:*:*:*:*:*:*:*:*")
-target, _ := cpe.FromCPE23String("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+pattern, _ := cpeskills.FromCPE23String("cpe:2.3:a:*:*:*:*:*:*:*:*:*:*")
+target, _ := cpeskills.FromCPE23String("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 
 if pattern.Match(target) {
     fmt.Println("Target matches pattern")
@@ -287,7 +287,7 @@ Escapes special characters in a value for WFN representation.
 
 **Example:**
 ```go
-escaped := cpe.EscapeValue("product:name")
+escaped := cpeskills.EscapeValue("product:name")
 fmt.Printf("Escaped: %s\n", escaped) // product\:name
 ```
 
@@ -307,7 +307,7 @@ Unescapes a WFN value to its original form.
 
 **Example:**
 ```go
-unescaped := cpe.UnescapeValue("product\\:name")
+unescaped := cpeskills.UnescapeValue("product\\:name")
 fmt.Printf("Unescaped: %s\n", unescaped) // product:name
 ```
 
@@ -329,14 +329,14 @@ Validates a WFN object for correctness.
 
 **Example:**
 ```go
-wfn := &cpe.WFN{
+wfn := &cpeskills.WFN{
     Part:    "a",
     Vendor:  "apache",
     Product: "tomcat",
     Version: "9.0.0",
 }
 
-err := cpe.ValidateWFN(wfn)
+err := cpeskills.ValidateWFN(wfn)
 if err != nil {
     log.Printf("WFN validation failed: %v", err)
 } else {
@@ -362,14 +362,14 @@ Normalizes a WFN by applying standard transformations.
 
 **Example:**
 ```go
-wfn := &cpe.WFN{
+wfn := &cpeskills.WFN{
     Part:    "A",           // Will be normalized to "a"
     Vendor:  "Apache",      // Will be normalized to "apache"
     Product: "Tomcat",      // Will be normalized to "tomcat"
     Version: "9.0.0",
 }
 
-normalized := cpe.NormalizeWFN(wfn)
+normalized := cpeskills.NormalizeWFN(wfn)
 fmt.Printf("Normalized vendor: %s\n", normalized.Vendor) // apache
 ```
 
@@ -387,7 +387,7 @@ import (
 func main() {
     // Create WFN from CPE 2.3 string
     fmt.Println("=== Creating WFN from CPE 2.3 ===")
-    wfn1, err := cpe.FromCPE23String("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+    wfn1, err := cpeskills.FromCPE23String("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }
@@ -399,7 +399,7 @@ func main() {
     
     // Create WFN from CPE 2.2 string
     fmt.Println("\n=== Creating WFN from CPE 2.2 ===")
-    wfn2, err := cpe.FromCPE22String("cpe:/a:microsoft:windows:10")
+    wfn2, err := cpeskills.FromCPE22String("cpe:/a:microsoft:windows:10")
     if err != nil {
         log.Fatal(err)
     }
@@ -422,8 +422,8 @@ func main() {
     
     // WFN matching
     fmt.Println("\n=== WFN Matching ===")
-    pattern, _ := cpe.FromCPE23String("cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*")
-    target, _ := cpe.FromCPE23String("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+    pattern, _ := cpeskills.FromCPE23String("cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*")
+    target, _ := cpeskills.FromCPE23String("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
     
     if pattern.Match(target) {
         fmt.Println("Target matches pattern")
@@ -433,7 +433,7 @@ func main() {
     
     // Create WFN manually
     fmt.Println("\n=== Creating WFN manually ===")
-    manualWFN := &cpe.WFN{
+    manualWFN := &cpeskills.WFN{
         Part:    "a",
         Vendor:  "oracle",
         Product: "java",
@@ -441,7 +441,7 @@ func main() {
     }
     
     // Validate WFN
-    err = cpe.ValidateWFN(manualWFN)
+    err = cpeskills.ValidateWFN(manualWFN)
     if err != nil {
         log.Printf("WFN validation failed: %v", err)
     } else {
@@ -455,8 +455,8 @@ func main() {
     // Demonstrate escape handling
     fmt.Println("\n=== Escape Handling ===")
     specialValue := "product:with:colons"
-    escaped := cpe.EscapeValue(specialValue)
-    unescaped := cpe.UnescapeValue(escaped)
+    escaped := cpeskills.EscapeValue(specialValue)
+    unescaped := cpeskills.UnescapeValue(escaped)
     
     fmt.Printf("Original: %s\n", specialValue)
     fmt.Printf("Escaped: %s\n", escaped)
@@ -464,14 +464,14 @@ func main() {
     
     // WFN normalization
     fmt.Println("\n=== WFN Normalization ===")
-    unnormalizedWFN := &cpe.WFN{
+    unnormalizedWFN := &cpeskills.WFN{
         Part:    "A",
         Vendor:  "APACHE",
         Product: "TOMCAT",
         Version: "9.0.0",
     }
     
-    normalizedWFN := cpe.NormalizeWFN(unnormalizedWFN)
+    normalizedWFN := cpeskills.NormalizeWFN(unnormalizedWFN)
     fmt.Printf("Original vendor: %s\n", unnormalizedWFN.Vendor)
     fmt.Printf("Normalized vendor: %s\n", normalizedWFN.Vendor)
 }

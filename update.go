@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 /**
  * Update 表示CPE中产品的更新标识符
@@ -11,25 +11,25 @@ package cpe
  * 示例:
  *   ```go
  *   // 创建一个表示Windows 10 SP1的CPE
- *   windowsCPE := &cpe.CPE{
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
- *       Version:     cpe.Version("10"),
- *       Update:      cpe.Update("sp1"),
+ *   windowsCPE := &cpeskills.CPE{
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
+ *       Version:     cpeskills.Version("10"),
+ *       Update:      cpeskills.Update("sp1"),
  *   }
  *
  *   // 搜索具有特定更新的产品
- *   searchCriteria := &cpe.CPE{
- *       ProductName: cpe.Product("windows"),
- *       Update:      cpe.Update("sp1"),
+ *   searchCriteria := &cpeskills.CPE{
+ *       ProductName: cpeskills.Product("windows"),
+ *       Update:      cpeskills.Update("sp1"),
  *   }
- *   options := cpe.DefaultMatchOptions()
- *   results := cpe.Search(cpeList, searchCriteria, options)
+ *   options := cpeskills.DefaultMatchOptions()
+ *   results := cpeskills.Search(cpeList, searchCriteria, options)
  *
  *   // 使用正则表达式匹配更新
  *   options.UseRegex = true
- *   regexCriteria := &cpe.CPE{
- *       Update: cpe.Update("sp[0-9]"),  // 匹配sp后跟随一个数字
+ *   regexCriteria := &cpeskills.CPE{
+ *       Update: cpeskills.Update("sp[0-9]"),  // 匹配sp后跟随一个数字
  *   }
  *   ```
  */

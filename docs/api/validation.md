@@ -27,7 +27,7 @@ Validates a single CPE component (vendor, product, version, etc.) for compliance
 **Example:**
 ```go
 // Valid components
-err := cpe.ValidateComponent("microsoft")
+err := cpeskills.ValidateComponent("microsoft")
 if err != nil {
     fmt.Printf("Invalid: %v\n", err)
 } else {
@@ -35,18 +35,18 @@ if err != nil {
 }
 
 // Test special values
-err = cpe.ValidateComponent("*")  // ANY value
+err = cpeskills.ValidateComponent("*")  // ANY value
 if err == nil {
     fmt.Println("Wildcard is valid")
 }
 
-err = cpe.ValidateComponent("-")  // NA value
+err = cpeskills.ValidateComponent("-")  // NA value
 if err == nil {
     fmt.Println("NA value is valid")
 }
 
 // Invalid component with control characters
-err = cpe.ValidateComponent("invalid\x00component")
+err = cpeskills.ValidateComponent("invalid\x00component")
 if err != nil {
     fmt.Printf("Invalid component: %v\n", err)
 }
@@ -107,11 +107,11 @@ for name, value := range components {
     var err error
     switch name {
     case "vendor":
-        err = cpe.ValidateVendor(value)
+        err = cpeskills.ValidateVendor(value)
     case "product":
-        err = cpe.ValidateProduct(value)
+        err = cpeskills.ValidateProduct(value)
     case "version":
-        err = cpe.ValidateVersion(value)
+        err = cpeskills.ValidateVersion(value)
     }
     
     if err != nil {
@@ -148,14 +148,14 @@ Validates a complete CPE object for correctness and compliance.
 **Example:**
 ```go
 // Create and validate a CPE
-cpeObj := &cpe.CPE{
-    Part:        *cpe.PartApplication,
-    Vendor:      cpe.Vendor("microsoft"),
-    ProductName: cpe.Product("windows"),
-    Version:     cpe.Version("10"),
+cpeObj := &cpeskills.CPE{
+    Part:        *cpeskills.PartApplication,
+    Vendor:      cpeskills.Vendor("microsoft"),
+    ProductName: cpeskills.Product("windows"),
+    Version:     cpeskills.Version("10"),
 }
 
-err := cpe.ValidateCPE(cpeObj)
+err := cpeskills.ValidateCPE(cpeObj)
 if err != nil {
     fmt.Printf("CPE validation failed: %v\n", err)
 } else {
@@ -163,13 +163,13 @@ if err != nil {
 }
 
 // Test invalid CPE
-invalidCPE := &cpe.CPE{
-    Part:        cpe.Part{ShortName: "x"}, // Invalid part
-    Vendor:      cpe.Vendor("microsoft"),
-    ProductName: cpe.Product("windows"),
+invalidCPE := &cpeskills.CPE{
+    Part:        cpeskills.Part{ShortName: "x"}, // Invalid part
+    Vendor:      cpeskills.Vendor("microsoft"),
+    ProductName: cpeskills.Product("windows"),
 }
 
-err = cpe.ValidateCPE(invalidCPE)
+err = cpeskills.ValidateCPE(invalidCPE)
 if err != nil {
     fmt.Printf("Expected validation error: %v\n", err)
 }
@@ -199,7 +199,7 @@ validCPEs := []string{
 }
 
 for _, cpeStr := range validCPEs {
-    err := cpe.ValidateCPEString(cpeStr)
+    err := cpeskills.ValidateCPEString(cpeStr)
     if err != nil {
         fmt.Printf("Invalid CPE '%s': %v\n", cpeStr, err)
     } else {
@@ -208,7 +208,7 @@ for _, cpeStr := range validCPEs {
 }
 
 // Invalid CPE string
-err := cpe.ValidateCPEString("invalid:format")
+err := cpeskills.ValidateCPEString("invalid:format")
 if err != nil {
     fmt.Printf("Expected error for invalid format: %v\n", err)
 }
@@ -246,7 +246,7 @@ cpe23Examples := []string{
 }
 
 for _, example := range cpe23Examples {
-    err := cpe.ValidateCPE23Format(example)
+    err := cpeskills.ValidateCPE23Format(example)
     if err != nil {
         fmt.Printf("Invalid CPE 2.3 format '%s': %v\n", example, err)
     } else {
@@ -285,7 +285,7 @@ cpe22Examples := []string{
 }
 
 for _, example := range cpe22Examples {
-    err := cpe.ValidateCPE22Format(example)
+    err := cpeskills.ValidateCPE22Format(example)
     if err != nil {
         fmt.Printf("Invalid CPE 2.2 format '%s': %v\n", example, err)
     } else {
@@ -328,7 +328,7 @@ components := []string{
 }
 
 for _, comp := range components {
-    normalized := cpe.NormalizeComponent(comp)
+    normalized := cpeskills.NormalizeComponent(comp)
     fmt.Printf("'%s' -> '%s'\n", comp, normalized)
 }
 ```
@@ -350,15 +350,15 @@ Normalizes all components of a CPE object.
 **Example:**
 ```go
 // Create CPE with non-normalized components
-originalCPE := &cpe.CPE{
-    Part:        *cpe.PartApplication,
-    Vendor:      cpe.Vendor("Microsoft"),
-    ProductName: cpe.Product("Windows 10"),
-    Version:     cpe.Version("Build 19041"),
+originalCPE := &cpeskills.CPE{
+    Part:        *cpeskills.PartApplication,
+    Vendor:      cpeskills.Vendor("Microsoft"),
+    ProductName: cpeskills.Product("Windows 10"),
+    Version:     cpeskills.Version("Build 19041"),
 }
 
 // Normalize the CPE
-normalizedCPE := cpe.NormalizeCPE(originalCPE)
+normalizedCPE := cpeskills.NormalizeCPE(originalCPE)
 
 fmt.Printf("Original vendor: %s\n", originalCPE.Vendor)
 fmt.Printf("Normalized vendor: %s\n", normalizedCPE.Vendor)
@@ -397,15 +397,15 @@ Validates a CPE with custom validation options.
 **Example:**
 ```go
 // Create validation options
-options := &cpe.ValidationOptions{
+options := &cpeskills.ValidationOptions{
     StrictMode:     true,
     AllowEmpty:     false,
     NormalizeFirst: true,
 }
 
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:Microsoft:Windows:10:*:*:*:*:*:*:*")
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:Microsoft:Windows:10:*:*:*:*:*:*:*")
 
-err := cpe.ValidateCPEWithOptions(cpeObj, options)
+err := cpeskills.ValidateCPEWithOptions(cpeObj, options)
 if err != nil {
     fmt.Printf("Validation with options failed: %v\n", err)
 } else {
@@ -433,12 +433,12 @@ Validates a list of CPE objects and returns any validation errors.
 ```go
 // Create list of CPEs to validate
 cpeList := []*CPE{
-    {Part: *cpe.PartApplication, Vendor: "microsoft", ProductName: "windows"},
-    {Part: cpe.Part{ShortName: "x"}, Vendor: "invalid"}, // Invalid part
-    {Part: *cpe.PartApplication, Vendor: "apache", ProductName: "tomcat"},
+    {Part: *cpeskills.PartApplication, Vendor: "microsoft", ProductName: "windows"},
+    {Part: cpeskills.Part{ShortName: "x"}, Vendor: "invalid"}, // Invalid part
+    {Part: *cpeskills.PartApplication, Vendor: "apache", ProductName: "tomcat"},
 }
 
-errors := cpe.ValidateCPEList(cpeList)
+errors := cpeskills.ValidateCPEList(cpeList)
 
 for i, err := range errors {
     if err != nil {
@@ -472,7 +472,7 @@ func main() {
     }
     
     for _, comp := range components {
-        err := cpe.ValidateComponent(comp)
+        err := cpeskills.ValidateComponent(comp)
         if err != nil {
             fmt.Printf("Invalid component '%s': %v\n", comp, err)
         } else {
@@ -489,7 +489,7 @@ func main() {
     }
     
     for _, cpeStr := range cpeStrings {
-        err := cpe.ValidateCPEString(cpeStr)
+        err := cpeskills.ValidateCPEString(cpeStr)
         if err != nil {
             fmt.Printf("Invalid CPE string '%s': %v\n", cpeStr, err)
         } else {
@@ -499,14 +499,14 @@ func main() {
     
     // CPE object validation
     fmt.Println("\n=== CPE Object Validation ===")
-    validCPE := &cpe.CPE{
-        Part:        *cpe.PartApplication,
-        Vendor:      cpe.Vendor("microsoft"),
-        ProductName: cpe.Product("windows"),
-        Version:     cpe.Version("10"),
+    validCPE := &cpeskills.CPE{
+        Part:        *cpeskills.PartApplication,
+        Vendor:      cpeskills.Vendor("microsoft"),
+        ProductName: cpeskills.Product("windows"),
+        Version:     cpeskills.Version("10"),
     }
     
-    err := cpe.ValidateCPE(validCPE)
+    err := cpeskills.ValidateCPE(validCPE)
     if err != nil {
         fmt.Printf("CPE validation failed: %v\n", err)
     } else {
@@ -523,20 +523,20 @@ func main() {
     }
     
     for _, comp := range unnormalizedComponents {
-        normalized := cpe.NormalizeComponent(comp)
+        normalized := cpeskills.NormalizeComponent(comp)
         fmt.Printf("'%s' -> '%s'\n", comp, normalized)
     }
     
     // CPE normalization
     fmt.Println("\n=== CPE Normalization ===")
-    unnormalizedCPE := &cpe.CPE{
-        Part:        *cpe.PartApplication,
-        Vendor:      cpe.Vendor("Microsoft"),
-        ProductName: cpe.Product("Windows 10"),
-        Version:     cpe.Version("Build 19041"),
+    unnormalizedCPE := &cpeskills.CPE{
+        Part:        *cpeskills.PartApplication,
+        Vendor:      cpeskills.Vendor("Microsoft"),
+        ProductName: cpeskills.Product("Windows 10"),
+        Version:     cpeskills.Version("Build 19041"),
     }
     
-    normalizedCPE := cpe.NormalizeCPE(unnormalizedCPE)
+    normalizedCPE := cpeskills.NormalizeCPE(unnormalizedCPE)
     fmt.Printf("Original: %s %s %s\n", 
         unnormalizedCPE.Vendor, unnormalizedCPE.ProductName, unnormalizedCPE.Version)
     fmt.Printf("Normalized: %s %s %s\n", 
@@ -544,13 +544,13 @@ func main() {
     
     // Validation with options
     fmt.Println("\n=== Validation with Options ===")
-    options := &cpe.ValidationOptions{
+    options := &cpeskills.ValidationOptions{
         StrictMode:     true,
         AllowEmpty:     false,
         NormalizeFirst: true,
     }
     
-    err = cpe.ValidateCPEWithOptions(unnormalizedCPE, options)
+    err = cpeskills.ValidateCPEWithOptions(unnormalizedCPE, options)
     if err != nil {
         fmt.Printf("Strict validation failed: %v\n", err)
     } else {

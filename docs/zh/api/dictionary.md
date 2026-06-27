@@ -60,7 +60,7 @@ func LoadDictionaryFromFile(filename string) (*CPEDictionary, error)
 **示例：**
 ```go
 // 从XML文件加载
-dict, err := cpe.LoadDictionaryFromFile("official-cpe-dictionary_v2.3.xml")
+dict, err := cpeskills.LoadDictionaryFromFile("official-cpe-dictionary_v2.3.xml")
 if err != nil {
     log.Fatal(err)
 }
@@ -80,7 +80,7 @@ func LoadDictionaryFromURL(url string) (*CPEDictionary, error)
 ```go
 // 从NVD官方URL加载
 nvdURL := "https://nvd.nist.gov/feeds/xml/cpe/dictionary/official-cpe-dictionary_v2.3.xml.gz"
-dict, err := cpe.LoadDictionaryFromURL(nvdURL)
+dict, err := cpeskills.LoadDictionaryFromURL(nvdURL)
 if err != nil {
     log.Printf("从URL加载失败: %v", err)
 }
@@ -115,7 +115,7 @@ func (d *CPEDictionary) UpdateEntry(cpe23 string, entry *CPEDictionaryEntry) err
 **示例：**
 ```go
 // 创建新条目
-entry := &cpe.CPEDictionaryEntry{
+entry := &cpeskills.CPEDictionaryEntry{
     CPE23:        "cpe:2.3:a:example:product:1.0:*:*:*:*:*:*:*",
     Title:        "Example Product 1.0",
     References:   []string{"https://example.com/product"},
@@ -378,8 +378,8 @@ type ConflictResolver interface {
 **示例：**
 ```go
 // 简单合并
-dict1, _ := cpe.LoadDictionaryFromFile("dict1.xml")
-dict2, _ := cpe.LoadDictionaryFromFile("dict2.xml")
+dict1, _ := cpeskills.LoadDictionaryFromFile("dict1.xml")
+dict2, _ := cpeskills.LoadDictionaryFromFile("dict2.xml")
 
 err := dict1.Merge(dict2)
 if err != nil {
@@ -389,7 +389,7 @@ if err != nil {
 }
 
 // 带冲突解决的合并
-resolver := &cpe.LatestWinsResolver{} // 使用最新的条目
+resolver := &cpeskills.LatestWinsResolver{} // 使用最新的条目
 err = dict1.MergeWithConflictResolution(dict2, resolver)
 ```
 
@@ -505,10 +505,10 @@ func main() {
     fmt.Println("=== CPE字典管理示例 ===")
     
     // 创建新字典
-    dict := cpe.NewCPEDictionary()
+    dict := cpeskills.NewCPEDictionary()
     
     // 添加示例条目
-    entries := []*cpe.CPEDictionaryEntry{
+    entries := []*cpeskills.CPEDictionaryEntry{
         {
             CPE23:        "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
             Title:        "Microsoft Windows 10",

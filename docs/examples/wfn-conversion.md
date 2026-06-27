@@ -34,14 +34,14 @@ func main() {
         fmt.Printf("\nExample %d: %s\n", i+1, cpeStr)
         
         // Parse CPE
-        cpeObj, err := cpe.ParseCPE(cpeStr)
+        cpeObj, err := cpeskills.ParseCPE(cpeStr)
         if err != nil {
             log.Printf("Failed to parse CPE: %v", err)
             continue
         }
         
         // Convert to WFN
-        wfn, err := cpe.CPEToWFN(cpeObj)
+        wfn, err := cpeskills.CPEToWFN(cpeObj)
         if err != nil {
             log.Printf("Failed to convert to WFN: %v", err)
             continue
@@ -59,24 +59,24 @@ func main() {
     fmt.Println("\n2. WFN to CPE Conversion:")
     
     // Create WFN manually
-    wfn := &cpe.WFN{
+    wfn := &cpeskills.WFN{
         Part:           "a",
         Vendor:         "adobe",
         Product:        "reader",
         Version:        "2021.001.20150",
-        Update:         cpe.WFNAny,
-        Edition:        cpe.WFNAny,
-        Language:       cpe.WFNAny,
-        SoftwareEdition: cpe.WFNAny,
-        TargetSoftware: cpe.WFNAny,
-        TargetHardware: cpe.WFNAny,
-        Other:          cpe.WFNAny,
+        Update:         cpeskills.WFNAny,
+        Edition:        cpeskills.WFNAny,
+        Language:       cpeskills.WFNAny,
+        SoftwareEdition: cpeskills.WFNAny,
+        TargetSoftware: cpeskills.WFNAny,
+        TargetHardware: cpeskills.WFNAny,
+        Other:          cpeskills.WFNAny,
     }
     
     fmt.Printf("WFN: %s\n", wfn.String())
     
     // Convert to CPE 2.3
-    cpe23, err := cpe.WFNToCPE23(wfn)
+    cpe23, err := cpeskills.WFNToCPE23(wfn)
     if err != nil {
         log.Printf("Failed to convert to CPE 2.3: %v", err)
     } else {
@@ -84,7 +84,7 @@ func main() {
     }
     
     // Convert to CPE 2.2
-    cpe22, err := cpe.WFNToCPE22(wfn)
+    cpe22, err := cpeskills.WFNToCPE22(wfn)
     if err != nil {
         log.Printf("Failed to convert to CPE 2.2: %v", err)
     } else {
@@ -100,10 +100,10 @@ func main() {
         value string
         desc  string
     }{
-        {"ANY", cpe.WFNAny, "Matches any value"},
-        {"NA", cpe.WFNNotApplicable, "Not applicable"},
+        {"ANY", cpeskills.WFNAny, "Matches any value"},
+        {"NA", cpeskills.WFNNotApplicable, "Not applicable"},
         {"Literal", "windows", "Literal string value"},
-        {"Quoted", cpe.QuoteWFNValue("special~chars"), "Quoted special characters"},
+        {"Quoted", cpeskills.QuoteWFNValue("special~chars"), "Quoted special characters"},
     }
     
     for _, example := range examples {
@@ -114,14 +114,14 @@ func main() {
     fmt.Println("\n4. WFN Matching:")
     
     // Create source and target WFNs
-    sourceWFN := &cpe.WFN{
+    sourceWFN := &cpeskills.WFN{
         Part:    "a",
         Vendor:  "microsoft",
-        Product: cpe.WFNAny, // Any product
-        Version: cpe.WFNAny, // Any version
+        Product: cpeskills.WFNAny, // Any product
+        Version: cpeskills.WFNAny, // Any version
     }
     
-    targetWFNs := []*cpe.WFN{
+    targetWFNs := []*cpeskills.WFN{
         {Part: "a", Vendor: "microsoft", Product: "windows", Version: "10"},
         {Part: "a", Vendor: "microsoft", Product: "office", Version: "2019"},
         {Part: "a", Vendor: "oracle", Product: "java", Version: "11"},
@@ -132,7 +132,7 @@ func main() {
     fmt.Println("Matching against targets:")
     
     for i, targetWFN := range targetWFNs {
-        match := cpe.MatchWFN(sourceWFN, targetWFN)
+        match := cpeskills.MatchWFN(sourceWFN, targetWFN)
         status := "❌"
         if match {
             status = "✅"
@@ -144,34 +144,34 @@ func main() {
     fmt.Println("\n5. WFN Validation:")
     
     validationTests := []struct {
-        wfn   *cpe.WFN
+        wfn   *cpeskills.WFN
         desc  string
         valid bool
     }{
         {
-            &cpe.WFN{Part: "a", Vendor: "microsoft", Product: "windows"},
+            &cpeskills.WFN{Part: "a", Vendor: "microsoft", Product: "windows"},
             "Valid application WFN",
             true,
         },
         {
-            &cpe.WFN{Part: "x", Vendor: "microsoft", Product: "windows"},
+            &cpeskills.WFN{Part: "x", Vendor: "microsoft", Product: "windows"},
             "Invalid part value",
             false,
         },
         {
-            &cpe.WFN{Part: "a", Vendor: "", Product: "windows"},
+            &cpeskills.WFN{Part: "a", Vendor: "", Product: "windows"},
             "Empty vendor",
             false,
         },
         {
-            &cpe.WFN{Part: "a", Vendor: "microsoft", Product: ""},
+            &cpeskills.WFN{Part: "a", Vendor: "microsoft", Product: ""},
             "Empty product",
             false,
         },
     }
     
     for i, test := range validationTests {
-        err := cpe.ValidateWFN(test.wfn)
+        err := cpeskills.ValidateWFN(test.wfn)
         isValid := err == nil
         
         status := "❌"
@@ -189,7 +189,7 @@ func main() {
     // Example 6: WFN Normalization
     fmt.Println("\n6. WFN Normalization:")
     
-    unnormalizedWFN := &cpe.WFN{
+    unnormalizedWFN := &cpeskills.WFN{
         Part:    "A", // Should be lowercase
         Vendor:  "Microsoft", // Should be lowercase
         Product: "Windows~10", // Special characters
@@ -198,19 +198,19 @@ func main() {
     
     fmt.Printf("Before normalization: %s\n", unnormalizedWFN.String())
     
-    normalizedWFN := cpe.NormalizeWFN(unnormalizedWFN)
+    normalizedWFN := cpeskills.NormalizeWFN(unnormalizedWFN)
     fmt.Printf("After normalization:  %s\n", normalizedWFN.String())
     
     // Example 7: WFN Comparison
     fmt.Println("\n7. WFN Comparison:")
     
-    wfn1 := &cpe.WFN{
+    wfn1 := &cpeskills.WFN{
         Part: "a", Vendor: "apache", Product: "tomcat", Version: "9.0.0",
     }
-    wfn2 := &cpe.WFN{
+    wfn2 := &cpeskills.WFN{
         Part: "a", Vendor: "apache", Product: "tomcat", Version: "9.0.1",
     }
-    wfn3 := &cpe.WFN{
+    wfn3 := &cpeskills.WFN{
         Part: "a", Vendor: "apache", Product: "tomcat", Version: "9.0.0",
     }
     
@@ -218,9 +218,9 @@ func main() {
     fmt.Printf("WFN2: %s\n", wfn2.String())
     fmt.Printf("WFN3: %s\n", wfn3.String())
     
-    fmt.Printf("WFN1 == WFN2: %t\n", cpe.CompareWFN(wfn1, wfn2) == 0)
-    fmt.Printf("WFN1 == WFN3: %t\n", cpe.CompareWFN(wfn1, wfn3) == 0)
-    fmt.Printf("WFN1 < WFN2:  %t\n", cpe.CompareWFN(wfn1, wfn2) < 0)
+    fmt.Printf("WFN1 == WFN2: %t\n", cpeskills.CompareWFN(wfn1, wfn2) == 0)
+    fmt.Printf("WFN1 == WFN3: %t\n", cpeskills.CompareWFN(wfn1, wfn3) == 0)
+    fmt.Printf("WFN1 < WFN2:  %t\n", cpeskills.CompareWFN(wfn1, wfn2) < 0)
 }
 ```
 

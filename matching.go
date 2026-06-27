@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 // Relation 表示两个CPE之间的匹配关系
 // 按照 NISTIR 7696 CPE Name Matching 规范定义

@@ -49,7 +49,7 @@ import (
 
 func main() {
     // 解析CPE 2.3格式
-    cpeObj, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    cpeObj, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }

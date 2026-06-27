@@ -31,8 +31,8 @@ func ValidateCPEFormat(cpeString string) error
 **示例：**
 ```go
 // 验证CPE对象
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-err := cpe.ValidateCPE(cpeObj)
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+err := cpeskills.ValidateCPE(cpeObj)
 if err != nil {
     fmt.Printf("CPE验证失败: %v\n", err)
 } else {
@@ -48,7 +48,7 @@ testStrings := []string{
 }
 
 for _, testStr := range testStrings {
-    err := cpe.ValidateCPEString(testStr)
+    err := cpeskills.ValidateCPEString(testStr)
     status := "✅"
     if err != nil {
         status = "❌"
@@ -105,10 +105,10 @@ components := map[string]string{
 }
 
 validators := map[string]func(string) error{
-    "part":    cpe.ValidatePart,
-    "vendor":  cpe.ValidateVendor,
-    "product": cpe.ValidateProduct,
-    "version": cpe.ValidateVersion,
+    "part":    cpeskills.ValidatePart,
+    "vendor":  cpeskills.ValidateVendor,
+    "product": cpeskills.ValidateProduct,
+    "version": cpeskills.ValidateVersion,
 }
 
 fmt.Println("组件验证结果:")
@@ -165,9 +165,9 @@ testFormats := []string{
 
 fmt.Println("格式检查结果:")
 for _, testStr := range testFormats {
-    is23 := cpe.IsCPE23Format(testStr)
-    is22 := cpe.IsCPE22Format(testStr)
-    isValid := cpe.IsValidCPEFormat(testStr)
+    is23 := cpeskills.IsCPE23Format(testStr)
+    is22 := cpeskills.IsCPE22Format(testStr)
+    isValid := cpeskills.IsValidCPEFormat(testStr)
     
     fmt.Printf("字符串: %s\n", testStr)
     fmt.Printf("  CPE 2.3: %t\n", is23)
@@ -205,17 +205,17 @@ func ValidateLogicalConstraints(cpe *CPE) error
 **示例：**
 ```go
 // 创建测试CPE
-testCPEs := []*cpe.CPE{
+testCPEs := []*cpeskills.CPE{
     // 语义正确的CPE
     {
-        Part:        cpe.PartApplication,
+        Part:        cpeskills.PartApplication,
         Vendor:      "microsoft",
         ProductName: "windows",
         Version:     "10",
     },
     // 语义不一致的CPE（操作系统标记为应用程序）
     {
-        Part:        cpe.PartApplication,
+        Part:        cpeskills.PartApplication,
         Vendor:      "microsoft",
         ProductName: "windows_server", // 这应该是操作系统
         Version:     "2019",
@@ -228,7 +228,7 @@ for i, testCPE := range testCPEs {
         testCPE.Vendor, testCPE.ProductName, testCPE.Version)
     
     // 语义验证
-    err := cpe.ValidateSemantics(testCPE)
+    err := cpeskills.ValidateSemantics(testCPE)
     if err != nil {
         fmt.Printf("  ❌ 语义验证失败: %v\n", err)
     } else {
@@ -236,7 +236,7 @@ for i, testCPE := range testCPEs {
     }
     
     // 一致性验证
-    err = cpe.ValidateConsistency(testCPE)
+    err = cpeskills.ValidateConsistency(testCPE)
     if err != nil {
         fmt.Printf("  ❌ 一致性验证失败: %v\n", err)
     } else {
@@ -287,19 +287,19 @@ cpeStrings := []string{
     "cpe:2.3:x:vendor:product:1.0:*:*:*:*:*:*:*", // 无效部件
 }
 
-cpes := []*cpe.CPE{}
+cpes := []*cpeskills.CPE{}
 for _, cpeStr := range cpeStrings {
-    cpeObj, err := cpe.ParseCPE(cpeStr)
+    cpeObj, err := cpeskills.ParseCPE(cpeStr)
     if err == nil {
         cpes = append(cpes, cpeObj)
     } else {
         // 为无效CPE创建占位符
-        cpes = append(cpes, &cpe.CPE{Cpe23: cpeStr})
+        cpes = append(cpes, &cpeskills.CPE{Cpe23: cpeStr})
     }
 }
 
 // 批量验证
-results := cpe.ValidateCPEList(cpes)
+results := cpeskills.ValidateCPEList(cpes)
 
 fmt.Println("批量验证结果:")
 for i, result := range results {
@@ -370,13 +370,13 @@ type VendorWhitelistRule struct {
     AllowedVendors []string
 }
 
-func (r *VendorWhitelistRule) Validate(cpe *cpe.CPE) error {
+func (r *VendorWhitelistRule) Validate(cpe *cpeskills.CPE) error {
     for _, allowed := range r.AllowedVendors {
-        if cpe.Vendor == allowed {
+        if cpeskills.Vendor == allowed {
             return nil
         }
     }
-    return fmt.Errorf("供应商 '%s' 不在白名单中", cpe.Vendor)
+    return fmt.Errorf("供应商 '%s' 不在白名单中", cpeskills.Vendor)
 }
 
 func (r *VendorWhitelistRule) GetName() string {
@@ -388,14 +388,14 @@ func (r *VendorWhitelistRule) GetDescription() string {
 }
 
 // 使用自定义验证器
-validator := &cpe.Validator{
-    Rules: []cpe.ValidationRule{
+validator := &cpeskills.Validator{
+    Rules: []cpeskills.ValidationRule{
         &VendorWhitelistRule{
             AllowedVendors: []string{"microsoft", "apache", "oracle"},
         },
     },
     Strict: true,
-    Options: &cpe.ValidationOptions{
+    Options: &cpeskills.ValidationOptions{
         CheckSemantics:   true,
         CheckConsistency: true,
         CheckFormat:      true,
@@ -403,7 +403,7 @@ validator := &cpe.Validator{
 }
 
 // 验证CPE
-testCPE, _ := cpe.ParseCpe23("cpe:2.3:a:unknown_vendor:product:1.0:*:*:*:*:*:*:*")
+testCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:unknown_vendor:product:1.0:*:*:*:*:*:*:*")
 err := validator.Validate(testCPE)
 if err != nil {
     fmt.Printf("自定义验证失败: %v\n", err)
@@ -458,12 +458,12 @@ testCPEs := []string{
 
 fmt.Println("CPE质量评估:")
 for i, cpeStr := range testCPEs {
-    cpeObj, err := cpe.ParseCpe23(cpeStr)
+    cpeObj, err := cpeskills.ParseCpe23(cpeStr)
     if err != nil {
         continue
     }
     
-    assessment := cpe.AssessQuality(cpeObj)
+    assessment := cpeskills.AssessQuality(cpeObj)
     
     fmt.Printf("\nCPE %d: %s\n", i+1, cpeStr)
     fmt.Printf("  总体分数: %.2f\n", assessment.OverallScore)
@@ -518,7 +518,7 @@ func main() {
         fmt.Printf("\n测试 %d: %s\n", i+1, cpeStr)
         
         // 格式验证
-        err := cpe.ValidateCPEFormat(cpeStr)
+        err := cpeskills.ValidateCPEFormat(cpeStr)
         if err != nil {
             fmt.Printf("  ❌ 格式验证失败: %v\n", err)
             continue
@@ -527,13 +527,13 @@ func main() {
         }
         
         // 解析并验证CPE对象
-        cpeObj, err := cpe.ParseCPE(cpeStr)
+        cpeObj, err := cpeskills.ParseCPE(cpeStr)
         if err != nil {
             fmt.Printf("  ❌ 解析失败: %v\n", err)
             continue
         }
         
-        err = cpe.ValidateCPE(cpeObj)
+        err = cpeskills.ValidateCPE(cpeObj)
         if err != nil {
             fmt.Printf("  ❌ CPE验证失败: %v\n", err)
         } else {
@@ -541,7 +541,7 @@ func main() {
         }
         
         // 质量评估
-        assessment := cpe.AssessQuality(cpeObj)
+        assessment := cpeskills.AssessQuality(cpeObj)
         fmt.Printf("  质量分数: %.2f\n", assessment.OverallScore)
     }
     
@@ -554,10 +554,10 @@ func main() {
     }
     
     validators := map[string]func(string) error{
-        "part":    cpe.ValidatePart,
-        "vendor":  cpe.ValidateVendor,
-        "product": cpe.ValidateProduct,
-        "version": cpe.ValidateVersion,
+        "part":    cpeskills.ValidatePart,
+        "vendor":  cpeskills.ValidateVendor,
+        "product": cpeskills.ValidateProduct,
+        "version": cpeskills.ValidateVersion,
     }
     
     for component, values := range components {
@@ -587,15 +587,15 @@ func main() {
     fmt.Println("\n3. 批量验证:")
     
     // 创建CPE列表进行批量验证
-    cpeList := []*cpe.CPE{}
+    cpeList := []*cpeskills.CPE{}
     for _, cpeStr := range testCPEs[:3] { // 只使用前3个有效的
-        cpeObj, err := cpe.ParseCPE(cpeStr)
+        cpeObj, err := cpeskills.ParseCPE(cpeStr)
         if err == nil {
             cpeList = append(cpeList, cpeObj)
         }
     }
     
-    results := cpe.ValidateCPEList(cpeList)
+    results := cpeskills.ValidateCPEList(cpeList)
     
     fmt.Printf("批量验证了 %d 个CPE:\n", len(results))
     for i, result := range results {
@@ -610,9 +610,9 @@ func main() {
     fmt.Println("\n4. 自定义验证规则:")
     
     // 创建自定义验证器
-    validator := &cpe.Validator{
+    validator := &cpeskills.Validator{
         Strict: true,
-        Options: &cpe.ValidationOptions{
+        Options: &cpeskills.ValidationOptions{
             CheckSemantics:   true,
             CheckConsistency: true,
             CheckFormat:      true,
@@ -620,7 +620,7 @@ func main() {
         },
     }
     
-    testCPE, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    testCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     err := validator.Validate(testCPE)
     if err != nil {
         fmt.Printf("自定义验证失败: %v\n", err)
@@ -630,8 +630,8 @@ func main() {
     
     fmt.Println("\n5. 质量评估详情:")
     
-    highQualityCPE, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10.0.19041.1234:*:*:*:*:*:*:*")
-    assessment := cpe.AssessQuality(highQualityCPE)
+    highQualityCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10.0.19041.1234:*:*:*:*:*:*:*")
+    assessment := cpeskills.AssessQuality(highQualityCPE)
     
     fmt.Printf("高质量CPE评估:\n")
     fmt.Printf("  总体分数: %.2f\n", assessment.OverallScore)

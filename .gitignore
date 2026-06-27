@@ -1,0 +1,10 @@
+# Dependencies
+docs/node_modules/
+
+# Coverage
+coverage.out
+coverage_final.out
+
+# OS
+.DS_Store
+Thumbs.db

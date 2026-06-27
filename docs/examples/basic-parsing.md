@@ -34,7 +34,7 @@ func main() {
     for i, cpeStr := range cpe23Examples {
         fmt.Printf("\nExample %d: %s\n", i+1, cpeStr)
         
-        cpeObj, err := cpe.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
             log.Printf("Failed to parse: %v", err)
             continue
@@ -66,7 +66,7 @@ func main() {
     for i, cpeStr := range cpe22Examples {
         fmt.Printf("\nExample %d: %s\n", i+1, cpeStr)
         
-        cpeObj, err := cpe.ParseCpe22(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe22(cpeStr)
         if err != nil {
             log.Printf("Failed to parse: %v", err)
             continue
@@ -94,11 +94,11 @@ func main() {
         fmt.Printf("\nInvalid Example %d: %s\n", i+1, invalidCPE)
         
         // Try parsing as CPE 2.3 first
-        _, err := cpe.ParseCpe23(invalidCPE)
+        _, err := cpeskills.ParseCpe23(invalidCPE)
         if err != nil {
-            if cpe.IsInvalidFormatError(err) {
+            if cpeskills.IsInvalidFormatError(err) {
                 fmt.Printf("  ❌ Invalid CPE 2.3 format: %v\n", err)
-            } else if cpe.IsInvalidPartError(err) {
+            } else if cpeskills.IsInvalidPartError(err) {
                 fmt.Printf("  ❌ Invalid part value: %v\n", err)
             } else {
                 fmt.Printf("  ❌ Other parsing error: %v\n", err)
@@ -109,7 +109,7 @@ func main() {
     // Example 4: Working with parsed CPE objects
     fmt.Println("\n4. Working with Parsed CPE Objects:")
     
-    windowsCPE, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    windowsCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }
@@ -121,13 +121,13 @@ func main() {
     
     // Modify the CPE
     windowsCPE.Version = "11"
-    fmt.Printf("Modified CPE: %s\n", cpe.FormatCpe23(windowsCPE))
+    fmt.Printf("Modified CPE: %s\n", cpeskills.FormatCpe23(windowsCPE))
     
     // Example 5: Format conversion
     fmt.Println("\n5. Format Conversion:")
     
     // Parse CPE 2.2 and convert to 2.3
-    tomcatCPE, err := cpe.ParseCpe22("cpe:/a:apache:tomcat:9.0.0")
+    tomcatCPE, err := cpeskills.ParseCpe22("cpe:/a:apache:tomcat:9.0.0")
     if err != nil {
         log.Fatal(err)
     }
@@ -136,13 +136,13 @@ func main() {
     fmt.Printf("Converted to CPE 2.3: %s\n", tomcatCPE.Cpe23)
     
     // Convert back to CPE 2.2 format
-    cpe22Format := cpe.FormatCpe22(tomcatCPE)
+    cpe22Format := cpeskills.FormatCpe22(tomcatCPE)
     fmt.Printf("Back to CPE 2.2: %s\n", cpe22Format)
     
     // Example 6: Special values
     fmt.Println("\n6. Special Values:")
     
-    specialCPE, err := cpe.ParseCpe23("cpe:2.3:a:*:*:*:*:*:*:*:*:*:*")
+    specialCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:*:*:*:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }
@@ -151,7 +151,7 @@ func main() {
     fmt.Printf("Vendor (wildcard): %s\n", specialCPE.Vendor)
     fmt.Printf("Product (wildcard): %s\n", specialCPE.ProductName)
     
-    naCPE, err := cpe.ParseCpe23("cpe:2.3:a:vendor:product:-:-:-:*:*:*:*:*")
+    naCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:vendor:product:-:-:-:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }

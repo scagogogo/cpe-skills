@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"fmt"
@@ -37,7 +37,7 @@ type CPESet struct {
  * 示例:
  *   ```go
  *   // 创建一个包含Microsoft产品的CPE集合
- *   microsoftSet := cpe.NewCPESet("Microsoft Products", "Collection of Microsoft product CPEs")
+ *   microsoftSet := cpeskills.NewCPESet("Microsoft Products", "Collection of Microsoft product CPEs")
  *   ```
  */
 func NewCPESet(name string, description string) *CPESet {
@@ -58,11 +58,11 @@ func NewCPESet(name string, description string) *CPESet {
  * 示例:
  *   ```go
  *   // 创建一个CPE并添加到集合
- *   windowsCPE := &cpe.CPE{
- *       Part:        *cpe.PartOperationSystem,
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
- *       Version:     cpe.Version("10"),
+ *   windowsCPE := &cpeskills.CPE{
+ *       Part:        *cpeskills.PartOperationSystem,
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
+ *       Version:     cpeskills.Version("10"),
  *   }
  *   microsoftSet.Add(windowsCPE)
  *   ```
@@ -165,8 +165,8 @@ func (s *CPESet) Clear() {
  * 示例:
  *   ```go
  *   // 计算两个集合的并集
- *   microsoftSet := cpe.NewCPESet("Microsoft", "Microsoft CPEs")
- *   appleSet := cpe.NewCPESet("Apple", "Apple CPEs")
+ *   microsoftSet := cpeskills.NewCPESet("Microsoft", "Microsoft CPEs")
+ *   appleSet := cpeskills.NewCPESet("Apple", "Apple CPEs")
  *
  *   // 添加CPE到各自集合...
  *
@@ -203,8 +203,8 @@ func (s *CPESet) Union(other *CPESet) *CPESet {
  * 示例:
  *   ```go
  *   // 计算两个集合的交集
- *   windowsSet := cpe.NewCPESet("Windows", "Windows CPEs")
- *   vulnerableSet := cpe.NewCPESet("Vulnerable", "Vulnerable CPEs")
+ *   windowsSet := cpeskills.NewCPESet("Windows", "Windows CPEs")
+ *   vulnerableSet := cpeskills.NewCPESet("Vulnerable", "Vulnerable CPEs")
  *
  *   // 添加CPE到各自集合...
  *
@@ -245,8 +245,8 @@ func (s *CPESet) Intersection(other *CPESet) *CPESet {
  * 示例:
  *   ```go
  *   // 计算两个集合的差集
- *   allWindowsSet := cpe.NewCPESet("All Windows", "All Windows versions")
- *   outdatedSet := cpe.NewCPESet("Outdated", "Outdated Windows versions")
+ *   allWindowsSet := cpeskills.NewCPESet("All Windows", "All Windows versions")
+ *   outdatedSet := cpeskills.NewCPESet("Outdated", "Outdated Windows versions")
  *
  *   // 添加CPE到各自集合...
  *
@@ -280,13 +280,13 @@ func (s *CPESet) Difference(other *CPESet) *CPESet {
  * 示例:
  *   ```go
  *   // 创建过滤条件
- *   criteria := &cpe.CPE{
- *       Vendor: cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
+ *   criteria := &cpeskills.CPE{
+ *       Vendor: cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
  *   }
  *
  *   // 使用自定义匹配选项过滤集合
- *   options := cpe.DefaultMatchOptions()
+ *   options := cpeskills.DefaultMatchOptions()
  *   options.IgnoreCase = true
  *
  *   // 过滤集合
@@ -325,13 +325,13 @@ func (s *CPESet) Filter(criteria *CPE, options *MatchOptions) *CPESet {
  * 示例:
  *   ```go
  *   // 创建高级过滤条件
- *   criteria := &cpe.CPE{
- *       ProductName: cpe.Product("windows"),
- *       Version: cpe.Version("10"),
+ *   criteria := &cpeskills.CPE{
+ *       ProductName: cpeskills.Product("windows"),
+ *       Version: cpeskills.Version("10"),
  *   }
  *
  *   // 使用高级匹配选项
- *   options := cpe.NewAdvancedMatchOptions()
+ *   options := cpeskills.NewAdvancedMatchOptions()
  *   options.MatchMode = "regex"  // 使用正则表达式匹配
  *
  *   // 过滤集合
@@ -533,8 +533,8 @@ func (s *CPESet) ToString() string {
  * 示例:
  *   ```go
  *   // 从CPE数组创建集合
- *   cpes := []*cpe.CPE{windows10CPE, windows11CPE, office365CPE}
- *   microsoftSet := cpe.FromArray(cpes, "Microsoft Products", "Microsoft Windows and Office")
+ *   cpes := []*cpeskills.CPE{windows10CPE, windows11CPE, office365CPE}
+ *   microsoftSet := cpeskills.FromArray(cpes, "Microsoft Products", "Microsoft Windows and Office")
  *   ```
  */
 func FromArray(cpes []*CPE, name string, description string) *CPESet {
@@ -559,10 +559,10 @@ func FromArray(cpes []*CPE, name string, description string) *CPESet {
  * 示例:
  *   ```go
  *   // 查找与Windows 10相关的所有CPE
- *   windows10CPE := &cpe.CPE{
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
- *       Version:     cpe.Version("10"),
+ *   windows10CPE := &cpeskills.CPE{
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
+ *       Version:     cpeskills.Version("10"),
  *   }
  *
  *   // 找出所有相关CPE

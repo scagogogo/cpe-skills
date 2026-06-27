@@ -31,7 +31,7 @@ func main() {
     }
     
     for i, versionStr := range versions {
-        cpeObj, err := cpe.ParseCpe23(versionStr)
+        cpeObj, err := cpeskills.ParseCpe23(versionStr)
         if err != nil {
             log.Printf("解析失败 %s: %v", versionStr, err)
             continue
@@ -43,7 +43,7 @@ func main() {
     // 示例2：版本范围匹配
     fmt.Println("\n2. 版本范围匹配:")
     
-    targetVersion, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:8.5.5:*:*:*:*:*:*:*")
+    targetVersion, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:8.5.5:*:*:*:*:*:*:*")
     
     ranges := []struct {
         min string
@@ -56,7 +56,7 @@ func main() {
     }
     
     for _, r := range ranges {
-        inRange := cpe.IsVersionInRange(targetVersion.Version, r.min, r.max)
+        inRange := cpeskills.IsVersionInRange(targetVersion.Version, r.min, r.max)
         fmt.Printf("版本 %s 在范围 %s - %s (%s): %t\n", 
             targetVersion.Version, r.min, r.max, r.description, inRange)
     }
@@ -68,7 +68,7 @@ func main() {
     compareVersions := []string{"8.4.9", "8.5.0", "8.5.1", "9.0.0"}
     
     for _, compareVer := range compareVersions {
-        result := cpe.CompareVersions(baseVersion, compareVer)
+        result := cpeskills.CompareVersions(baseVersion, compareVer)
         var relationship string
         switch result {
         case -1:
@@ -99,12 +99,12 @@ func main() {
     }
     
     for _, testCPE := range testCPEs {
-        testObj, _ := cpe.ParseCpe23(testCPE)
+        testObj, _ := cpeskills.ParseCpe23(testCPE)
         fmt.Printf("\n测试: %s\n", testCPE)
         
         for _, pattern := range patterns {
-            patternObj, _ := cpe.ParseCpe23(pattern)
-            if cpe.MatchesVersionPattern(testObj, patternObj) {
+            patternObj, _ := cpeskills.ParseCpe23(pattern)
+            if cpeskills.MatchesVersionPattern(testObj, patternObj) {
                 fmt.Printf("  ✓ 匹配模式: %s\n", pattern)
             }
         }
@@ -131,12 +131,12 @@ func main() {
     }
     
     for _, checkCPE := range checkCPEs {
-        cpeObj, _ := cpe.ParseCpe23(checkCPE)
+        cpeObj, _ := cpeskills.ParseCpe23(checkCPE)
         fmt.Printf("\n检查: %s\n", checkCPE)
         
         for _, vuln := range vulnerableRanges {
             if cpeObj.ProductName == vuln.product {
-                isVulnerable := cpe.IsVersionInRange(cpeObj.Version, vuln.minVersion, vuln.maxVersion)
+                isVulnerable := cpeskills.IsVersionInRange(cpeObj.Version, vuln.minVersion, vuln.maxVersion)
                 if isVulnerable {
                     fmt.Printf("  ⚠️  存在漏洞: %s (版本 %s - %s)\n", 
                         vuln.description, vuln.minVersion, vuln.maxVersion)
@@ -160,11 +160,11 @@ func main() {
     
     fmt.Println("未排序的版本:")
     for _, cpeStr := range unsortedCPEs {
-        cpeObj, _ := cpe.ParseCpe23(cpeStr)
+        cpeObj, _ := cpeskills.ParseCpe23(cpeStr)
         fmt.Printf("  %s\n", cpeObj.Version)
     }
     
-    sortedCPEs := cpe.SortCPEsByVersion(unsortedCPEs)
+    sortedCPEs := cpeskills.SortCPEsByVersion(unsortedCPEs)
     
     fmt.Println("\n已排序的版本 (升序):")
     for _, cpeObj := range sortedCPEs {
@@ -185,7 +185,7 @@ func main() {
     }
     
     for i, cv := range complexVersions {
-        cpeObj, err := cpe.ParseCpe23(cv.cpe)
+        cpeObj, err := cpeskills.ParseCpe23(cv.cpe)
         if err != nil {
             fmt.Printf("  ❌ %d. 解析失败: %s\n", i+1, cv.cpe)
             continue
@@ -211,7 +211,7 @@ func main() {
     
     fmt.Println("版本兼容性测试:")
     for i, test := range compatibilityTests {
-        isCompatible := cpe.IsVersionCompatible(test.required, test.available)
+        isCompatible := cpeskills.IsVersionCompatible(test.required, test.available)
         
         status := "❌"
         if isCompatible == test.compatible {

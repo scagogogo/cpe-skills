@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"fmt"
@@ -42,13 +42,13 @@ const (
  * 示例:
  *   ```go
  *   // 处理CPE错误
- *   func processCPE(cpeStr string) (*cpe.CPE, error) {
- *       cpeObj, err := cpe.Parse(cpeStr)
+ *   func processCPE(cpeStr string) (*cpeskills.CPE, error) {
+ *       cpeObj, err := cpeskills.Parse(cpeStr)
  *       if err != nil {
- *           if cpe.IsParsingError(err) {
+ *           if cpeskills.IsParsingError(err) {
  *               // 处理解析错误
  *               log.Printf("解析错误: %v", err)
- *           } else if cpe.IsInvalidFormatError(err) {
+ *           } else if cpeskills.IsInvalidFormatError(err) {
  *               // 处理格式错误
  *               log.Printf("格式错误: %v", err)
  *           }
@@ -110,7 +110,7 @@ func (e *CPEError) Unwrap() error {
  *   cpeStr := "cpe:2.3:INVALID FORMAT"
  *   _, err := parseCPE(cpeStr)
  *   if err != nil {
- *       return cpe.NewParsingError(cpeStr, err)
+ *       return cpeskills.NewParsingError(cpeStr, err)
  *   }
  *   ```
  */
@@ -133,7 +133,7 @@ func NewParsingError(cpeString string, err error) *CPEError {
  *   ```go
  *   // 检查CPE字符串格式
  *   if !isValidCPEFormat(cpeStr) {
- *       return nil, cpe.NewInvalidFormatError(cpeStr)
+ *       return nil, cpeskills.NewInvalidFormatError(cpeStr)
  *   }
  *   ```
  */
@@ -155,7 +155,7 @@ func NewInvalidFormatError(cpeString string) *CPEError {
  *   ```go
  *   // 验证CPE部件值
  *   if part != "a" && part != "o" && part != "h" {
- *       return cpe.NewInvalidPartError(part)
+ *       return cpeskills.NewInvalidPartError(part)
  *   }
  *   ```
  */
@@ -177,7 +177,7 @@ func NewInvalidPartError(part string) *CPEError {
  *   ```go
  *   // 验证属性值
  *   if !isValidProductName(product) {
- *       return cpe.NewInvalidAttributeError("product", product)
+ *       return cpeskills.NewInvalidAttributeError("product", product)
  *   }
  *   ```
  */
@@ -199,7 +199,7 @@ func NewInvalidAttributeError(attribute, value string) *CPEError {
  *   // 在存储中查找CPE
  *   cpe, found := storage.Find(cpeID)
  *   if !found {
- *       return nil, cpe.NewNotFoundError(fmt.Sprintf("CPE with ID %s", cpeID))
+ *       return nil, cpeskills.NewNotFoundError(fmt.Sprintf("CPE with ID %s", cpeID))
  *   }
  *   ```
  */
@@ -221,7 +221,7 @@ func NewNotFoundError(what string) *CPEError {
  *   ```go
  *   // 保存CPE到存储
  *   if err := storage.Save(cpe); err != nil {
- *       return cpe.NewOperationFailedError("save CPE to storage", err)
+ *       return cpeskills.NewOperationFailedError("save CPE to storage", err)
  *   }
  *   ```
  */
@@ -242,7 +242,7 @@ func NewOperationFailedError(operation string, err error) *CPEError {
  * 示例:
  *   ```go
  *   if err != nil {
- *       if cpe.IsParsingError(err) {
+ *       if cpeskills.IsParsingError(err) {
  *           // 针对解析错误的特殊处理
  *           log.Printf("解析CPE时出错: %v", err)
  *       }

@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"errors"
@@ -33,7 +33,7 @@ var (
  * 示例:
  *   ```go
  *   // 创建文件存储
- *   storage, err := cpe.NewFileStorage("/path/to/storage", true)
+ *   storage, err := cpeskills.NewFileStorage("/path/to/storage", true)
  *   if err != nil {
  *       log.Fatalf("无法创建存储: %v", err)
  *   }
@@ -44,11 +44,11 @@ var (
  *   }
  *
  *   // 存储CPE
- *   windowsCPE := &cpe.CPE{
+ *   windowsCPE := &cpeskills.CPE{
  *       Cpe23:       "cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*",
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
- *       Version:     cpe.Version("10"),
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
+ *       Version:     cpeskills.Version("10"),
  *   }
  *   if err := storage.StoreCPE(windowsCPE); err != nil {
  *       log.Printf("存储CPE失败: %v", err)
@@ -57,7 +57,7 @@ var (
  *   // 检索CPE
  *   retrievedCPE, err := storage.RetrieveCPE(windowsCPE.GetURI())
  *   if err != nil {
- *       if errors.Is(err, cpe.ErrNotFound) {
+ *       if errors.Is(err, cpeskills.ErrNotFound) {
  *           log.Println("CPE不存在")
  *       } else {
  *           log.Printf("检索CPE失败: %v", err)

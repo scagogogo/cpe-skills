@@ -20,8 +20,8 @@ func (c *CPE) Match(other *CPE) bool
 
 **示例：**
 ```go
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
 
 if cpe1.Match(cpe2) {
     fmt.Println("CPE匹配成功")
@@ -46,13 +46,13 @@ func MatchCPE(cpe1, cpe2 *CPE, options *MatchOptions) bool
 
 **示例：**
 ```go
-options := &cpe.MatchOptions{
+options := &cpeskills.MatchOptions{
     ExactMatch:     false,
     IgnoreCase:     true,
     AllowWildcards: true,
 }
 
-match := cpe.MatchCPE(cpe1, cpe2, options)
+match := cpeskills.MatchCPE(cpe1, cpe2, options)
 ```
 
 ## 高级匹配算法
@@ -74,7 +74,7 @@ func FuzzyMatch(cpe1, cpe2 *CPE) float64
 
 **示例：**
 ```go
-score := cpe.FuzzyMatch(cpe1, cpe2)
+score := cpeskills.FuzzyMatch(cpe1, cpe2)
 fmt.Printf("相似度分数: %.2f\n", score)
 
 if score >= 0.8 {
@@ -104,14 +104,14 @@ func WeightedMatch(cpe1, cpe2 *CPE, weights MatchWeights) float64
 
 **示例：**
 ```go
-weights := cpe.MatchWeights{
+weights := cpeskills.MatchWeights{
     Part:    0.1,  // 组件类型权重较低
     Vendor:  0.3,  // 供应商权重中等
     Product: 0.4,  // 产品权重最高
     Version: 0.2,  // 版本权重中等
 }
 
-score := cpe.WeightedMatch(cpe1, cpe2, weights)
+score := cpeskills.WeightedMatch(cpe1, cpe2, weights)
 fmt.Printf("加权匹配分数: %.3f\n", score)
 ```
 
@@ -126,10 +126,10 @@ func SemanticMatch(cpe1, cpe2 *CPE) bool
 **示例：**
 ```go
 // 这些CPE在语义上是等价的
-ie1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:internet_explorer:*:*:*:*:*:*:*:*")
-ie2, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:ie:*:*:*:*:*:*:*:*")
+ie1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:internet_explorer:*:*:*:*:*:*:*:*")
+ie2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:ie:*:*:*:*:*:*:*:*")
 
-if cpe.SemanticMatch(ie1, ie2) {
+if cpeskills.SemanticMatch(ie1, ie2) {
     fmt.Println("语义匹配成功")
 }
 ```
@@ -154,12 +154,12 @@ func MatchPattern(target *CPE, pattern *CPE) bool
 **示例：**
 ```go
 // 创建匹配所有Microsoft产品的模式
-pattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+pattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
 
 // 测试目标CPE
-target, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+target, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
 
-if cpe.MatchPattern(target, pattern) {
+if cpeskills.MatchPattern(target, pattern) {
     fmt.Println("匹配Microsoft产品模式")
 }
 ```
@@ -180,7 +180,7 @@ func MatchRegex(cpe *CPE, field string, pattern string) bool
 **示例：**
 ```go
 // 匹配版本号模式
-match := cpe.MatchRegex(cpeObj, "version", `^\d+\.\d+\.\d+$`)
+match := cpeskills.MatchRegex(cpeObj, "version", `^\d+\.\d+\.\d+$`)
 if match {
     fmt.Println("版本号格式正确")
 }
@@ -203,7 +203,7 @@ func CompareVersions(version1, version2 string) int
 
 **示例：**
 ```go
-result := cpe.CompareVersions("1.2.3", "1.2.4")
+result := cpeskills.CompareVersions("1.2.3", "1.2.4")
 switch result {
 case -1:
     fmt.Println("版本1较旧")
@@ -224,7 +224,7 @@ func IsVersionInRange(version, minVersion, maxVersion string) bool
 
 **示例：**
 ```go
-inRange := cpe.IsVersionInRange("1.2.5", "1.2.0", "1.3.0")
+inRange := cpeskills.IsVersionInRange("1.2.5", "1.2.0", "1.3.0")
 if inRange {
     fmt.Println("版本在范围内")
 }
@@ -241,7 +241,7 @@ func MatchVersionPattern(version, pattern string) bool
 **示例：**
 ```go
 // 匹配1.x.x版本
-match := cpe.MatchVersionPattern("1.2.3", "1.*.*")
+match := cpeskills.MatchVersionPattern("1.2.3", "1.*.*")
 if match {
     fmt.Println("匹配版本模式")
 }
@@ -276,13 +276,13 @@ func FindMatches(target *CPE, cpeSet *CPESet) []*CPE
 **示例：**
 ```go
 // 创建CPE集合
-cpeSet := cpe.NewCPESet()
+cpeSet := cpeskills.NewCPESet()
 cpeSet.Add(cpe1)
 cpeSet.Add(cpe2)
 cpeSet.Add(cpe3)
 
 // 查找匹配项
-matches := cpe.FindMatches(targetCPE, cpeSet)
+matches := cpeskills.FindMatches(targetCPE, cpeSet)
 fmt.Printf("找到 %d 个匹配项\n", len(matches))
 ```
 
@@ -353,7 +353,7 @@ func DetailedMatch(cpe1, cpe2 *CPE, options *MatchOptions) *MatchResult
 
 **示例：**
 ```go
-result := cpe.DetailedMatch(cpe1, cpe2, options)
+result := cpeskills.DetailedMatch(cpe1, cpe2, options)
 
 fmt.Printf("匹配结果: %t\n", result.Match)
 fmt.Printf("匹配分数: %.3f\n", result.Score)
@@ -371,14 +371,14 @@ for component, score := range result.Details {
 
 ```go
 // 启用匹配缓存
-cpe.EnableMatchCache(5000)
+cpeskills.EnableMatchCache(5000)
 
 // 匹配操作会被缓存
 match1 := cpe1.Match(cpe2) // 计算并缓存
 match2 := cpe1.Match(cpe2) // 从缓存获取
 
 // 清除缓存
-cpe.ClearMatchCache()
+cpeskills.ClearMatchCache()
 ```
 
 ### 批量匹配
@@ -451,9 +451,9 @@ import (
 
 func main() {
     // 创建测试CPE
-    cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
-    cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*")
-    cpe3, _ := cpe.ParseCpe23("cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*")
+    cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+    cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*")
+    cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*")
     
     fmt.Println("=== 基本匹配测试 ===")
     
@@ -464,8 +464,8 @@ func main() {
     fmt.Println("\n=== 模糊匹配测试 ===")
     
     // 模糊匹配
-    score12 := cpe.FuzzyMatch(cpe1, cpe2)
-    score13 := cpe.FuzzyMatch(cpe1, cpe3)
+    score12 := cpeskills.FuzzyMatch(cpe1, cpe2)
+    score13 := cpeskills.FuzzyMatch(cpe1, cpe3)
     
     fmt.Printf("cpe1 与 cpe2 相似度: %.3f\n", score12)
     fmt.Printf("cpe1 与 cpe3 相似度: %.3f\n", score13)
@@ -473,21 +473,21 @@ func main() {
     fmt.Println("\n=== 加权匹配测试 ===")
     
     // 加权匹配
-    weights := cpe.MatchWeights{
+    weights := cpeskills.MatchWeights{
         Part:    0.1,
         Vendor:  0.3,
         Product: 0.4,
         Version: 0.2,
     }
     
-    weightedScore := cpe.WeightedMatch(cpe1, cpe2, weights)
+    weightedScore := cpeskills.WeightedMatch(cpe1, cpe2, weights)
     fmt.Printf("加权匹配分数: %.3f\n", weightedScore)
     
     fmt.Println("\n=== 详细匹配结果 ===")
     
     // 详细匹配
-    options := cpe.DefaultMatchOptions()
-    result := cpe.DetailedMatch(cpe1, cpe2, options)
+    options := cpeskills.DefaultMatchOptions()
+    result := cpeskills.DetailedMatch(cpe1, cpe2, options)
     
     fmt.Printf("匹配: %t\n", result.Match)
     fmt.Printf("分数: %.3f\n", result.Score)
@@ -506,7 +506,7 @@ func main() {
     baseVersion := "9.0.0"
     
     for _, version := range versions {
-        result := cpe.CompareVersions(baseVersion, version)
+        result := cpeskills.CompareVersions(baseVersion, version)
         var relation string
         switch result {
         case -1:
@@ -522,11 +522,11 @@ func main() {
     fmt.Println("\n=== 模式匹配测试 ===")
     
     // 模式匹配
-    pattern, _ := cpe.ParseCpe23("cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*")
-    targets := []*cpe.CPE{cpe1, cpe2}
+    pattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*")
+    targets := []*cpeskills.CPE{cpe1, cpe2}
     
     for i, target := range targets {
-        match := cpe.MatchPattern(target, pattern)
+        match := cpeskills.MatchPattern(target, pattern)
         fmt.Printf("目标 %d 匹配Apache模式: %t\n", i+1, match)
     }
 }

@@ -50,7 +50,7 @@ func main() {
         fmt.Printf("  表达式: %s\n", e.expr)
         
         // 解析表达式
-        parsedExpr, err := cpe.ParseApplicabilityExpression(e.expr)
+        parsedExpr, err := cpeskills.ParseApplicabilityExpression(e.expr)
         if err != nil {
             log.Printf("解析表达式失败: %v", err)
             continue
@@ -76,7 +76,7 @@ func main() {
     
     fmt.Printf("复杂表达式:\n%s\n", complexExpr)
     
-    parsedComplex, err := cpe.ParseApplicabilityExpression(complexExpr)
+    parsedComplex, err := cpeskills.ParseApplicabilityExpression(complexExpr)
     if err != nil {
         log.Printf("解析复杂表达式失败: %v", err)
     } else {
@@ -129,9 +129,9 @@ func main() {
         fmt.Printf("\n测试系统: %s\n", system.name)
         
         // 将CPE字符串转换为对象
-        systemCPEs := make([]*cpe.CPE, 0, len(system.cpes))
+        systemCPEs := make([]*cpeskills.CPE, 0, len(system.cpes))
         for _, cpeStr := range system.cpes {
-            cpeObj, err := cpe.ParseCpe23(cpeStr)
+            cpeObj, err := cpeskills.ParseCpe23(cpeStr)
             if err != nil {
                 log.Printf("解析CPE %s失败: %v", cpeStr, err)
                 continue
@@ -140,7 +140,7 @@ func main() {
         }
         
         // 测试适用性
-        applies := cpe.EvaluateApplicability(parsedComplex, systemCPEs)
+        applies := cpeskills.EvaluateApplicability(parsedComplex, systemCPEs)
         
         status := "❌ 不适用"
         if applies {
@@ -166,7 +166,7 @@ func main() {
     
     fmt.Printf("Java版本范围表达式:\n%s\n", javaRangeExpr)
     
-    javaExpr, err := cpe.ParseApplicabilityExpression(javaRangeExpr)
+    javaExpr, err := cpeskills.ParseApplicabilityExpression(javaRangeExpr)
     if err != nil {
         log.Printf("解析Java表达式失败: %v", err)
     } else {
@@ -181,8 +181,8 @@ func main() {
         
         fmt.Println("\n测试Java版本:")
         for _, javaVer := range javaVersions {
-            javaCPE, _ := cpe.ParseCpe23(javaVer)
-            applies := cpe.EvaluateApplicability(javaExpr, []*cpe.CPE{javaCPE})
+            javaCPE, _ := cpeskills.ParseCpe23(javaVer)
+            applies := cpeskills.EvaluateApplicability(javaExpr, []*cpeskills.CPE{javaCPE})
             
             status := "❌"
             if applies {
@@ -208,7 +208,7 @@ func main() {
     
     fmt.Printf("Linux上Web服务器表达式:\n%s\n", webServerLinuxExpr)
     
-    webServerExpr, err := cpe.ParseApplicabilityExpression(webServerLinuxExpr)
+    webServerExpr, err := cpeskills.ParseApplicabilityExpression(webServerLinuxExpr)
     if err != nil {
         log.Printf("解析Web服务器表达式失败: %v", err)
     } else {
@@ -242,13 +242,13 @@ func main() {
         
         fmt.Println("\n测试服务器配置:")
         for _, config := range serverConfigs {
-            configCPEs := make([]*cpe.CPE, 0, len(config.cpes))
+            configCPEs := make([]*cpeskills.CPE, 0, len(config.cpes))
             for _, cpeStr := range config.cpes {
-                cpeObj, _ := cpe.ParseCpe23(cpeStr)
+                cpeObj, _ := cpeskills.ParseCpe23(cpeStr)
                 configCPEs = append(configCPEs, cpeObj)
             }
             
-            applies := cpe.EvaluateApplicability(webServerExpr, configCPEs)
+            applies := cpeskills.EvaluateApplicability(webServerExpr, configCPEs)
             
             status := "❌"
             if applies {
@@ -282,25 +282,25 @@ func main() {
     fmt.Printf("冗长表达式:\n%s\n", verboseExpr)
     fmt.Printf("优化表达式:\n%s\n", optimizedExpr)
     
-    verboseParsed, _ := cpe.ParseApplicabilityExpression(verboseExpr)
-    optimizedParsed, _ := cpe.ParseApplicabilityExpression(optimizedExpr)
+    verboseParsed, _ := cpeskills.ParseApplicabilityExpression(verboseExpr)
+    optimizedParsed, _ := cpeskills.ParseApplicabilityExpression(optimizedExpr)
     
     // 测试两个表达式
-    testCPEs := []*cpe.CPE{
+    testCPEs := []*cpeskills.CPE{
         mustParse("cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*"),
         mustParse("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*"),
     }
     
-    verboseResult := cpe.EvaluateApplicability(verboseParsed, testCPEs)
-    optimizedResult := cpe.EvaluateApplicability(optimizedParsed, testCPEs)
+    verboseResult := cpeskills.EvaluateApplicability(verboseParsed, testCPEs)
+    optimizedResult := cpeskills.EvaluateApplicability(optimizedParsed, testCPEs)
     
     fmt.Printf("冗长结果: %t\n", verboseResult)
     fmt.Printf("优化结果: %t\n", optimizedResult)
     fmt.Printf("结果匹配: %t\n", verboseResult == optimizedResult)
 }
 
-func mustParse(cpeStr string) *cpe.CPE {
-    cpeObj, err := cpe.ParseCpe23(cpeStr)
+func mustParse(cpeStr string) *cpeskills.CPE {
+    cpeObj, err := cpeskills.ParseCpe23(cpeStr)
     if err != nil {
         panic(err)
     }

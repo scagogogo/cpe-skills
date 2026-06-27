@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 func TestParseCPEString_CPE23(t *testing.T) {
@@ -46,7 +46,7 @@ func TestParseCPEString_InvalidFormat(t *testing.T) {
 }
 
 func TestOutputCPE_TextFormat(t *testing.T) {
-	c, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	c, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 	var buf bytes.Buffer
 	err := outputCPE(&buf, c, "text")
 	if err != nil {
@@ -62,7 +62,7 @@ func TestOutputCPE_TextFormat(t *testing.T) {
 }
 
 func TestOutputCPE_JSONFormat(t *testing.T) {
-	c, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	c, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 	var buf bytes.Buffer
 	err := outputCPE(&buf, c, "json")
 	if err != nil {
@@ -75,8 +75,8 @@ func TestOutputCPE_JSONFormat(t *testing.T) {
 }
 
 func TestOutputConversion_To22(t *testing.T) {
-	c, _ := cpe.ParseCpe23("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
-	result := cpe.FormatCpe22(c)
+	c, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+	result := cpeskills.FormatCpe22(c)
 	if !strings.HasPrefix(result, "cpe:/") {
 		t.Errorf("expected CPE 2.2 format, got: %s", result)
 	}

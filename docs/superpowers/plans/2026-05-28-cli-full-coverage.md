@@ -80,7 +80,7 @@ func runValidate(cmd *cobra.Command, args []string) error {
 	}
 
 	// 然后验证CPE结构是否合规
-	validateErr := cpe.ValidateCPE(c)
+	validateErr := cpeskills.ValidateCPE(c)
 	if validateErr != nil {
 		if outputFormat == "json" {
 			fmt.Printf(`{"valid": false, "parseable": true, "error": "%s"}`, validateErr.Error())
@@ -138,7 +138,7 @@ func runNormalize(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	normalized := cpe.NormalizeCPE(c)
+	normalized := cpeskills.NormalizeCPE(c)
 
 	if outputFormat == "json" {
 		return outputCPE(cmd.OutOrStdout(), normalized, "json")
@@ -258,7 +258,7 @@ func init() {
 }
 
 // readCPEsFromFile 从文件读取 CPE 列表
-func readCPEsFromFile(path string) ([]*cpe.CPE, error) {
+func readCPEsFromFile(path string) ([]*cpeskills.CPE, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("opening file: %w", err)
@@ -268,13 +268,13 @@ func readCPEsFromFile(path string) ([]*cpe.CPE, error) {
 }
 
 // scanCPEsFromStdin 从 stdin 读取 CPE 列表
-func scanCPEsFromStdin() ([]*cpe.CPE, error) {
+func scanCPEsFromStdin() ([]*cpeskills.CPE, error) {
 	return scanCPEs(os.Stdin)
 }
 
 // scanCPEs 通用扫描函数
-func scanCPEs(reader *os.File) ([]*cpe.CPE, error) {
-	var cpes []*cpe.CPE
+func scanCPEs(reader *os.File) ([]*cpeskills.CPE, error) {
+	var cpes []*cpeskills.CPE
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -292,7 +292,7 @@ func scanCPEs(reader *os.File) ([]*cpe.CPE, error) {
 }
 
 // outputCPEList 输出 CPE 列表
-func outputCPEList(cpes []*cpe.CPE) {
+func outputCPEList(cpes []*cpeskills.CPE) {
 	if outputFormat == "json" {
 		fmt.Printf("[")
 		for i, c := range cpes {
@@ -310,8 +310,8 @@ func outputCPEList(cpes []*cpe.CPE) {
 }
 
 // cpesToSet 将 CPE 列表转为 CPESet
-func cpesToSet(cpes []*cpe.CPE, name string) *cpe.CPESet {
-	set := cpe.NewCPESet(name, "")
+func cpesToSet(cpes []*cpeskills.CPE, name string) *cpeskills.CPESet {
+	set := cpeskills.NewCPESet(name, "")
 	for _, c := range cpes {
 		set.Add(c)
 	}
@@ -466,7 +466,7 @@ func init() {
 }
 
 func runEvaluate(cmd *cobra.Command, args []string) error {
-	expr, err := cpe.ParseExpression(args[0])
+	expr, err := cpeskills.ParseExpression(args[0])
 	if err != nil {
 		return fmt.Errorf("parsing expression: %w", err)
 	}
@@ -592,7 +592,7 @@ func init() {
 
 func runCVEValidate(cmd *cobra.Command, args []string) error {
 	cveID := args[0]
-	valid := cpe.ValidateCVE(cveID)
+	valid := cpeskills.ValidateCVE(cveID)
 	if outputFormat == "json" {
 		fmt.Printf(`{"cve_id": "%s", "valid": %t}`, cveID, valid)
 		fmt.Println()
@@ -624,7 +624,7 @@ func runCVEExtract(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("reading input: %w", err)
 	}
 
-	cveIDs := cpe.ExtractCVEsFromText(string(data))
+	cveIDs := cpeskills.ExtractCVEsFromText(string(data))
 	if outputFormat == "json" {
 		encoder := json.NewEncoder(cmd.OutOrStdout())
 		encoder.SetIndent("", "  ")
@@ -641,7 +641,7 @@ func runCVESort(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	sorted := cpe.SortCVEs(cveIDs)
+	sorted := cpeskills.SortCVEs(cveIDs)
 	for _, id := range sorted {
 		fmt.Println(id)
 	}
@@ -653,7 +653,7 @@ func runCVEGroup(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	grouped := cpe.GroupCVEsByYear(cveIDs)
+	grouped := cpeskills.GroupCVEsByYear(cveIDs)
 	encoder := json.NewEncoder(cmd.OutOrStdout())
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(grouped)
@@ -664,7 +664,7 @@ func runCVEDedup(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	unique := cpe.RemoveDuplicateCVEs(cveIDs)
+	unique := cpeskills.RemoveDuplicateCVEs(cveIDs)
 	for _, id := range unique {
 		fmt.Println(id)
 	}
@@ -785,8 +785,8 @@ func init() {
 	rootCmd.AddCommand(nvdCmd)
 }
 
-func newNVDOptions() *cpe.NVDFeedOptions {
-	opts := cpe.DefaultNVDFeedOptions()
+func newNVDOptions() *cpeskills.NVDFeedOptions {
+	opts := cpeskills.DefaultNVDFeedOptions()
 	if nvdCacheDir != "" {
 		opts.CacheDir = nvdCacheDir
 	}
@@ -797,7 +797,7 @@ func newNVDOptions() *cpe.NVDFeedOptions {
 
 func runNVDDownload(cmd *cobra.Command, args []string) error {
 	opts := newNVDOptions()
-	data, err := cpe.DownloadAllNVDData(opts)
+	data, err := cpeskills.DownloadAllNVDData(opts)
 	if err != nil {
 		return fmt.Errorf("downloading NVD data: %w", err)
 	}
@@ -825,12 +825,12 @@ func runNVDLookupCVE(cmd *cobra.Command, args []string) error {
 	}
 
 	opts := newNVDOptions()
-	matchData, err := cpe.DownloadAndParseCPEMatch(opts)
+	matchData, err := cpeskills.DownloadAndParseCPEMatch(opts)
 	if err != nil {
 		return fmt.Errorf("downloading CPE match data: %w", err)
 	}
 
-	nvdData := &cpe.NVDCPEData{CPEMatchData: matchData}
+	nvdData := &cpeskills.NVDCPEData{CPEMatchData: matchData}
 	cves := nvdData.FindCVEsForCPE(c)
 
 	if outputFormat == "json" {
@@ -850,12 +850,12 @@ func runNVDLookupCPE(cmd *cobra.Command, args []string) error {
 	cveID := args[0]
 
 	opts := newNVDOptions()
-	matchData, err := cpe.DownloadAndParseCPEMatch(opts)
+	matchData, err := cpeskills.DownloadAndParseCPEMatch(opts)
 	if err != nil {
 		return fmt.Errorf("downloading CPE match data: %w", err)
 	}
 
-	nvdData := &cpe.NVDCPEData{CPEMatchData: matchData}
+	nvdData := &cpeskills.NVDCPEData{CPEMatchData: matchData}
 	cpes := nvdData.FindCPEsForCVE(cveID)
 
 	if outputFormat == "json" {
@@ -995,7 +995,7 @@ func runMatch(cmd *cobra.Command, args []string) error {
 	var result bool
 
 	if matchAdvanced {
-		opts := cpe.NewAdvancedMatchOptions()
+		opts := cpeskills.NewAdvancedMatchOptions()
 		opts.UseFuzzyMatch = matchFuzzy
 		opts.IgnoreCase = matchIgnoreCase
 		opts.MatchCommonOnly = matchCommonOnly
@@ -1006,9 +1006,9 @@ func runMatch(cmd *cobra.Command, args []string) error {
 		if matchScoreThreshold > 0 {
 			opts.ScoreThreshold = matchScoreThreshold
 		}
-		result = cpe.AdvancedMatchCPE(criteria, target, opts)
+		result = cpeskills.AdvancedMatchCPE(criteria, target, opts)
 	} else {
-		options := &cpe.MatchOptions{
+		options := &cpeskills.MatchOptions{
 			IgnoreVersion:    matchIgnoreVersion,
 			UseRegex:         matchUseRegex,
 			AllowSubVersions: true,
@@ -1016,7 +1016,7 @@ func runMatch(cmd *cobra.Command, args []string) error {
 			MinVersion:       matchMinVersion,
 			MaxVersion:       matchMaxVersion,
 		}
-		result = cpe.MatchCPE(criteria, target, options)
+		result = cpeskills.MatchCPE(criteria, target, options)
 	}
 
 	if outputFormat == "json" {
@@ -1097,7 +1097,7 @@ func runDictParse(cmd *cobra.Command, args []string) error {
 	}
 	defer f.Close()
 
-	dict, err := cpe.ParseDictionary(f)
+	dict, err := cpeskills.ParseDictionary(f)
 	if err != nil {
 		return fmt.Errorf("parsing dictionary: %w", err)
 	}
@@ -1132,7 +1132,7 @@ func runDictSearch(cmd *cobra.Command, args []string) error {
 	}
 	defer f.Close()
 
-	dict, err := cpe.ParseDictionary(f)
+	dict, err := cpeskills.ParseDictionary(f)
 	if err != nil {
 		return fmt.Errorf("parsing dictionary: %w", err)
 	}
@@ -1162,7 +1162,7 @@ func runDictExport(cmd *cobra.Command, args []string) error {
 	}
 	defer f.Close()
 
-	dict, err := cpe.ParseDictionary(f)
+	dict, err := cpeskills.ParseDictionary(f)
 	if err != nil {
 		return fmt.Errorf("parsing dictionary: %w", err)
 	}
@@ -1244,15 +1244,15 @@ func runParse(cmd *cobra.Command, args []string) error {
 }
 
 // parseCPEString 自动检测 CPE 版本并解析（支持 2.2、2.3 和 WFN）
-func parseCPEString(input string) (*cpe.CPE, error) {
+func parseCPEString(input string) (*cpeskills.CPE, error) {
 	if len(input) >= 6 && input[:6] == "cpe:2." {
-		return cpe.ParseCpe23(input)
+		return cpeskills.ParseCpe23(input)
 	}
 	if len(input) >= 5 && input[:5] == "cpe:/" {
-		return cpe.ParseCpe22(input)
+		return cpeskills.ParseCpe22(input)
 	}
 	if strings.HasPrefix(input, "wfn:[") {
-		wfn, err := cpe.FromCPE23String(input)
+		wfn, err := cpeskills.FromCPE23String(input)
 		if err != nil {
 			// WFN 格式无法直接解析为 CPE 2.3，尝试通过 WFN 转换
 			return nil, fmt.Errorf("WFN format input not directly parseable, use WFN string in CPE 2.3 form: %w", err)
@@ -1263,14 +1263,14 @@ func parseCPEString(input string) (*cpe.CPE, error) {
 }
 
 // outputConversion 输出格式转换结果
-func outputConversion(c *cpe.CPE, format string) error {
+func outputConversion(c *cpeskills.CPE, format string) error {
 	switch format {
 	case "2.2":
-		fmt.Println(cpe.FormatCpe22(c))
+		fmt.Println(cpeskills.FormatCpe22(c))
 	case "2.3":
-		fmt.Println(cpe.FormatCpe23(c))
+		fmt.Println(cpeskills.FormatCpe23(c))
 	case "wfn":
-		wfn := cpe.FromCPE(c)
+		wfn := cpeskills.FromCPE(c)
 		fmt.Printf("wfn:[part=%s,vendor=%s,product=%s,version=%s,update=%s,edition=%s,language=%s,swEdition=%s,targetSw=%s,targetHw=%s,other=%s]\n",
 			wfn.Part, wfn.Vendor, wfn.Product, wfn.Version, wfn.Update, wfn.Edition, wfn.Language,
 			wfn.SoftwareEdition, wfn.TargetSoftware, wfn.TargetHardware, wfn.Other)

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -30,9 +30,9 @@ func main() {
 
 	// 在真实场景中，我们会使用NVD API密钥
 	// 这里我们只是创建一个简单的数据源
-	nvdDataSource := cpe.CreateNVDDataSource("")
+	nvdDataSource := cpeskills.CreateNVDDataSource("")
 	// 配置缓存
-	nvdDataSource.SetCacheSettings(&cpe.CacheSettings{
+	nvdDataSource.SetCacheSettings(&cpeskills.CacheSettings{
 		Enabled:     true,
 		Directory:   tempDir,
 		ExpiryHours: 24,
@@ -61,21 +61,21 @@ func main() {
 	fmt.Println("\n===== 示例2: 模拟CPE字典 =====")
 
 	// 创建一些CPE条目
-	cpeWin10, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpeWin10, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Windows 10 CPE失败: %v", err)
 	}
 
-	cpeAcrobat, err := cpe.ParseCpe23("cpe:2.3:a:adobe:acrobat_reader:dc:*:*:*:*:*:*:*")
+	cpeAcrobat, err := cpeskills.ParseCpe23("cpe:2.3:a:adobe:acrobat_reader:dc:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Acrobat Reader CPE失败: %v", err)
 	}
 
 	// 创建CPE字典项
-	win10Item := &cpe.CPEItem{
+	win10Item := &cpeskills.CPEItem{
 		Name:  cpeWin10.GetURI(),
 		Title: "Microsoft Windows 10",
-		References: []cpe.Reference{
+		References: []cpeskills.Reference{
 			{
 				URL:  "https://www.microsoft.com/windows/windows-10",
 				Type: "Vendor",
@@ -84,10 +84,10 @@ func main() {
 		CPE: cpeWin10,
 	}
 
-	acrobatItem := &cpe.CPEItem{
+	acrobatItem := &cpeskills.CPEItem{
 		Name:  cpeAcrobat.GetURI(),
 		Title: "Adobe Acrobat Reader DC",
-		References: []cpe.Reference{
+		References: []cpeskills.Reference{
 			{
 				URL:  "https://acrobat.adobe.com/us/en/acrobat/pdf-reader.html",
 				Type: "Vendor",
@@ -97,8 +97,8 @@ func main() {
 	}
 
 	// 创建CPE字典
-	dictionary := &cpe.CPEDictionary{
-		Items:         []*cpe.CPEItem{win10Item, acrobatItem},
+	dictionary := &cpeskills.CPEDictionary{
+		Items:         []*cpeskills.CPEItem{win10Item, acrobatItem},
 		GeneratedAt:   time.Now(),
 		SchemaVersion: "2.3",
 	}
@@ -148,7 +148,7 @@ func main() {
 	fmt.Println("\n===== 示例4: 存储CPE字典到本地存储 =====")
 
 	// 初始化文件存储
-	storage, err := cpe.NewFileStorage(tempDir, true)
+	storage, err := cpeskills.NewFileStorage(tempDir, true)
 	if err != nil {
 		log.Fatalf("初始化文件存储失败: %v", err)
 	}
@@ -214,7 +214,7 @@ func main() {
 	fmt.Println("\n===== 示例6: 搜索CPE字典 =====")
 
 	// 创建搜索条件
-	searchCriteria, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+	searchCriteria, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("创建搜索条件失败: %v", err)
 	}
@@ -226,7 +226,7 @@ func main() {
 	fmt.Printf("匹配结果:\n")
 
 	for _, item := range retrievedDict.Items {
-		if cpe.MatchCPE(searchCriteria, item.CPE, nil) {
+		if cpeskills.MatchCPE(searchCriteria, item.CPE, nil) {
 			matchCount++
 			fmt.Printf("%d. %s - %s\n", matchCount, item.Name, item.Title)
 		}

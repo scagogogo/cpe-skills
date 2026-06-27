@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"strings"
@@ -13,16 +13,16 @@ import (
  * 示例:
  *   ```go
  *   // 创建一个表示Windows 10的CPE
- *   windowsCPE := &cpe.CPE{
+ *   windowsCPE := &cpeskills.CPE{
  *       Cpe23:       "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
- *       Part:        *cpe.PartApplication,
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
- *       Version:     cpe.Version("10"),
+ *       Part:        *cpeskills.PartApplication,
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
+ *       Version:     cpeskills.Version("10"),
  *   }
  *
  *   // 或者使用解析函数创建
- *   windowsCPE, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+ *   windowsCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
  *   if err != nil {
  *       log.Fatalf("解析CPE失败: %v", err)
  *   }
@@ -97,8 +97,8 @@ type CPE struct {
  * 示例:
  *   ```go
  *   // 创建两个CPE对象
- *   windowsCPE, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
- *   windowsPattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+ *   windowsCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+ *   windowsPattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
  *
  *   // 检查是否匹配
  *   if windowsPattern.Match(windowsCPE) {
@@ -107,7 +107,7 @@ type CPE struct {
  *   // 输出: Windows 10匹配通配模式
  *
  *   // 不同Part不匹配
- *   osPattern, _ := cpe.ParseCpe23("cpe:2.3:o:microsoft:windows:*:*:*:*:*:*:*:*")
+ *   osPattern, _ := cpeskills.ParseCpe23("cpe:2.3:o:microsoft:windows:*:*:*:*:*:*:*:*")
  *   if !osPattern.Match(windowsCPE) {
  *       fmt.Println("应用程序和操作系统不匹配")
  *   }
@@ -197,15 +197,15 @@ func (x *CPE) Match(other *CPE) bool {
  * 示例:
  *   ```go
  *   // 通配符匹配任意值
- *   fmt.Println(cpe.matchAttribute("*", "windows"))   // 输出: true
- *   fmt.Println(cpe.matchAttribute("windows", "*"))   // 输出: true
+ *   fmt.Println(cpeskills.matchAttribute("*", "windows"))   // 输出: true
+ *   fmt.Println(cpeskills.matchAttribute("windows", "*"))   // 输出: true
  *
  *   // 两个不适用值匹配
- *   fmt.Println(cpe.matchAttribute("-", "-"))         // 输出: true
+ *   fmt.Println(cpeskills.matchAttribute("-", "-"))         // 输出: true
  *
  *   // 完全相等才匹配
- *   fmt.Println(cpe.matchAttribute("windows", "windows"))    // 输出: true
- *   fmt.Println(cpe.matchAttribute("windows", "linux"))      // 输出: false
+ *   fmt.Println(cpeskills.matchAttribute("windows", "windows"))    // 输出: true
+ *   fmt.Println(cpeskills.matchAttribute("windows", "linux"))      // 输出: false
  *   ```
  */
 func matchAttribute(a, b string) bool {
@@ -235,13 +235,13 @@ func matchAttribute(a, b string) bool {
  * 示例:
  *   ```go
  *   // 创建一个CPE并获取其URI
- *   windowsCPE, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+ *   windowsCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
  *   uri := windowsCPE.GetURI()
  *   fmt.Println("CPE URI:", uri)
  *   // 输出: CPE URI: cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
  *
  *   // 用于存储和检索CPE
- *   storage, _ := cpe.NewFileStorage("/tmp/cpe-storage", true)
+ *   storage, _ := cpeskills.NewFileStorage("/tmp/cpe-storage", true)
  *   err := storage.StoreCPE(windowsCPE)
  *   if err != nil {
  *       log.Fatalf("存储CPE失败: %v", err)
@@ -267,18 +267,18 @@ func (c *CPE) GetURI() string {
  * 示例:
  *   ```go
  *   // 创建一个新的CPE对象
- *   windowsCPE := &cpe.CPE{
- *       Part:        *cpe.PartApplication,
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
- *       Version:     cpe.Version("10"),
- *       Update:      cpe.Update("*"),
- *       Edition:     cpe.Edition("*"),
- *       Language:    cpe.Language("*"),
+ *   windowsCPE := &cpeskills.CPE{
+ *       Part:        *cpeskills.PartApplication,
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
+ *       Version:     cpeskills.Version("10"),
+ *       Update:      cpeskills.Update("*"),
+ *       Edition:     cpeskills.Edition("*"),
+ *       Language:    cpeskills.Language("*"),
  *   }
  *
  *   // 获取格式化的URI
- *   uri := cpe.FormatURI(windowsCPE)
+ *   uri := cpeskills.FormatURI(windowsCPE)
  *   fmt.Println(uri)
  *   // 输出: cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
  *   ```
@@ -331,19 +331,19 @@ func FormatURI(cpe *CPE) string {
  * 示例:
  *   ```go
  *   // 创建匹配条件和目标CPE
- *   criteria, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
- *   target, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+ *   criteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+ *   target, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
  *
  *   // 使用默认匹配选项
- *   options := cpe.DefaultMatchOptions()
- *   if cpe.MatchCPE(criteria, target, options) {
+ *   options := cpeskills.DefaultMatchOptions()
+ *   if cpeskills.MatchCPE(criteria, target, options) {
  *       fmt.Println("CPE匹配成功")
  *   }
  *
  *   // 忽略版本匹配
  *   options.IgnoreVersion = true
- *   windowsXP, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:xp:*:*:*:*:*:*:*")
- *   if cpe.MatchCPE(criteria, windowsXP, options) {
+ *   windowsXP, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:xp:*:*:*:*:*:*:*")
+ *   if cpeskills.MatchCPE(criteria, windowsXP, options) {
  *       fmt.Println("忽略版本时匹配成功")
  *   }
  *   ```

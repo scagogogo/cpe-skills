@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -14,22 +14,22 @@ func main() {
 	fmt.Println("========= CPE适用性语言示例 =========")
 
 	// 创建一些CPE对象作为匹配目标
-	cpeWindows10, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpeWindows10, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Windows 10 CPE失败: %v", err)
 	}
 
-	cpeWindows11, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
+	cpeWindows11, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Windows 11 CPE失败: %v", err)
 	}
 
-	cpeAcrobat, err := cpe.ParseCpe23("cpe:2.3:a:adobe:acrobat_reader:dc:*:*:*:*:*:*:*")
+	cpeAcrobat, err := cpeskills.ParseCpe23("cpe:2.3:a:adobe:acrobat_reader:dc:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Acrobat Reader CPE失败: %v", err)
 	}
 
-	cpeJava8, err := cpe.ParseCpe23("cpe:2.3:a:oracle:java:1.8.0:*:*:*:*:*:*:*")
+	cpeJava8, err := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:1.8.0:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Java 8 CPE失败: %v", err)
 	}
@@ -38,25 +38,25 @@ func main() {
 	fmt.Println("\n===== 示例1: 基本CPE匹配 =====")
 
 	// 创建匹配条件
-	windowsCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	windowsCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "microsoft",
 		ProductName: "windows",
 	}
 
-	acrobatCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	acrobatCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "adobe",
 		ProductName: "acrobat_reader",
 	}
 
 	// 测试单个CPE匹配
-	fmt.Printf("Windows 10 匹配Windows条件: %t\n", cpe.MatchCPE(windowsCriteria, cpeWindows10, nil))
-	fmt.Printf("Windows 11 匹配Windows条件: %t\n", cpe.MatchCPE(windowsCriteria, cpeWindows11, nil))
-	fmt.Printf("Acrobat Reader 匹配Windows条件: %t\n", cpe.MatchCPE(windowsCriteria, cpeAcrobat, nil))
-	fmt.Printf("Java 8 匹配Windows条件: %t\n", cpe.MatchCPE(windowsCriteria, cpeJava8, nil))
+	fmt.Printf("Windows 10 匹配Windows条件: %t\n", cpeskills.MatchCPE(windowsCriteria, cpeWindows10, nil))
+	fmt.Printf("Windows 11 匹配Windows条件: %t\n", cpeskills.MatchCPE(windowsCriteria, cpeWindows11, nil))
+	fmt.Printf("Acrobat Reader 匹配Windows条件: %t\n", cpeskills.MatchCPE(windowsCriteria, cpeAcrobat, nil))
+	fmt.Printf("Java 8 匹配Windows条件: %t\n", cpeskills.MatchCPE(windowsCriteria, cpeJava8, nil))
 
-	fmt.Printf("\nAcrobat Reader 匹配Acrobat条件: %t\n", cpe.MatchCPE(acrobatCriteria, cpeAcrobat, nil))
+	fmt.Printf("\nAcrobat Reader 匹配Acrobat条件: %t\n", cpeskills.MatchCPE(acrobatCriteria, cpeAcrobat, nil))
 
 	/*
 		输出示例:
@@ -73,7 +73,7 @@ func main() {
 	fmt.Println("\n===== 示例2: 版本范围匹配 =====")
 
 	// 创建针对Windows 7到10的匹配条件
-	windowsVersionOptions := &cpe.MatchOptions{
+	windowsVersionOptions := &cpeskills.MatchOptions{
 		VersionRange: true,
 		MinVersion:   "7",
 		MaxVersion:   "10",
@@ -81,8 +81,8 @@ func main() {
 
 	// 测试不同Windows版本
 	fmt.Printf("Windows版本范围匹配(7到10):\n")
-	fmt.Printf("Windows 10 匹配: %t\n", cpe.MatchCPE(windowsCriteria, cpeWindows10, windowsVersionOptions))
-	fmt.Printf("Windows 11 匹配: %t\n", cpe.MatchCPE(windowsCriteria, cpeWindows11, windowsVersionOptions))
+	fmt.Printf("Windows 10 匹配: %t\n", cpeskills.MatchCPE(windowsCriteria, cpeWindows10, windowsVersionOptions))
+	fmt.Printf("Windows 11 匹配: %t\n", cpeskills.MatchCPE(windowsCriteria, cpeWindows11, windowsVersionOptions))
 
 	/*
 		输出示例:
@@ -95,13 +95,13 @@ func main() {
 	// 示例3: 忽略版本匹配
 	fmt.Println("\n===== 示例3: 忽略版本匹配 =====")
 
-	ignoreVersionOptions := &cpe.MatchOptions{
+	ignoreVersionOptions := &cpeskills.MatchOptions{
 		IgnoreVersion: true,
 	}
 
 	// 创建特定版本匹配条件
-	windows10Criteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	windows10Criteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "microsoft",
 		ProductName: "windows",
 		Version:     "10",
@@ -109,12 +109,12 @@ func main() {
 
 	// 测试忽略版本匹配
 	fmt.Printf("Windows 10条件 (标准匹配):\n")
-	fmt.Printf("Windows 10 匹配: %t\n", cpe.MatchCPE(windows10Criteria, cpeWindows10, nil))
-	fmt.Printf("Windows 11 匹配: %t\n", cpe.MatchCPE(windows10Criteria, cpeWindows11, nil))
+	fmt.Printf("Windows 10 匹配: %t\n", cpeskills.MatchCPE(windows10Criteria, cpeWindows10, nil))
+	fmt.Printf("Windows 11 匹配: %t\n", cpeskills.MatchCPE(windows10Criteria, cpeWindows11, nil))
 
 	fmt.Printf("\nWindows 10条件 (忽略版本匹配):\n")
-	fmt.Printf("Windows 10 匹配: %t\n", cpe.MatchCPE(windows10Criteria, cpeWindows10, ignoreVersionOptions))
-	fmt.Printf("Windows 11 匹配: %t\n", cpe.MatchCPE(windows10Criteria, cpeWindows11, ignoreVersionOptions))
+	fmt.Printf("Windows 10 匹配: %t\n", cpeskills.MatchCPE(windows10Criteria, cpeWindows10, ignoreVersionOptions))
+	fmt.Printf("Windows 11 匹配: %t\n", cpeskills.MatchCPE(windows10Criteria, cpeWindows11, ignoreVersionOptions))
 
 	/*
 		输出示例:
@@ -132,21 +132,21 @@ func main() {
 	fmt.Println("\n===== 示例4: 正则表达式匹配 =====")
 
 	// 创建使用正则表达式的匹配条件
-	regexCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	regexCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "micro.*",
 		ProductName: "win.*",
 	}
 
-	regexOptions := &cpe.MatchOptions{
+	regexOptions := &cpeskills.MatchOptions{
 		UseRegex: true,
 	}
 
 	// 测试正则表达式匹配
 	fmt.Printf("正则条件: Vendor=%s, Product=%s\n", regexCriteria.Vendor, regexCriteria.ProductName)
-	fmt.Printf("Windows 10 匹配正则条件: %t\n", cpe.MatchCPE(regexCriteria, cpeWindows10, regexOptions))
-	fmt.Printf("Windows 11 匹配正则条件: %t\n", cpe.MatchCPE(regexCriteria, cpeWindows11, regexOptions))
-	fmt.Printf("Acrobat Reader 匹配正则条件: %t\n", cpe.MatchCPE(regexCriteria, cpeAcrobat, regexOptions))
+	fmt.Printf("Windows 10 匹配正则条件: %t\n", cpeskills.MatchCPE(regexCriteria, cpeWindows10, regexOptions))
+	fmt.Printf("Windows 11 匹配正则条件: %t\n", cpeskills.MatchCPE(regexCriteria, cpeWindows11, regexOptions))
+	fmt.Printf("Acrobat Reader 匹配正则条件: %t\n", cpeskills.MatchCPE(regexCriteria, cpeAcrobat, regexOptions))
 
 	/*
 		输出示例:
@@ -161,18 +161,18 @@ func main() {
 	fmt.Println("\n===== 示例5: 手动实现简单的集合匹配逻辑 =====")
 
 	// 创建CPE集合
-	cpeSet := []*cpe.CPE{cpeWindows10, cpeWindows11, cpeAcrobat, cpeJava8}
+	cpeSet := []*cpeskills.CPE{cpeWindows10, cpeWindows11, cpeAcrobat, cpeJava8}
 
 	// 手动实现AND匹配 (都必须匹配)
-	matchAND := func(cpes []*cpe.CPE, criteria1, criteria2 *cpe.CPE, options *cpe.MatchOptions) bool {
+	matchAND := func(cpes []*cpeskills.CPE, criteria1, criteria2 *cpeskills.CPE, options *cpeskills.MatchOptions) bool {
 		match1Found := false
 		match2Found := false
 
 		for _, c := range cpes {
-			if cpe.MatchCPE(criteria1, c, options) {
+			if cpeskills.MatchCPE(criteria1, c, options) {
 				match1Found = true
 			}
-			if cpe.MatchCPE(criteria2, c, options) {
+			if cpeskills.MatchCPE(criteria2, c, options) {
 				match2Found = true
 			}
 		}
@@ -181,9 +181,9 @@ func main() {
 	}
 
 	// 手动实现OR匹配 (任一匹配即可)
-	matchOR := func(cpes []*cpe.CPE, criteria1, criteria2 *cpe.CPE, options *cpe.MatchOptions) bool {
+	matchOR := func(cpes []*cpeskills.CPE, criteria1, criteria2 *cpeskills.CPE, options *cpeskills.MatchOptions) bool {
 		for _, c := range cpes {
-			if cpe.MatchCPE(criteria1, c, options) || cpe.MatchCPE(criteria2, c, options) {
+			if cpeskills.MatchCPE(criteria1, c, options) || cpeskills.MatchCPE(criteria2, c, options) {
 				return true
 			}
 		}
@@ -198,8 +198,8 @@ func main() {
 		matchOR(cpeSet, windowsCriteria, acrobatCriteria, nil))
 
 	// 创建Java匹配条件
-	javaCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	javaCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "oracle",
 		ProductName: "java",
 	}
@@ -208,8 +208,8 @@ func main() {
 		matchAND(cpeSet, windowsCriteria, javaCriteria, nil))
 
 	// 创建没有匹配项的条件
-	unknownCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	unknownCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "unknown",
 		ProductName: "product",
 	}

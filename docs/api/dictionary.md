@@ -78,7 +78,7 @@ if err != nil {
 }
 defer file.Close()
 
-dictionary, err := cpe.ParseDictionary(file)
+dictionary, err := cpeskills.ParseDictionary(file)
 if err != nil {
     log.Fatalf("Failed to parse dictionary: %v", err)
 }
@@ -109,7 +109,7 @@ Convenience function to parse a dictionary directly from a file.
 
 **Example:**
 ```go
-dictionary, err := cpe.ParseDictionaryFromFile("cpe-dictionary.xml")
+dictionary, err := cpeskills.ParseDictionaryFromFile("cpe-dictionary.xml")
 if err != nil {
     log.Fatal(err)
 }
@@ -226,13 +226,13 @@ Stores a dictionary using the storage interface.
 **Example:**
 ```go
 // Parse dictionary
-dictionary, err := cpe.ParseDictionaryFromFile("cpe-dictionary.xml")
+dictionary, err := cpeskills.ParseDictionaryFromFile("cpe-dictionary.xml")
 if err != nil {
     log.Fatal(err)
 }
 
 // Store in file storage
-storage, _ := cpe.NewFileStorage("./data", true)
+storage, _ := cpeskills.NewFileStorage("./data", true)
 storage.Initialize()
 
 err = storage.StoreDictionary(dictionary)
@@ -255,7 +255,7 @@ Retrieves a stored dictionary.
 ```go
 dictionary, err := storage.RetrieveDictionary()
 if err != nil {
-    if errors.Is(err, cpe.ErrNotFound) {
+    if errors.Is(err, cpeskills.ErrNotFound) {
         fmt.Println("No dictionary found")
     } else {
         log.Printf("Failed to retrieve dictionary: %v", err)
@@ -283,7 +283,7 @@ Validates a dictionary for consistency and correctness.
 
 **Example:**
 ```go
-err := cpe.ValidateDictionary(dictionary)
+err := cpeskills.ValidateDictionary(dictionary)
 if err != nil {
     log.Printf("Dictionary validation failed: %v", err)
 } else {
@@ -311,11 +311,11 @@ Merges two dictionaries into a single dictionary.
 **Example:**
 ```go
 // Load two dictionaries
-dict1, _ := cpe.ParseDictionaryFromFile("dict1.xml")
-dict2, _ := cpe.ParseDictionaryFromFile("dict2.xml")
+dict1, _ := cpeskills.ParseDictionaryFromFile("dict1.xml")
+dict2, _ := cpeskills.ParseDictionaryFromFile("dict2.xml")
 
 // Merge them
-merged := cpe.MergeDictionaries(dict1, dict2)
+merged := cpeskills.MergeDictionaries(dict1, dict2)
 fmt.Printf("Merged dictionary has %d items\n", len(merged.Items))
 ```
 
@@ -390,7 +390,7 @@ import (
 func main() {
     // Parse dictionary from NVD XML file
     fmt.Println("Parsing CPE dictionary...")
-    dictionary, err := cpe.ParseDictionaryFromFile("official-cpe-dictionary_v2.3.xml")
+    dictionary, err := cpeskills.ParseDictionaryFromFile("official-cpe-dictionary_v2.3.xml")
     if err != nil {
         log.Fatalf("Failed to parse dictionary: %v", err)
     }
@@ -437,7 +437,7 @@ func main() {
     
     // Store dictionary
     fmt.Println("\nStoring dictionary...")
-    storage, err := cpe.NewFileStorage("./dictionary-data", true)
+    storage, err := cpeskills.NewFileStorage("./dictionary-data", true)
     if err != nil {
         log.Fatal(err)
     }

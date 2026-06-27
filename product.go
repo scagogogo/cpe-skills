@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 /**
  * Product 表示CPE中的产品名称组件
@@ -11,23 +11,23 @@ package cpe
  * 示例:
  *   ```go
  *   // 创建一个表示Microsoft Office产品的CPE
- *   officeCPE := &cpe.CPE{
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("office"),
- *       Version:     cpe.Version("2019"),
+ *   officeCPE := &cpeskills.CPE{
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("office"),
+ *       Version:     cpeskills.Version("2019"),
  *   }
  *
  *   // 搜索特定产品
- *   searchCriteria := &cpe.CPE{
- *       ProductName: cpe.Product("office"),
+ *   searchCriteria := &cpeskills.CPE{
+ *       ProductName: cpeskills.Product("office"),
  *   }
- *   options := cpe.DefaultMatchOptions()
- *   results := cpe.Search(cpeList, searchCriteria, options)
+ *   options := cpeskills.DefaultMatchOptions()
+ *   results := cpeskills.Search(cpeList, searchCriteria, options)
  *
  *   // 使用正则表达式匹配产品名
  *   options.UseRegex = true
- *   regexCriteria := &cpe.CPE{
- *       ProductName: cpe.Product("(word|excel|powerpoint)"),
+ *   regexCriteria := &cpeskills.CPE{
+ *       ProductName: cpeskills.Product("(word|excel|powerpoint)"),
  *   }
  *   ```
  */

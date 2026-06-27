@@ -35,7 +35,7 @@ import (
 
 func main() {
     // 解析CPE字符串
-    cpeObj, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    cpeObj, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }
@@ -46,7 +46,7 @@ func main() {
     fmt.Printf("版本: %s\n", cpeObj.Version)
     
     // 创建匹配模式
-    pattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+    pattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
     
     // 测试匹配
     if pattern.Match(cpeObj) {
@@ -102,9 +102,9 @@ func main() {
 
 ### 错误处理
 ```go
-cpeObj, err := cpe.ParseCpe23(cpeString)
+cpeObj, err := cpeskills.ParseCpe23(cpeString)
 if err != nil {
-    if cpe.IsInvalidFormatError(err) {
+    if cpeskills.IsInvalidFormatError(err) {
         fmt.Printf("无效格式: %s\n", cpeString)
         return
     }
@@ -114,7 +114,7 @@ if err != nil {
 
 ### 资源清理
 ```go
-storage, err := cpe.NewFileStorage("./data", true)
+storage, err := cpeskills.NewFileStorage("./data", true)
 if err != nil {
     log.Fatal(err)
 }
@@ -134,7 +134,7 @@ cpeStrings := []string{
 }
 
 for _, cpeStr := range cpeStrings {
-    cpeObj, err := cpe.ParseCpe23(cpeStr)
+    cpeObj, err := cpeskills.ParseCpe23(cpeStr)
     if err != nil {
         log.Printf("解析失败 %s: %v", cpeStr, err)
         continue
@@ -150,27 +150,27 @@ for _, cpeStr := range cpeStrings {
 ### 1. 始终处理错误
 ```go
 // 好的做法
-cpeObj, err := cpe.ParseCpe23(input)
+cpeObj, err := cpeskills.ParseCpe23(input)
 if err != nil {
     return fmt.Errorf("解析CPE失败: %w", err)
 }
 
 // 不好的做法
-cpeObj, _ := cpe.ParseCpe23(input) // 忽略错误
+cpeObj, _ := cpeskills.ParseCpe23(input) // 忽略错误
 ```
 
 ### 2. 使用适当的存储
 ```go
 // 用于测试
-storage := cpe.NewMemoryStorage()
+storage := cpeskills.NewMemoryStorage()
 
 // 用于生产
-storage, err := cpe.NewFileStorage("./cpe-data", true)
+storage, err := cpeskills.NewFileStorage("./cpe-data", true)
 ```
 
 ### 3. 验证输入
 ```go
-err := cpe.ValidateCPEString(userInput)
+err := cpeskills.ValidateCPEString(userInput)
 if err != nil {
     return fmt.Errorf("无效的CPE格式: %w", err)
 }
@@ -179,7 +179,7 @@ if err != nil {
 ### 4. 对集合使用Sets
 ```go
 // 对大集合高效
-cpeSet := cpe.NewCPESet()
+cpeSet := cpeskills.NewCPESet()
 cpeSet.Add(cpe1, cpe2, cpe3)
 
 // 高效过滤
@@ -190,22 +190,22 @@ microsoftCPEs := cpeSet.FilterByVendor("microsoft")
 
 ### 1. 启用缓存
 ```go
-storage, _ := cpe.NewFileStorage("./data", true) // 启用缓存
+storage, _ := cpeskills.NewFileStorage("./data", true) // 启用缓存
 ```
 
 ### 2. 使用批操作
 ```go
 // 比单个操作更好
-cpeSet := cpe.FromArray(cpeArray)
+cpeSet := cpeskills.FromArray(cpeArray)
 results := cpeSet.FilterByVendor("microsoft")
 ```
 
 ### 3. 重用匹配选项
 ```go
-options := cpe.DefaultMatchOptions()
+options := cpeskills.DefaultMatchOptions()
 // 为多个匹配重用选项
 for _, cpe := range cpes {
-    if cpe.MatchCPE(pattern, cpe, options) {
+    if cpeskills.MatchCPE(pattern, cpe, options) {
         // 处理匹配
     }
 }

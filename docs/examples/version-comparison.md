@@ -31,7 +31,7 @@ func main() {
     }
     
     for i, versionStr := range versions {
-        cpeObj, err := cpe.ParseCpe23(versionStr)
+        cpeObj, err := cpeskills.ParseCpe23(versionStr)
         if err != nil {
             log.Printf("Failed to parse %s: %v", versionStr, err)
             continue
@@ -43,7 +43,7 @@ func main() {
     // Example 2: Version Range Matching
     fmt.Println("\n2. Version Range Matching:")
     
-    targetVersion, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:8.5.5:*:*:*:*:*:*:*")
+    targetVersion, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:8.5.5:*:*:*:*:*:*:*")
     
     ranges := []struct {
         min string
@@ -56,7 +56,7 @@ func main() {
     }
     
     for _, r := range ranges {
-        inRange := cpe.IsVersionInRange(targetVersion.Version, r.min, r.max)
+        inRange := cpeskills.IsVersionInRange(targetVersion.Version, r.min, r.max)
         fmt.Printf("Version %s in range %s - %s (%s): %t\n", 
             targetVersion.Version, r.min, r.max, r.description, inRange)
     }
@@ -68,7 +68,7 @@ func main() {
     compareVersions := []string{"8.4.9", "8.5.0", "8.5.1", "9.0.0"}
     
     for _, compareVer := range compareVersions {
-        result := cpe.CompareVersions(baseVersion, compareVer)
+        result := cpeskills.CompareVersions(baseVersion, compareVer)
         var relationship string
         switch result {
         case -1:
@@ -99,12 +99,12 @@ func main() {
     }
     
     for _, testCPE := range testCPEs {
-        testObj, _ := cpe.ParseCpe23(testCPE)
+        testObj, _ := cpeskills.ParseCpe23(testCPE)
         fmt.Printf("\nTesting: %s\n", testCPE)
         
         for _, pattern := range patterns {
-            patternObj, _ := cpe.ParseCpe23(pattern)
-            if cpe.MatchesVersionPattern(testObj, patternObj) {
+            patternObj, _ := cpeskills.ParseCpe23(pattern)
+            if cpeskills.MatchesVersionPattern(testObj, patternObj) {
                 fmt.Printf("  ✓ Matches pattern: %s\n", pattern)
             }
         }
@@ -131,12 +131,12 @@ func main() {
     }
     
     for _, checkCPE := range checkCPEs {
-        cpeObj, _ := cpe.ParseCpe23(checkCPE)
+        cpeObj, _ := cpeskills.ParseCpe23(checkCPE)
         fmt.Printf("\nChecking: %s\n", checkCPE)
         
         for _, vuln := range vulnerableRanges {
             if cpeObj.ProductName == vuln.product {
-                isVulnerable := cpe.IsVersionInRange(cpeObj.Version, vuln.minVersion, vuln.maxVersion)
+                isVulnerable := cpeskills.IsVersionInRange(cpeObj.Version, vuln.minVersion, vuln.maxVersion)
                 if isVulnerable {
                     fmt.Printf("  ⚠️  VULNERABLE: %s (versions %s - %s)\n", 
                         vuln.description, vuln.minVersion, vuln.maxVersion)
@@ -160,11 +160,11 @@ func main() {
     
     fmt.Println("Unsorted versions:")
     for _, cpeStr := range unsortedCPEs {
-        cpeObj, _ := cpe.ParseCpe23(cpeStr)
+        cpeObj, _ := cpeskills.ParseCpe23(cpeStr)
         fmt.Printf("  %s\n", cpeObj.Version)
     }
     
-    sortedCPEs := cpe.SortCPEsByVersion(unsortedCPEs)
+    sortedCPEs := cpeskills.SortCPEsByVersion(unsortedCPEs)
     
     fmt.Println("\nSorted versions (ascending):")
     for _, cpeObj := range sortedCPEs {

@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"encoding/json"
@@ -48,7 +48,7 @@ type FileStorage struct {
  *   defer os.RemoveAll(tempDir) // 在程序结束时清理
  *
  *   // 创建带缓存的文件存储
- *   storage, err := cpe.NewFileStorage(tempDir, true)
+ *   storage, err := cpeskills.NewFileStorage(tempDir, true)
  *   if err != nil {
  *       log.Fatalf("创建存储失败: %v", err)
  *   }
@@ -186,7 +186,7 @@ func (fs *FileStorage) StoreCPE(cpe *CPE) error {
  *   // 从存储中检索CPE
  *   winCPE, err := storage.RetrieveCPE(cpeURI)
  *   if err != nil {
- *       if err == cpe.ErrNotFound {
+ *       if err == cpeskills.ErrNotFound {
  *           log.Printf("CPE不存在: %s", cpeURI)
  *       } else {
  *           log.Fatalf("检索CPE失败: %v", err)
@@ -291,12 +291,12 @@ func (f *FileStorage) DeleteCPE(uri string) error {
  * 示例:
  *   ```go
  *   // 搜索所有Microsoft的产品
- *   criteria := &cpe.CPE{
- *       Vendor: cpe.Vendor("microsoft"),
+ *   criteria := &cpeskills.CPE{
+ *       Vendor: cpeskills.Vendor("microsoft"),
  *   }
  *
  *   // 设置匹配选项，忽略版本匹配
- *   options := &cpe.MatchOptions{
+ *   options := &cpeskills.MatchOptions{
  *       IgnoreVersion: true,
  *   }
  *
@@ -644,21 +644,21 @@ func (fs *FileStorage) FindCPEsByCVE(cveID string) ([]*CPE, error) {
  * 示例:
  *   ```go
  *   // 创建一个新的CPE字典
- *   dictionary := &cpe.CPEDictionary{
+ *   dictionary := &cpeskills.CPEDictionary{
  *       GeneratedAt:    time.Now(),
  *       SchemaVersion:  "2.3",
- *       Items:          make([]*cpe.CPEItem, 0),
+ *       Items:          make([]*cpeskills.CPEItem, 0),
  *   }
  *
  *   // 添加CPE项到字典
- *   windowsCPE, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+ *   windowsCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
  *
  *   // 创建Windows 10的字典项
- *   windowsItem := &cpe.CPEItem{
+ *   windowsItem := &cpeskills.CPEItem{
  *       Name:        windowsCPE.Cpe23,
  *       Title:       "Microsoft Windows 10",
  *       CPE:         windowsCPE,
- *       References:  []cpe.Reference{
+ *       References:  []cpeskills.Reference{
  *           {
  *               URL:  "https://www.microsoft.com/windows",
  *               Type: "vendor",

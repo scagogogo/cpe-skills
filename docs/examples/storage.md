@@ -28,7 +28,7 @@ func main() {
     fmt.Println("\n1. File Storage:")
     
     // Create file storage with caching enabled
-    storage, err := cpe.NewFileStorage("./cpe-storage-demo", true)
+    storage, err := cpeskills.NewFileStorage("./cpe-storage-demo", true)
     if err != nil {
         log.Fatal(err)
     }
@@ -54,7 +54,7 @@ func main() {
     }
     
     for i, cpeStr := range cpeObjects {
-        cpeObj, err := cpe.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
             log.Printf("Failed to parse %s: %v", cpeStr, err)
             continue
@@ -85,11 +85,11 @@ func main() {
     fmt.Println("\n4. Searching CPE Objects:")
     
     // Search for Microsoft products
-    criteria := &cpe.CPE{
-        Vendor: cpe.Vendor("microsoft"),
+    criteria := &cpeskills.CPE{
+        Vendor: cpeskills.Vendor("microsoft"),
     }
     
-    results, err := storage.SearchCPE(criteria, cpe.DefaultMatchOptions())
+    results, err := storage.SearchCPE(criteria, cpeskills.DefaultMatchOptions())
     if err != nil {
         log.Printf("Search failed: %v", err)
     } else {
@@ -102,11 +102,11 @@ func main() {
     // Example 5: Advanced search
     fmt.Println("\n5. Advanced Search:")
     
-    advancedCriteria := &cpe.CPE{
-        Part: *cpe.PartApplication,
+    advancedCriteria := &cpeskills.CPE{
+        Part: *cpeskills.PartApplication,
     }
     
-    advancedOptions := cpe.NewAdvancedMatchOptions()
+    advancedOptions := cpeskills.NewAdvancedMatchOptions()
     advancedOptions.MatchMode = "exact"
     
     advancedResults, err := storage.AdvancedSearchCPE(advancedCriteria, advancedOptions)
@@ -122,14 +122,14 @@ func main() {
     // Example 6: Memory Storage
     fmt.Println("\n6. Memory Storage:")
     
-    memStorage := cpe.NewMemoryStorage()
+    memStorage := cpeskills.NewMemoryStorage()
     err = memStorage.Initialize()
     if err != nil {
         log.Fatal(err)
     }
     
     // Store some test data
-    testCPE, _ := cpe.ParseCpe23("cpe:2.3:a:test:product:1.0:*:*:*:*:*:*:*")
+    testCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:test:product:1.0:*:*:*:*:*:*:*")
     err = memStorage.StoreCPE(testCPE)
     if err != nil {
         log.Printf("Failed to store in memory: %v", err)
@@ -149,7 +149,7 @@ func main() {
     fmt.Println("\n7. Storage Manager:")
     
     // Create storage manager with file storage as primary
-    manager := cpe.NewStorageManager(storage)
+    manager := cpeskills.NewStorageManager(storage)
     manager.SetCache(memStorage) // Use memory storage as cache
     
     fmt.Println("✓ Storage manager created with file primary and memory cache")
@@ -158,7 +158,7 @@ func main() {
     fmt.Println("\n8. CVE Storage:")
     
     // Create a sample CVE
-    sampleCVE := &cpe.CVEReference{
+    sampleCVE := &cpeskills.CVEReference{
         ID:          "CVE-2021-44228",
         Description: "Apache Log4j2 JNDI features do not protect against attacker controlled LDAP",
         CVSS:        10.0,
@@ -196,7 +196,7 @@ func main() {
     }
     
     // Delete a CPE
-    deleteCPE, _ := cpe.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
+    deleteCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
     err = storage.DeleteCPE(deleteCPE.GetURI())
     if err != nil {
         log.Printf("Failed to delete CPE: %v", err)

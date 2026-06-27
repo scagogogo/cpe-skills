@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"encoding/json"
@@ -216,7 +216,8 @@ func (ds *VulnDataSource) GetVulnerabilities(params map[string]string) ([]*CVERe
 	// 根据数据源类型设置特定的端点
 	switch ds.Type {
 	case DataSourceNVD:
-		endpoint = "vuln/search" + endpoint
+		// NVD API 2.0: query params direct on base URL
+		_ = endpoint // will be appended as query params
 	case DataSourceGitHub:
 		endpoint = "advisories" + endpoint
 	case DataSourceRedHatCVE:
@@ -269,7 +270,8 @@ func (ds *VulnDataSource) GetVulnerabilityById(cveID string) (*CVEReference, err
 	// 根据数据源类型构建请求
 	switch ds.Type {
 	case DataSourceNVD:
-		endpoint = fmt.Sprintf("vuln/%s", cveID)
+		// NVD API 2.0: /cves/2.0?cveId={cveID}
+		endpoint = fmt.Sprintf("?cveId=%s", cveID)
 	case DataSourceRedHatCVE:
 		endpoint = fmt.Sprintf("rest/cve/%s", cveID)
 	default:
@@ -928,13 +930,13 @@ func mergeStringSlices(slice1, slice2 []string) []string {
 	return result
 }
 
-// CreateNVDDataSource 创建NVD数据源
+// CreateNVDDataSource creates an NVD data source using API 2.0
 func CreateNVDDataSource(apiKey string) *VulnDataSource {
 	ds := NewVulnDataSource(
 		DataSourceNVD,
 		"National Vulnerability Database",
-		"美国国家漏洞数据库",
-		"https://services.nvd.nist.gov/rest/json/",
+		"NVD API 2.0",
+		NVDApiBaseURL,
 	)
 
 	if apiKey != "" {
@@ -1013,7 +1015,7 @@ type CPEDataSource interface {
  * 使用示例:
  *   ```go
  *   // 查询Apache Log4j 2.0相关的漏洞
- *   cveList, err := cpe.QueryByCPE("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+ *   cveList, err := cpeskills.QueryByCPE("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
  *   if err != nil {
  *       log.Fatalf("查询漏洞失败: %v", err)
  *   }
@@ -1023,7 +1025,7 @@ type CPEDataSource interface {
  *       fmt.Printf("%d. %s\n", i+1, cveID)
  *
  *       // 可以进一步获取每个CVE的详细信息
- *       cveInfo, _ := cpe.GetCVEInfo(cveID)
+ *       cveInfo, _ := cpeskills.GetCVEInfo(cveID)
  *       if cveInfo != nil {
  *           fmt.Printf("   严重性: %s\n", cveInfo.Severity)
  *           fmt.Printf("   描述: %s\n", cveInfo.Description)
@@ -1058,7 +1060,7 @@ func QueryByCPE(cpe string) ([]string, error) {
  * 使用示例:
  *   ```go
  *   // 获取著名的Log4Shell漏洞信息
- *   cveInfo, err := cpe.GetCVEInfoImpl("CVE-2021-44228")
+ *   cveInfo, err := cpeskills.GetCVEInfoImpl("CVE-2021-44228")
  *   if err != nil {
  *       log.Fatalf("获取CVE信息失败: %v", err)
  *   }
@@ -1131,7 +1133,7 @@ func GetCVEInfoImpl(cveID string) (*CVEReference, error) {
  *
  *   // 添加一些测试数据
  *   mySource.cpeData["cpe:2.3:a:mycompany:myproduct:1.0:*:*:*:*:*:*:*"] = []string{"CVE-2023-00001"}
- *   mySource.cveData["CVE-2023-00001"] = &cpe.CVEReference{
+ *   mySource.cveData["CVE-2023-00001"] = &cpeskills.CVEReference{
  *       CVEID: "CVE-2023-00001",
  *       Description: "A vulnerability in MyProduct allows...",
  *       Severity: "HIGH",
@@ -1139,10 +1141,10 @@ func GetCVEInfoImpl(cveID string) (*CVEReference, error) {
  *   }
  *
  *   // 注册自定义数据源
- *   cpe.RegisterDataSource(mySource)
+ *   cpeskills.RegisterDataSource(mySource)
  *
  *   // 现在可以通过标准接口查询自定义数据源
- *   cves, _ := cpe.QueryByCPE("cpe:2.3:a:mycompany:myproduct:1.0:*:*:*:*:*:*:*")
+ *   cves, _ := cpeskills.QueryByCPE("cpe:2.3:a:mycompany:myproduct:1.0:*:*:*:*:*:*:*")
  *   // cves应该包含"CVE-2023-00001"
  *   ```
  *
@@ -1172,10 +1174,10 @@ func RegisterDataSource(dataSource CPEDataSource) {
  * 使用示例:
  *   ```go
  *   // 清除所有已注册的数据源
- *   cpe.ClearDataSources()
+ *   cpeskills.ClearDataSources()
  *
  *   // 重新注册自定义数据源
- *   cpe.RegisterDataSource(myNewDataSource)
+ *   cpeskills.RegisterDataSource(myNewDataSource)
  *   ```
  *
  * 注意事项:

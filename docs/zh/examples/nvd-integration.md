@@ -25,7 +25,7 @@ func main() {
     fmt.Println("\n1. 设置NVD客户端:")
     
     // 创建NVD客户端配置
-    config := &cpe.NVDConfig{
+    config := &cpeskills.NVDConfig{
         APIKey:         "", // 可选：NVD API密钥用于提高速率限制
         CacheDir:       "./nvd_cache",
         UpdateInterval: 24 * time.Hour,
@@ -33,7 +33,7 @@ func main() {
         Timeout:        30 * time.Second,
     }
     
-    client := cpe.NewNVDClient(config)
+    client := cpeskills.NewNVDClient(config)
     fmt.Println("✅ NVD客户端创建成功")
     
     // 示例2：下载CPE字典
@@ -80,7 +80,7 @@ func main() {
     // 查询Apache Tomcat的漏洞
     fmt.Println("查询Apache Tomcat的高危漏洞:")
     
-    query := cpe.NVDQuery{
+    query := cpeskills.NVDQuery{
         CPEVendor:    "apache",
         CPEProduct:   "tomcat",
         CVSSScoreMin: 7.0, // 只查询高危漏洞
@@ -150,11 +150,11 @@ func main() {
     highSeverityCount := 0
     
     for i, componentStr := range systemInventory {
-        component, _ := cpe.ParseCpe23(componentStr)
+        component, _ := cpeskills.ParseCpe23(componentStr)
         fmt.Printf("\n  %d. %s %s %s\n", i+1, component.Vendor, component.ProductName, component.Version)
         
         // 查询该组件的漏洞
-        componentQuery := cpe.NVDQuery{
+        componentQuery := cpeskills.NVDQuery{
             CPEVendor:  component.Vendor,
             CPEProduct: component.ProductName,
             Limit:      5,
@@ -239,7 +239,7 @@ func main() {
             validCount++
         }
         
-        component, _ := cpe.ParseCpe23(cpeStr)
+        component, _ := cpeskills.ParseCpe23(cpeStr)
         fmt.Printf("  %d. %s %s - %s\n", 
             i+1, component.Vendor, component.ProductName, status)
     }
@@ -289,10 +289,10 @@ type VulnerabilityReport struct {
     RiskLevel            string    `json:"risk_level"`
 }
 
-func createSampleDictionary() *cpe.CPEDictionary {
-    dict := cpe.NewCPEDictionary()
+func createSampleDictionary() *cpeskills.CPEDictionary {
+    dict := cpeskills.NewCPEDictionary()
     
-    entries := []*cpe.CPEDictionaryEntry{
+    entries := []*cpeskills.CPEDictionaryEntry{
         {
             CPE23: "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
             Title: "Apache Tomcat 9.0.0",
@@ -314,8 +314,8 @@ func createSampleDictionary() *cpe.CPEDictionary {
     return dict
 }
 
-func createSampleVulnerabilities() []*cpe.CVEEntry {
-    return []*cpe.CVEEntry{
+func createSampleVulnerabilities() []*cpeskills.CVEEntry {
+    return []*cpeskills.CVEEntry{
         {
             ID:            "CVE-2021-25122",
             BaseScore:     7.5,
@@ -333,8 +333,8 @@ func createSampleVulnerabilities() []*cpe.CVEEntry {
     }
 }
 
-func createSampleCVE(cveID string) *cpe.CVEEntry {
-    return &cpe.CVEEntry{
+func createSampleCVE(cveID string) *cpeskills.CVEEntry {
+    return &cpeskills.CVEEntry{
         ID:            cveID,
         BaseScore:     10.0,
         Severity:      "CRITICAL",

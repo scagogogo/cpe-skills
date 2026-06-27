@@ -5,11 +5,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 // 打印匹配结果
-func printMatchingResult(description string, target *cpe.CPE, criteria *cpe.CPE, options *cpe.MatchOptions, isMatch bool) {
+func printMatchingResult(description string, target *cpeskills.CPE, criteria *cpeskills.CPE, options *cpeskills.MatchOptions, isMatch bool) {
 	fmt.Printf("==== %s ====\n", description)
 	fmt.Printf("目标CPE: %s\n", target.GetURI())
 
@@ -67,33 +67,33 @@ func main() {
 	fmt.Println("\n===== 示例1: 基本精确匹配 =====")
 
 	// 创建目标CPE
-	targetCPE, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	targetCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析目标CPE失败: %v", err)
 	}
 
 	// 创建匹配条件 - 精确匹配
-	exactCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	exactCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "microsoft",
 		ProductName: "windows",
 		Version:     "10",
 	}
 
 	// 测试精确匹配
-	exactMatch := cpe.MatchCPE(exactCriteria, targetCPE, nil)
+	exactMatch := cpeskills.MatchCPE(exactCriteria, targetCPE, nil)
 	printMatchingResult("精确匹配", targetCPE, exactCriteria, nil, exactMatch)
 
 	// 创建不匹配条件
-	nonMatchCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	nonMatchCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "microsoft",
 		ProductName: "windows",
 		Version:     "11",
 	}
 
 	// 测试不匹配
-	nonMatch := cpe.MatchCPE(nonMatchCriteria, targetCPE, nil)
+	nonMatch := cpeskills.MatchCPE(nonMatchCriteria, targetCPE, nil)
 	printMatchingResult("版本不匹配", targetCPE, nonMatchCriteria, nil, nonMatch)
 
 	/*
@@ -116,25 +116,25 @@ func main() {
 	fmt.Println("\n===== 示例2: 部分匹配和通配符 =====")
 
 	// 创建仅匹配vendor和product的条件
-	partialCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	partialCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "microsoft",
 		ProductName: "windows",
 	}
 
 	// 测试部分匹配
-	partialMatch := cpe.MatchCPE(partialCriteria, targetCPE, nil)
+	partialMatch := cpeskills.MatchCPE(partialCriteria, targetCPE, nil)
 	printMatchingResult("部分匹配 (仅Vendor和Product)", targetCPE, partialCriteria, nil, partialMatch)
 
 	// 创建通配符条件
-	wildcardCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	wildcardCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "*",
 		ProductName: "windows",
 	}
 
 	// 测试通配符匹配
-	wildcardMatch := cpe.MatchCPE(wildcardCriteria, targetCPE, nil)
+	wildcardMatch := cpeskills.MatchCPE(wildcardCriteria, targetCPE, nil)
 	printMatchingResult("通配符匹配 (任意Vendor)", targetCPE, wildcardCriteria, nil, wildcardMatch)
 
 	/*
@@ -157,25 +157,25 @@ func main() {
 	fmt.Println("\n===== 示例3: 版本范围匹配 =====")
 
 	// 创建版本范围匹配选项
-	versionRangeOptions := &cpe.MatchOptions{
+	versionRangeOptions := &cpeskills.MatchOptions{
 		VersionRange: true,
 		MinVersion:   "8",
 		MaxVersion:   "11",
 	}
 
 	// 测试版本范围匹配
-	versionRangeMatch := cpe.MatchCPE(partialCriteria, targetCPE, versionRangeOptions)
+	versionRangeMatch := cpeskills.MatchCPE(partialCriteria, targetCPE, versionRangeOptions)
 	printMatchingResult("版本范围匹配 (8到11)", targetCPE, partialCriteria, versionRangeOptions, versionRangeMatch)
 
 	// 创建不匹配的版本范围
-	nonMatchVersionOptions := &cpe.MatchOptions{
+	nonMatchVersionOptions := &cpeskills.MatchOptions{
 		VersionRange: true,
 		MinVersion:   "11",
 		MaxVersion:   "12",
 	}
 
 	// 测试不匹配的版本范围
-	nonVersionMatch := cpe.MatchCPE(partialCriteria, targetCPE, nonMatchVersionOptions)
+	nonVersionMatch := cpeskills.MatchCPE(partialCriteria, targetCPE, nonMatchVersionOptions)
 	printMatchingResult("版本范围不匹配 (11到12)", targetCPE, partialCriteria, nonMatchVersionOptions, nonVersionMatch)
 
 	/*
@@ -198,20 +198,20 @@ func main() {
 	fmt.Println("\n===== 示例4: 忽略版本匹配 =====")
 
 	// 创建不匹配版本的条件
-	wrongVersionCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	wrongVersionCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "microsoft",
 		ProductName: "windows",
 		Version:     "11",
 	}
 
 	// 创建忽略版本的选项
-	ignoreVersionOptions := &cpe.MatchOptions{
+	ignoreVersionOptions := &cpeskills.MatchOptions{
 		IgnoreVersion: true,
 	}
 
 	// 测试忽略版本匹配
-	ignoreVersionMatch := cpe.MatchCPE(wrongVersionCriteria, targetCPE, ignoreVersionOptions)
+	ignoreVersionMatch := cpeskills.MatchCPE(wrongVersionCriteria, targetCPE, ignoreVersionOptions)
 	printMatchingResult("忽略版本匹配", targetCPE, wrongVersionCriteria, ignoreVersionOptions, ignoreVersionMatch)
 
 	/*
@@ -228,30 +228,30 @@ func main() {
 	fmt.Println("\n===== 示例5: 正则表达式匹配 =====")
 
 	// 创建正则表达式匹配条件
-	regexCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	regexCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "micro.*",
 		ProductName: "win.*",
 	}
 
 	// 创建正则表达式匹配选项
-	regexOptions := &cpe.MatchOptions{
+	regexOptions := &cpeskills.MatchOptions{
 		UseRegex: true,
 	}
 
 	// 测试正则表达式匹配
-	regexMatch := cpe.MatchCPE(regexCriteria, targetCPE, regexOptions)
+	regexMatch := cpeskills.MatchCPE(regexCriteria, targetCPE, regexOptions)
 	printMatchingResult("正则表达式匹配", targetCPE, regexCriteria, regexOptions, regexMatch)
 
 	// 创建不匹配的正则表达式条件
-	nonMatchRegexCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	nonMatchRegexCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "micro.*",
 		ProductName: "office.*",
 	}
 
 	// 测试不匹配的正则表达式
-	nonRegexMatch := cpe.MatchCPE(nonMatchRegexCriteria, targetCPE, regexOptions)
+	nonRegexMatch := cpeskills.MatchCPE(nonMatchRegexCriteria, targetCPE, regexOptions)
 	printMatchingResult("正则表达式不匹配", targetCPE, nonMatchRegexCriteria, regexOptions, nonRegexMatch)
 
 	/*
@@ -274,7 +274,7 @@ func main() {
 	fmt.Println("\n===== 示例6: 组合匹配选项 =====")
 
 	// 创建组合匹配选项 (正则表达式 + 版本范围)
-	combinedOptions := &cpe.MatchOptions{
+	combinedOptions := &cpeskills.MatchOptions{
 		UseRegex:     true,
 		VersionRange: true,
 		MinVersion:   "9",
@@ -282,25 +282,25 @@ func main() {
 	}
 
 	// 测试组合匹配
-	combinedMatch := cpe.MatchCPE(regexCriteria, targetCPE, combinedOptions)
+	combinedMatch := cpeskills.MatchCPE(regexCriteria, targetCPE, combinedOptions)
 	printMatchingResult("组合匹配 (正则 + 版本范围)", targetCPE, regexCriteria, combinedOptions, combinedMatch)
 
 	// 创建更复杂的目标CPE
-	complexCPE, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows_server:2019:r2:*:*:*:*:*:*")
+	complexCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows_server:2019:r2:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析复杂CPE失败: %v", err)
 	}
 
 	// 创建复杂匹配条件
-	complexCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	complexCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "micro.*",
 		ProductName: "windows_.*",
 		Update:      "r.*",
 	}
 
 	// 测试复杂匹配
-	complexMatch := cpe.MatchCPE(complexCriteria, complexCPE, regexOptions)
+	complexMatch := cpeskills.MatchCPE(complexCriteria, complexCPE, regexOptions)
 	printMatchingResult("复杂匹配", complexCPE, complexCriteria, regexOptions, complexMatch)
 
 	/*

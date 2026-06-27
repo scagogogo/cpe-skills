@@ -425,11 +425,11 @@ import (
 
 func main() {
     // 创建CPE对象
-    cpeObj := &cpe.CPE{
-        Part:        cpe.PartApplication,
-        Vendor:      cpe.VendorMicrosoft,
-        ProductName: cpe.ProductWindows,
-        Version:     cpe.Version("10"),
+    cpeObj := &cpeskills.CPE{
+        Part:        cpeskills.PartApplication,
+        Vendor:      cpeskills.VendorMicrosoft,
+        ProductName: cpeskills.ProductWindows,
+        Version:     cpeskills.Version("10"),
     }
     
     // 验证CPE
@@ -443,7 +443,7 @@ func main() {
     fmt.Printf("CPE 2.2: %s\n", cpeObj.GetCPE22())
     
     // 创建CPE集合
-    cpeSet := cpe.NewCPESet()
+    cpeSet := cpeskills.NewCPESet()
     cpeSet.Add(cpeObj)
     
     fmt.Printf("集合大小: %d\n", cpeSet.Size())

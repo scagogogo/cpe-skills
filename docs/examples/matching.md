@@ -25,11 +25,11 @@ func main() {
     fmt.Println("=== CPE Matching Examples ===")
     
     // Create test CPEs
-    windows10, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-    windows11, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
-    windowsPattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
-    microsoftPattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
-    office2019, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+    windows10, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    windows11, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
+    windowsPattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+    microsoftPattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+    office2019, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
     
     // Example 1: Basic matching
     fmt.Println("\n1. Basic Matching:")
@@ -48,70 +48,70 @@ func main() {
     // Example 2: Matching with options
     fmt.Println("\n2. Matching with Options:")
     
-    options := &cpe.MatchOptions{
+    options := &cpeskills.MatchOptions{
         IgnoreVersion: true,
         CaseSensitive: false,
     }
     
     fmt.Printf("Windows 10 vs Windows 11 (ignore version): %t\n",
-        cpe.MatchCPE(windows10, windows11, options))
+        cpeskills.MatchCPE(windows10, windows11, options))
     
     // Example 3: Advanced matching
     fmt.Println("\n3. Advanced Matching:")
     
-    advancedOptions := cpe.NewAdvancedMatchOptions()
+    advancedOptions := cpeskills.NewAdvancedMatchOptions()
     advancedOptions.MatchMode = "exact"
     advancedOptions.IgnoreCase = true
     
     // Test case-insensitive matching
-    microsoftUpper, _ := cpe.ParseCpe23("cpe:2.3:a:MICROSOFT:WINDOWS:10:*:*:*:*:*:*:*")
+    microsoftUpper, _ := cpeskills.ParseCpe23("cpe:2.3:a:MICROSOFT:WINDOWS:10:*:*:*:*:*:*:*")
     fmt.Printf("Case-insensitive match: %t\n",
-        cpe.AdvancedMatchCPE(windows10, microsoftUpper, advancedOptions))
+        cpeskills.AdvancedMatchCPE(windows10, microsoftUpper, advancedOptions))
     
     // Example 4: Distance-based matching
     fmt.Println("\n4. Distance-based Matching:")
     
-    distanceOptions := cpe.NewAdvancedMatchOptions()
+    distanceOptions := cpeskills.NewAdvancedMatchOptions()
     distanceOptions.MatchMode = "distance"
     distanceOptions.ScoreThreshold = 0.7
     
     // Create similar but not identical CPEs
-    similar1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-    similar2, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10.0:*:*:*:*:*:*:*")
+    similar1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    similar2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10.0:*:*:*:*:*:*:*")
     
     fmt.Printf("Distance match (threshold 0.7): %t\n",
-        cpe.AdvancedMatchCPE(similar1, similar2, distanceOptions))
+        cpeskills.AdvancedMatchCPE(similar1, similar2, distanceOptions))
     
     // Example 5: Regex matching
     fmt.Println("\n5. Regex Matching:")
     
-    regexOptions := cpe.NewAdvancedMatchOptions()
+    regexOptions := cpeskills.NewAdvancedMatchOptions()
     regexOptions.UseRegex = true
     
     // Create pattern with regex
-    regexPattern, _ := cpe.ParseCpe23("cpe:2.3:a:.*soft.*:.*:*:*:*:*:*:*:*:*")
+    regexPattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:.*soft.*:.*:*:*:*:*:*:*:*:*")
     
     fmt.Printf("Regex pattern matches Microsoft Windows: %t\n",
-        cpe.AdvancedMatchCPE(regexPattern, windows10, regexOptions))
+        cpeskills.AdvancedMatchCPE(regexPattern, windows10, regexOptions))
     
     // Example 6: Version comparison
     fmt.Println("\n6. Version Comparison:")
     
-    versionOptions := cpe.NewAdvancedMatchOptions()
+    versionOptions := cpeskills.NewAdvancedMatchOptions()
     versionOptions.VersionCompareMode = "range"
     versionOptions.VersionLower = "9.0"
     versionOptions.VersionUpper = "11.0"
     
-    versionPattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+    versionPattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
     
     fmt.Printf("Version 10 in range [9.0, 11.0]: %t\n",
-        cpe.AdvancedMatchCPE(versionPattern, windows10, versionOptions))
+        cpeskills.AdvancedMatchCPE(versionPattern, windows10, versionOptions))
     
     // Example 7: Field-specific matching
     fmt.Println("\n7. Field-specific Matching:")
     
-    fieldOptions := cpe.NewAdvancedMatchOptions()
-    fieldOptions.FieldOptions = map[string]cpe.FieldMatchOption{
+    fieldOptions := cpeskills.NewAdvancedMatchOptions()
+    fieldOptions.FieldOptions = map[string]cpeskills.FieldMatchOption{
         "vendor": {
             Weight:   1.0,
             Required: true,
@@ -127,12 +127,12 @@ func main() {
     }
     
     fmt.Printf("Field-specific match: %t\n",
-        cpe.AdvancedMatchCPE(windowsPattern, windows10, fieldOptions))
+        cpeskills.AdvancedMatchCPE(windowsPattern, windows10, fieldOptions))
     
     // Example 8: Batch matching
     fmt.Println("\n8. Batch Matching:")
     
-    testCPEs := []*cpe.CPE{windows10, windows11, office2019}
+    testCPEs := []*cpeskills.CPE{windows10, windows11, office2019}
     pattern := microsoftPattern
     
     fmt.Printf("Testing pattern: %s\n", pattern.GetURI())

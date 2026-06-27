@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 /**
  * convenience.go - 便捷函数集合

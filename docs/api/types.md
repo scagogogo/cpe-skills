@@ -70,8 +70,8 @@ Determines if the current CPE matches another CPE according to CPE Name Matching
 
 **Example:**
 ```go
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
 
 if cpe2.Match(cpe1) {
     fmt.Println("CPE1 matches CPE2 pattern")
@@ -247,16 +247,16 @@ const (
 
 ```go
 // Create CPE manually
-windowsCPE := &cpe.CPE{
+windowsCPE := &cpeskills.CPE{
     Cpe23:       "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
-    Part:        *cpe.PartApplication,
-    Vendor:      cpe.Vendor("microsoft"),
-    ProductName: cpe.Product("windows"),
-    Version:     cpe.Version("10"),
+    Part:        *cpeskills.PartApplication,
+    Vendor:      cpeskills.Vendor("microsoft"),
+    ProductName: cpeskills.Product("windows"),
+    Version:     cpeskills.Version("10"),
 }
 
 // Parse from string
-parsedCPE, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+parsedCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 if err != nil {
     log.Fatal(err)
 }
@@ -271,8 +271,8 @@ if cpeObj.Part.ShortName == "a" {
 }
 
 // Use predefined parts
-newCPE := &cpe.CPE{
-    Part: *cpe.PartOperationSystem,
+newCPE := &cpeskills.CPE{
+    Part: *cpeskills.PartOperationSystem,
     // ... other fields
 }
 ```
@@ -286,7 +286,7 @@ productStr := string(cpeObj.ProductName)
 versionStr := string(cpeObj.Version)
 
 // Create from strings
-cpeObj.Vendor = cpe.Vendor("apache")
-cpeObj.ProductName = cpe.Product("tomcat")
-cpeObj.Version = cpe.Version("9.0.0")
+cpeObj.Vendor = cpeskills.Vendor("apache")
+cpeObj.ProductName = cpeskills.Product("tomcat")
+cpeObj.Version = cpeskills.Version("9.0.0")
 ```

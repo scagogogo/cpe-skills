@@ -62,8 +62,8 @@ func (e *CPEError) Wrap(cause error) *CPEError
 **示例：**
 ```go
 // 创建CPE错误
-err := &cpe.CPEError{
-    Type:    cpe.ErrorTypeInvalidFormat,
+err := &cpeskills.CPEError{
+    Type:    cpeskills.ErrorTypeInvalidFormat,
     Message: "CPE格式无效",
     Field:   "cpe_string",
     Value:   "invalid-cpe",
@@ -71,7 +71,7 @@ err := &cpe.CPEError{
 
 fmt.Printf("错误: %v\n", err)
 fmt.Printf("错误类型: %d\n", err.GetType())
-fmt.Printf("是否为格式错误: %t\n", err.Is(cpe.ErrorTypeInvalidFormat))
+fmt.Printf("是否为格式错误: %t\n", err.Is(cpeskills.ErrorTypeInvalidFormat))
 ```
 
 ## 错误创建函数
@@ -111,21 +111,21 @@ func NewValidationError(field, value, message string) *CPEError
 **示例：**
 ```go
 // 创建不同类型的错误
-formatError := cpe.NewCPEError(cpe.ErrorTypeInvalidFormat, "CPE格式不正确")
+formatError := cpeskills.NewCPEError(cpeskills.ErrorTypeInvalidFormat, "CPE格式不正确")
 
-fieldError := cpe.NewFieldError(
-    cpe.ErrorTypeInvalidVendor,
+fieldError := cpeskills.NewFieldError(
+    cpeskills.ErrorTypeInvalidVendor,
     "vendor",
     "",
     "供应商不能为空",
 )
 
-parsingError := cpe.NewParsingError(
+parsingError := cpeskills.NewParsingError(
     "invalid-cpe-string",
     fmt.Errorf("unexpected character"),
 )
 
-validationError := cpe.NewValidationError(
+validationError := cpeskills.NewValidationError(
     "version",
     "invalid-version",
     "版本格式不符合规范",
@@ -176,11 +176,11 @@ func IsNetworkError(err error) bool
 
 **示例：**
 ```go
-_, err := cpe.ParseCpe23("invalid-cpe-format")
+_, err := cpeskills.ParseCpe23("invalid-cpe-format")
 if err != nil {
-    if cpe.IsFormatError(err) {
+    if cpeskills.IsFormatError(err) {
         fmt.Println("这是一个格式错误")
-    } else if cpe.IsParsingError(err) {
+    } else if cpeskills.IsParsingError(err) {
         fmt.Println("这是一个解析错误")
     } else {
         fmt.Printf("其他错误: %v\n", err)
@@ -225,7 +225,7 @@ func (el *ErrorList) FilterByType(errorType ErrorType) []error
 **示例：**
 ```go
 // 创建错误列表
-errorList := &cpe.ErrorList{}
+errorList := &cpeskills.ErrorList{}
 
 // 批量解析CPE并收集错误
 cpeStrings := []string{
@@ -236,7 +236,7 @@ cpeStrings := []string{
 }
 
 for _, cpeStr := range cpeStrings {
-    _, err := cpe.ParseCpe23(cpeStr)
+    _, err := cpeskills.ParseCpe23(cpeStr)
     if err != nil {
         errorList.Add(err)
     }
@@ -283,7 +283,7 @@ type DefaultErrorRecovery struct {
 **示例：**
 ```go
 // 创建错误恢复器
-recovery := &cpe.DefaultErrorRecovery{
+recovery := &cpeskills.DefaultErrorRecovery{
     EnableAutoFix:    true,
     EnableSuggestions: true,
 }
@@ -291,7 +291,7 @@ recovery := &cpe.DefaultErrorRecovery{
 // 尝试解析有问题的CPE
 invalidCPE := "cpe:2.3:a:microsoft:windows:10" // 缺少字段
 
-_, err := cpe.ParseCpe23(invalidCPE)
+_, err := cpeskills.ParseCpe23(invalidCPE)
 if err != nil {
     fmt.Printf("解析失败: %v\n", err)
     
@@ -359,7 +359,7 @@ type FileErrorLogger struct {
 **示例：**
 ```go
 // 创建文件日志记录器
-logger := &cpe.FileErrorLogger{
+logger := &cpeskills.FileErrorLogger{
     LogFile:    "./cpe_errors.log",
     MaxSize:    10 * 1024 * 1024, // 10MB
     MaxBackups: 5,
@@ -367,7 +367,7 @@ logger := &cpe.FileErrorLogger{
 }
 
 // 记录错误
-err := cpe.NewCPEError(cpe.ErrorTypeInvalidFormat, "测试错误")
+err := cpeskills.NewCPEError(cpeskills.ErrorTypeInvalidFormat, "测试错误")
 logger.LogError(err)
 
 // 带上下文记录错误
@@ -411,7 +411,7 @@ func GetErrorStatistics() *ErrorStatistics
 **示例：**
 ```go
 // 获取错误统计
-stats := cpe.GetErrorStatistics()
+stats := cpeskills.GetErrorStatistics()
 
 fmt.Printf("错误统计信息:\n")
 fmt.Printf("  总错误数: %d\n", stats.TotalErrors)
@@ -444,14 +444,14 @@ func main() {
     fmt.Println("=== CPE错误处理示例 ===")
     
     // 设置错误日志记录器
-    logger := &cpe.FileErrorLogger{
+    logger := &cpeskills.FileErrorLogger{
         LogFile:    "./cpe_errors.log",
         MaxSize:    1024 * 1024, // 1MB
         MaxBackups: 3,
     }
     
     // 设置错误恢复器
-    recovery := &cpe.DefaultErrorRecovery{
+    recovery := &cpeskills.DefaultErrorRecovery{
         EnableAutoFix:    true,
         EnableSuggestions: true,
     }
@@ -466,7 +466,7 @@ func main() {
         "cpe:2.3:a:vendor:product",                      // 不完整
     }
     
-    errorList := &cpe.ErrorList{}
+    errorList := &cpeskills.ErrorList{}
     successCount := 0
     recoveredCount := 0
     
@@ -475,7 +475,7 @@ func main() {
         fmt.Printf("\n测试 %d: %s\n", i+1, cpeStr)
         
         // 尝试解析
-        cpeObj, err := cpe.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
             fmt.Printf("  ❌ 解析失败: %v\n", err)
             
@@ -489,11 +489,11 @@ func main() {
             errorList.Add(err)
             
             // 错误类型检查
-            if cpe.IsFormatError(err) {
+            if cpeskills.IsFormatError(err) {
                 fmt.Println("    类型: 格式错误")
-            } else if cpe.IsParsingError(err) {
+            } else if cpeskills.IsParsingError(err) {
                 fmt.Println("    类型: 解析错误")
-            } else if cpe.IsValidationError(err) {
+            } else if cpeskills.IsValidationError(err) {
                 fmt.Println("    类型: 验证错误")
             }
             
@@ -537,7 +537,7 @@ func main() {
             fmt.Printf("  %d. %v\n", i+1, err)
             
             // 如果是CPE错误，显示详细信息
-            if cpeErr, ok := err.(*cpe.CPEError); ok {
+            if cpeErr, ok := err.(*cpeskills.CPEError); ok {
                 details := cpeErr.GetDetails()
                 for key, value := range details {
                     fmt.Printf("     %s: %v\n", key, value)
@@ -546,7 +546,7 @@ func main() {
         }
         
         // 按类型过滤错误
-        formatErrors := errorList.FilterByType(cpe.ErrorTypeInvalidFormat)
+        formatErrors := errorList.FilterByType(cpeskills.ErrorTypeInvalidFormat)
         if len(formatErrors) > 0 {
             fmt.Printf("\n格式错误数量: %d\n", len(formatErrors))
         }
@@ -554,7 +554,7 @@ func main() {
     
     // 错误统计
     fmt.Println("\n3. 错误统计:")
-    stats := cpe.GetErrorStatistics()
+    stats := cpeskills.GetErrorStatistics()
     fmt.Printf("总错误数: %d\n", stats.TotalErrors)
     fmt.Printf("错误率: %.2f%%\n", stats.ErrorRate*100)
     
@@ -563,15 +563,15 @@ func main() {
         for errorType, count := range stats.ErrorsByType {
             var typeName string
             switch errorType {
-            case cpe.ErrorTypeInvalidFormat:
+            case cpeskills.ErrorTypeInvalidFormat:
                 typeName = "格式错误"
-            case cpe.ErrorTypeInvalidPart:
+            case cpeskills.ErrorTypeInvalidPart:
                 typeName = "无效部件"
-            case cpe.ErrorTypeInvalidVendor:
+            case cpeskills.ErrorTypeInvalidVendor:
                 typeName = "无效供应商"
-            case cpe.ErrorTypeInvalidProduct:
+            case cpeskills.ErrorTypeInvalidProduct:
                 typeName = "无效产品"
-            case cpe.ErrorTypeParsingError:
+            case cpeskills.ErrorTypeParsingError:
                 typeName = "解析错误"
             default:
                 typeName = fmt.Sprintf("类型%d", errorType)
@@ -583,8 +583,8 @@ func main() {
     // 自定义错误处理
     fmt.Println("\n4. 自定义错误处理:")
     
-    customErr := &cpe.CPEError{
-        Type:      cpe.ErrorTypeValidationError,
+    customErr := &cpeskills.CPEError{
+        Type:      cpeskills.ErrorTypeValidationError,
         Message:   "自定义验证失败",
         Field:     "custom_field",
         Value:     "custom_value",
@@ -593,7 +593,7 @@ func main() {
     
     fmt.Printf("自定义错误: %v\n", customErr)
     fmt.Printf("错误类型: %d\n", customErr.GetType())
-    fmt.Printf("是否为验证错误: %t\n", customErr.Is(cpe.ErrorTypeValidationError))
+    fmt.Printf("是否为验证错误: %t\n", customErr.Is(cpeskills.ErrorTypeValidationError))
     
     // 包装错误
     wrappedErr := customErr.Wrap(fmt.Errorf("底层错误"))

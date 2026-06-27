@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +50,7 @@ func runMatch(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("parsing target CPE: %w", err)
 	}
 
-	options := &cpe.MatchOptions{
+	options := &cpeskills.MatchOptions{
 		IgnoreVersion:    matchIgnoreVersion,
 		UseRegex:         matchUseRegex,
 		AllowSubVersions: true,
@@ -59,7 +59,7 @@ func runMatch(cmd *cobra.Command, args []string) error {
 		MaxVersion:       matchMaxVersion,
 	}
 
-	result := cpe.MatchCPE(criteria, target, options)
+	result := cpeskills.MatchCPE(criteria, target, options)
 
 	if outputFormat == "json" {
 		fmt.Printf(`{"match": %t, "criteria": "%s", "target": "%s"}`, result, criteria.GetURI(), target.GetURI())

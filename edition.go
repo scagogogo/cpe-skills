@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 /**
  * Edition 表示CPE中的版本类型组件
@@ -13,28 +13,28 @@ package cpe
  * 示例:
  *   ```go
  *   // 创建一个表示Windows 10专业版的CPE
- *   win10ProCPE := &cpe.CPE{
- *       Part:        *cpe.PartOperationSystem,
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
- *       Version:     cpe.Version("10"),
- *       Edition:     cpe.Edition("pro"),
+ *   win10ProCPE := &cpeskills.CPE{
+ *       Part:        *cpeskills.PartOperationSystem,
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
+ *       Version:     cpeskills.Version("10"),
+ *       Edition:     cpeskills.Edition("pro"),
  *   }
  *
  *   // 使用通配符匹配任意版本类型
- *   windowsAnyCPE := &cpe.CPE{
- *       Part:        *cpe.PartOperationSystem,
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
- *       Edition:     cpe.Edition("*"),  // 匹配任意版本类型
+ *   windowsAnyCPE := &cpeskills.CPE{
+ *       Part:        *cpeskills.PartOperationSystem,
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
+ *       Edition:     cpeskills.Edition("*"),  // 匹配任意版本类型
  *   }
  *
  *   // 创建搜索条件，查找特定版本类型的产品
- *   searchCriteria := &cpe.CPE{
- *       Edition: cpe.Edition("enterprise"),
+ *   searchCriteria := &cpeskills.CPE{
+ *       Edition: cpeskills.Edition("enterprise"),
  *   }
- *   options := cpe.DefaultMatchOptions()
- *   results := cpe.Search(cpeList, searchCriteria, options)
+ *   options := cpeskills.DefaultMatchOptions()
+ *   results := cpeskills.Search(cpeList, searchCriteria, options)
  *   ```
  */
 type Edition string

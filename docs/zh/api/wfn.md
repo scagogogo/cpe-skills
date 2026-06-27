@@ -54,15 +54,15 @@ func NewWFNFromCPE(cpe *CPE) (*WFN, error)
 **示例：**
 ```go
 // 创建空WFN
-wfn := cpe.NewWFN()
+wfn := cpeskills.NewWFN()
 wfn.Part = "a"
 wfn.Vendor = "microsoft"
 wfn.Product = "windows"
 wfn.Version = "10"
 
 // 从CPE创建WFN
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
-wfn, err := cpe.NewWFNFromCPE(cpeObj)
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+wfn, err := cpeskills.NewWFNFromCPE(cpeObj)
 if err != nil {
     log.Fatal(err)
 }
@@ -99,8 +99,8 @@ func WFNToCPE22(wfn *WFN) (string, error)
 **示例：**
 ```go
 // CPE到WFN转换
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*")
-wfn, err := cpe.CPEToWFN(cpeObj)
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*")
+wfn, err := cpeskills.CPEToWFN(cpeObj)
 if err != nil {
     log.Fatal(err)
 }
@@ -109,12 +109,12 @@ fmt.Printf("原始CPE: %s\n", cpeObj.GetURI())
 fmt.Printf("WFN格式: %s\n", wfn.String())
 
 // WFN到CPE转换
-cpe23, err := cpe.WFNToCPE23(wfn)
+cpe23, err := cpeskills.WFNToCPE23(wfn)
 if err != nil {
     log.Fatal(err)
 }
 
-cpe22, err := cpe.WFNToCPE22(wfn)
+cpe22, err := cpeskills.WFNToCPE22(wfn)
 if err != nil {
     log.Fatal(err)
 }
@@ -151,7 +151,7 @@ func (w *WFN) Equals(other *WFN) bool
 
 **示例：**
 ```go
-wfn1 := &cpe.WFN{
+wfn1 := &cpeskills.WFN{
     Part:    "a",
     Vendor:  "apache",
     Product: "tomcat",
@@ -194,7 +194,7 @@ func IsValidWFNValue(value string) bool
 
 **示例：**
 ```go
-wfn := &cpe.WFN{
+wfn := &cpeskills.WFN{
     Part:    "a",
     Vendor:  "microsoft",
     Product: "windows",
@@ -210,7 +210,7 @@ if err != nil {
 }
 
 // 验证单个值
-if cpe.IsValidWFNValue("microsoft") {
+if cpeskills.IsValidWFNValue("microsoft") {
     fmt.Println("'microsoft'是有效的WFN值")
 }
 ```
@@ -244,15 +244,15 @@ func CompareWFN(wfn1, wfn2 *WFN) int
 **示例：**
 ```go
 // 创建匹配模式
-pattern := &cpe.WFN{
+pattern := &cpeskills.WFN{
     Part:    "a",
     Vendor:  "microsoft",
-    Product: cpe.WFNAny, // 任意产品
-    Version: cpe.WFNAny, // 任意版本
+    Product: cpeskills.WFNAny, // 任意产品
+    Version: cpeskills.WFNAny, // 任意版本
 }
 
 // 测试目标
-targets := []*cpe.WFN{
+targets := []*cpeskills.WFN{
     {Part: "a", Vendor: "microsoft", Product: "windows", Version: "10"},
     {Part: "a", Vendor: "microsoft", Product: "office", Version: "2019"},
     {Part: "a", Vendor: "oracle", Product: "java", Version: "11"},
@@ -300,7 +300,7 @@ func NormalizeWFNValue(value string) string
 **示例：**
 ```go
 // 创建需要规范化的WFN
-unnormalized := &cpe.WFN{
+unnormalized := &cpeskills.WFN{
     Part:    "A",           // 应该是小写
     Vendor:  "Microsoft",   // 应该是小写
     Product: "Windows~10",  // 特殊字符需要转义
@@ -315,7 +315,7 @@ fmt.Printf("规范化后: %s\n", normalized.String())
 
 // 规范化单个值
 value := "Product~Name"
-normalizedValue := cpe.NormalizeWFNValue(value)
+normalizedValue := cpeskills.NormalizeWFNValue(value)
 fmt.Printf("值规范化: %s -> %s\n", value, normalizedValue)
 ```
 
@@ -351,12 +351,12 @@ func EscapeWFNValue(value string) string
 specialValue := "product~name*with?chars"
 
 // 转义
-quoted := cpe.QuoteWFNValue(specialValue)
+quoted := cpeskills.QuoteWFNValue(specialValue)
 fmt.Printf("原始值: %s\n", specialValue)
 fmt.Printf("转义后: %s\n", quoted)
 
 // 反转义
-unquoted := cpe.UnquoteWFNValue(quoted)
+unquoted := cpeskills.UnquoteWFNValue(quoted)
 fmt.Printf("反转义: %s\n", unquoted)
 
 // 验证往返转换
@@ -410,11 +410,11 @@ func (s *WFNSet) ToSlice() []*WFN
 **示例：**
 ```go
 // 创建WFN集合
-wfnSet := cpe.NewWFNSet()
+wfnSet := cpeskills.NewWFNSet()
 
 // 添加WFN
-wfn1 := &cpe.WFN{Part: "a", Vendor: "microsoft", Product: "windows"}
-wfn2 := &cpe.WFN{Part: "a", Vendor: "apache", Product: "tomcat"}
+wfn1 := &cpeskills.WFN{Part: "a", Vendor: "microsoft", Product: "windows"}
+wfn2 := &cpeskills.WFN{Part: "a", Vendor: "apache", Product: "tomcat"}
 
 wfnSet.Add(wfn1)
 wfnSet.Add(wfn2)
@@ -460,13 +460,13 @@ func main() {
     for i, cpeStr := range cpeStrings {
         fmt.Printf("\n示例 %d: %s\n", i+1, cpeStr)
         
-        cpeObj, err := cpe.ParseCPE(cpeStr)
+        cpeObj, err := cpeskills.ParseCPE(cpeStr)
         if err != nil {
             log.Printf("解析失败: %v", err)
             continue
         }
         
-        wfn, err := cpe.CPEToWFN(cpeObj)
+        wfn, err := cpeskills.CPEToWFN(cpeObj)
         if err != nil {
             log.Printf("转换失败: %v", err)
             continue
@@ -482,25 +482,25 @@ func main() {
     // 示例2：WFN到CPE转换
     fmt.Println("\n2. WFN到CPE转换:")
     
-    wfn := &cpe.WFN{
+    wfn := &cpeskills.WFN{
         Part:    "a",
         Vendor:  "adobe",
         Product: "reader",
         Version: "2021.001.20150",
-        Update:  cpe.WFNAny,
-        Edition: cpe.WFNAny,
+        Update:  cpeskills.WFNAny,
+        Edition: cpeskills.WFNAny,
     }
     
     fmt.Printf("WFN: %s\n", wfn.String())
     
-    cpe23, err := cpe.WFNToCPE23(wfn)
+    cpe23, err := cpeskills.WFNToCPE23(wfn)
     if err != nil {
         log.Printf("转换为CPE 2.3失败: %v", err)
     } else {
         fmt.Printf("CPE 2.3: %s\n", cpe23)
     }
     
-    cpe22, err := cpe.WFNToCPE22(wfn)
+    cpe22, err := cpeskills.WFNToCPE22(wfn)
     if err != nil {
         log.Printf("转换为CPE 2.2失败: %v", err)
     } else {
@@ -510,14 +510,14 @@ func main() {
     // 示例3：WFN匹配
     fmt.Println("\n3. WFN匹配:")
     
-    pattern := &cpe.WFN{
+    pattern := &cpeskills.WFN{
         Part:    "a",
         Vendor:  "microsoft",
-        Product: cpe.WFNAny,
-        Version: cpe.WFNAny,
+        Product: cpeskills.WFNAny,
+        Version: cpeskills.WFNAny,
     }
     
-    targets := []*cpe.WFN{
+    targets := []*cpeskills.WFN{
         {Part: "a", Vendor: "microsoft", Product: "windows", Version: "10"},
         {Part: "a", Vendor: "microsoft", Product: "office", Version: "2019"},
         {Part: "a", Vendor: "oracle", Product: "java", Version: "11"},
@@ -539,7 +539,7 @@ func main() {
     // 示例4：WFN验证
     fmt.Println("\n4. WFN验证:")
     
-    testWFNs := []*cpe.WFN{
+    testWFNs := []*cpeskills.WFN{
         {Part: "a", Vendor: "microsoft", Product: "windows"},     // 有效
         {Part: "x", Vendor: "microsoft", Product: "windows"},     // 无效部件
         {Part: "a", Vendor: "", Product: "windows"},              // 空供应商
@@ -562,7 +562,7 @@ func main() {
     // 示例5：WFN规范化
     fmt.Println("\n5. WFN规范化:")
     
-    unnormalized := &cpe.WFN{
+    unnormalized := &cpeskills.WFN{
         Part:    "A",
         Vendor:  "Microsoft",
         Product: "Windows~10",
@@ -585,8 +585,8 @@ func main() {
     }
     
     for _, value := range specialValues {
-        quoted := cpe.QuoteWFNValue(value)
-        unquoted := cpe.UnquoteWFNValue(quoted)
+        quoted := cpeskills.QuoteWFNValue(value)
+        unquoted := cpeskills.UnquoteWFNValue(quoted)
         
         fmt.Printf("  原始: %s\n", value)
         fmt.Printf("  转义: %s\n", quoted)

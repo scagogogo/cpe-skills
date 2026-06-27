@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -28,18 +28,18 @@ func main() {
 	fmt.Println("\n===== 示例1: 创建CPE和CVE数据 =====")
 
 	// 创建CPE对象
-	cpeWin10, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpeWin10, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Windows 10 CPE失败: %v", err)
 	}
 
-	cpeJava8, err := cpe.ParseCpe23("cpe:2.3:a:oracle:java:1.8.0:*:*:*:*:*:*:*")
+	cpeJava8, err := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:1.8.0:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Java 8 CPE失败: %v", err)
 	}
 
 	// 创建CVE引用
-	cve1 := &cpe.CVEReference{
+	cve1 := &cpeskills.CVEReference{
 		CVEID:            "CVE-2020-1234",
 		Description:      "Windows 10中的安全漏洞，允许攻击者执行任意代码。",
 		PublishedDate:    time.Date(2020, 6, 15, 0, 0, 0, 0, time.UTC),
@@ -50,7 +50,7 @@ func main() {
 		AffectedCPEs:     []string{cpeWin10.GetURI()},
 	}
 
-	cve2 := &cpe.CVEReference{
+	cve2 := &cpeskills.CVEReference{
 		CVEID:            "CVE-2020-5678",
 		Description:      "Java 8中的远程代码执行漏洞。",
 		PublishedDate:    time.Date(2020, 7, 10, 0, 0, 0, 0, time.UTC),
@@ -61,7 +61,7 @@ func main() {
 		AffectedCPEs:     []string{cpeJava8.GetURI()},
 	}
 
-	cve3 := &cpe.CVEReference{
+	cve3 := &cpeskills.CVEReference{
 		CVEID:            "CVE-2020-9012",
 		Description:      "影响多个产品的跨站脚本攻击漏洞。",
 		PublishedDate:    time.Date(2020, 8, 5, 0, 0, 0, 0, time.UTC),
@@ -98,7 +98,7 @@ func main() {
 	fmt.Println("\n===== 示例2: 存储CPE和CVE数据 =====")
 
 	// 初始化文件存储
-	storage, err := cpe.NewFileStorage(tempDir, false)
+	storage, err := cpeskills.NewFileStorage(tempDir, false)
 	if err != nil {
 		log.Fatalf("初始化文件存储失败: %v", err)
 	}
@@ -212,10 +212,10 @@ func main() {
 	fmt.Println("\n===== 示例5: 查找高严重性CVE =====")
 
 	// 获取所有CVE
-	allCVEs := []*cpe.CVEReference{cve1, cve2, cve3}
+	allCVEs := []*cpeskills.CVEReference{cve1, cve2, cve3}
 
 	// 查找高严重性CVE
-	var highSeverityCVEs []*cpe.CVEReference
+	var highSeverityCVEs []*cpeskills.CVEReference
 	for _, cve := range allCVEs {
 		if cve.CVSSScore >= 7.0 {
 			highSeverityCVEs = append(highSeverityCVEs, cve)

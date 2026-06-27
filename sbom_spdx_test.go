@@ -1,0 +1,243 @@
+package cpeskills
+
+import (
+	"encoding/json"
+	"testing"
+)
+
+func TestParseSPDXJSON(t *testing.T) {
+	// 最小的 SPDX 2.3 JSON
+	input := `{
+		"SPDXID": "SPDXRef-DOCUMENT",
+		"spdxVersion": "SPDX-2.3",
+		"name": "test-sbom",
+		"dataLicense": "CC0-1.0",
+		"creationInfo": {
+			"created": "2024-01-15T10:30:00Z",
+			"creators": ["Organization: scagogogo", "Tool: cpe-cli"]
+		},
+		"packages": [
+			{
+				"SPDXID": "SPDXRef-lodash",
+				"name": "lodash",
+				"versionInfo": "4.17.21",
+				"downloadLocation": "NOASSERTION",
+				"filesAnalyzed": false,
+				"licenseConcluded": "MIT",
+				"licenseDeclared": "MIT",
+				"copyrightText": "NOASSERTION",
+				"externalRefs": [
+					{
+						"referenceCategory": "PACKAGE-MANAGER",
+						"referenceType": "purl",
+						"referenceLocator": "pkg:npm/lodash@4.17.21"
+					}
+				]
+			}
+		],
+		"relationships": [
+			{
+				"spdxElementId": "SPDXRef-DOCUMENT",
+				"relatedSpdxElement": "SPDXRef-lodash",
+				"relationshipType": "DESCRIBES"
+			}
+		]
+	}`
+
+	sbom, err := ParseSPDXJSON([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if sbom.Format != SBOMFormatSPDX {
+		t.Errorf("expected format %s, got %s", SBOMFormatSPDX, sbom.Format)
+	}
+	if sbom.SpecVersion != "SPDX-2.3" {
+		t.Errorf("expected spec version 'SPDX-2.3', got %q", sbom.SpecVersion)
+	}
+	if sbom.Name != "test-sbom" {
+		t.Errorf("expected name 'test-sbom', got %q", sbom.Name)
+	}
+	if sbom.ComponentCount() != 1 {
+		t.Fatalf("expected 1 component, got %d", sbom.ComponentCount())
+	}
+
+	comp := sbom.Components[0]
+	if comp.Name != "lodash" {
+		t.Errorf("expected name 'lodash', got %q", comp.Name)
+	}
+	if comp.Version != "4.17.21" {
+		t.Errorf("expected version '4.17.21', got %q", comp.Version)
+	}
+	if comp.PURL == nil || comp.PURL.Name != "lodash" {
+		t.Error("expected PURL to be parsed")
+	}
+	if len(comp.Licenses) != 1 || comp.Licenses[0].SPDXID != "MIT" {
+		t.Error("expected MIT license")
+	}
+}
+
+func TestParseSPDXJSON_Invalid(t *testing.T) {
+	_, err := ParseSPDXJSON([]byte("not json"))
+	if err == nil {
+		t.Error("expected error for invalid JSON")
+	}
+}
+
+func TestToSPDXJSON(t *testing.T) {
+	sbom := NewSBOM(SBOMFormatSPDX, "test-sbom")
+	sbom.SpecVersion = "SPDX-2.3"
+
+	comp := NewSBOMComponent("lodash", "4.17.21")
+	comp.Type = "library"
+	comp.SetPURL(NewPURL("npm", "", "lodash", "4.17.21"))
+	cpe, _ := Parse("cpe:2.3:a:lodash:lodash:4.17.21:*:*:*:*:*:*:*")
+	comp.SetCPE(cpe)
+	comp.Supplier = "npm"
+	comp.Licenses = []*License{NewLicense("MIT", "MIT License")}
+	sbom.AddComponent(comp)
+
+	sbom.AddDependency("SPDXRef-DOCUMENT", []string{"SPDXRef-lodash"})
+
+	data, err := sbom.ToSPDXJSON()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		t.Fatalf("invalid JSON output: %v", err)
+	}
+
+	if result["spdxVersion"] != "SPDX-2.3" {
+		t.Errorf("expected spdxVersion 'SPDX-2.3', got %v", result["spdxVersion"])
+	}
+	if result["name"] != "test-sbom" {
+		t.Errorf("expected name 'test-sbom', got %v", result["name"])
+	}
+
+	packages, ok := result["packages"].([]interface{})
+	if !ok || len(packages) != 1 {
+		t.Fatalf("expected 1 package")
+	}
+
+	pkgMap := packages[0].(map[string]interface{})
+	if pkgMap["name"] != "lodash" {
+		t.Errorf("expected name 'lodash', got %v", pkgMap["name"])
+	}
+}
+
+func TestParseSPDXJSON_RoundTrip(t *testing.T) {
+	input := `{
+		"SPDXID": "SPDXRef-DOCUMENT",
+		"spdxVersion": "SPDX-2.3",
+		"name": "test-sbom",
+		"dataLicense": "CC0-1.0",
+		"creationInfo": {
+			"created": "2024-01-15T10:30:00Z",
+			"creators": ["Organization: test"]
+		},
+		"packages": [
+			{
+				"SPDXID": "SPDXRef-express",
+				"name": "express",
+				"versionInfo": "4.17.1",
+				"downloadLocation": "NOASSERTION",
+				"filesAnalyzed": false,
+				"licenseConcluded": "MIT",
+				"licenseDeclared": "MIT",
+				"copyrightText": "NOASSERTION",
+				"externalRefs": [
+					{
+						"referenceCategory": "PACKAGE-MANAGER",
+						"referenceType": "purl",
+						"referenceLocator": "pkg:npm/express@4.17.1"
+					}
+				]
+			}
+		]
+	}`
+
+	sbom, err := ParseSPDXJSON([]byte(input))
+	if err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	exported, err := sbom.ToSPDXJSON()
+	if err != nil {
+		t.Fatalf("export error: %v", err)
+	}
+
+	sbom2, err := ParseSPDXJSON(exported)
+	if err != nil {
+		t.Fatalf("re-parse error: %v", err)
+	}
+
+	if sbom2.ComponentCount() != 1 {
+		t.Errorf("expected 1 component after round-trip, got %d", sbom2.ComponentCount())
+	}
+}
+
+func TestParseSPDXJSON_Empty(t *testing.T) {
+	input := `{
+		"SPDXID": "SPDXRef-DOCUMENT",
+		"spdxVersion": "SPDX-2.3",
+		"name": "empty-sbom",
+		"dataLicense": "CC0-1.0",
+		"creationInfo": {
+			"created": "2024-01-01T00:00:00Z",
+			"creators": ["Organization: test"]
+		}
+	}`
+
+	sbom, err := ParseSPDXJSON([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if sbom.ComponentCount() != 0 {
+		t.Errorf("expected 0 components, got %d", sbom.ComponentCount())
+	}
+}
+
+func TestParseSPDXLicenseIdentifier(t *testing.T) {
+	// 简单许可证
+	l := parseSPDXLicenseIdentifier("MIT")
+	if l == nil || l.SPDXID != "MIT" {
+		t.Errorf("expected MIT, got %v", l)
+	}
+
+	// 复合 AND 表达式
+	l = parseSPDXLicenseIdentifier("MIT AND Apache-2.0")
+	if l == nil || l.SPDXID != "MIT" {
+		t.Errorf("expected first license MIT, got %v", l)
+	}
+
+	// 复合 OR 表达式
+	l = parseSPDXLicenseIdentifier("GPL-2.0-only OR MIT")
+	if l == nil || l.SPDXID != "GPL-2.0-only" {
+		t.Errorf("expected first license GPL-2.0-only, got %v", l)
+	}
+
+	// 空字符串
+	l = parseSPDXLicenseIdentifier("")
+	if l != nil {
+		t.Error("expected nil for empty string")
+	}
+}
+
+func TestParseSPDXSupplier(t *testing.T) {
+	s := parseSPDXSupplier("Organization: scagogogo")
+	if s != "scagogogo" {
+		t.Errorf("expected 'scagogogo', got %q", s)
+	}
+
+	s = parseSPDXSupplier("NOASSERTION")
+	if s != "" {
+		t.Errorf("expected empty for NOASSERTION, got %q", s)
+	}
+
+	s = parseSPDXSupplier("")
+	if s != "" {
+		t.Errorf("expected empty, got %q", s)
+	}
+}

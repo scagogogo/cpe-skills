@@ -92,7 +92,7 @@ import (
 
 func main() {
     // Parse a CPE string
-    cpeObj, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    cpeObj, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }
@@ -104,7 +104,7 @@ func main() {
     fmt.Printf("Version: %s\n", cpeObj.Version)
     
     // Match with another CPE
-    pattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+    pattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
     if pattern.Match(cpeObj) {
         fmt.Println("CPE matches the pattern")
     }

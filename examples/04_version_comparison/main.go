@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 	"github.com/scagogogo/versions"
 )
 
@@ -111,27 +111,27 @@ func main() {
 	fmt.Println("\n========= 在CPE对象中进行版本比较 =========")
 
 	// 创建两个不同版本的CPE
-	cpe1, err := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:8.5.20:*:*:*:*:*:*:*")
+	cpe1, err := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:8.5.20:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析CPE1失败: %v", err)
 	}
 
-	cpe2, err := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+	cpe2, err := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析CPE2失败: %v", err)
 	}
 
 	// 检查版本匹配
 	// 创建版本范围匹配选项
-	options := &cpe.MatchOptions{
+	options := &cpeskills.MatchOptions{
 		VersionRange: true,
 		MinVersion:   "8.0.0",
 		MaxVersion:   "9.0.0",
 	}
 
 	// 创建适用于版本范围的条件
-	criteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	criteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "apache",
 		ProductName: "tomcat",
 	}
@@ -140,8 +140,8 @@ func main() {
 	fmt.Printf("CPE1版本: %s\n", cpe1.Version)
 	fmt.Printf("CPE2版本: %s\n", cpe2.Version)
 	fmt.Printf("版本范围: %s 到 %s\n", options.MinVersion, options.MaxVersion)
-	fmt.Printf("CPE1在版本范围内: %t\n", cpe.MatchCPE(criteria, cpe1, options))
-	fmt.Printf("CPE2在版本范围内: %t\n", cpe.MatchCPE(criteria, cpe2, options))
+	fmt.Printf("CPE1在版本范围内: %t\n", cpeskills.MatchCPE(criteria, cpe1, options))
+	fmt.Printf("CPE2在版本范围内: %t\n", cpeskills.MatchCPE(criteria, cpe2, options))
 
 	/*
 		输出示例:
@@ -161,8 +161,8 @@ func main() {
 	options.MaxVersion = "8.9.0"
 
 	fmt.Printf("新版本范围: %s 到 %s\n", options.MinVersion, options.MaxVersion)
-	fmt.Printf("CPE1在新版本范围内: %t\n", cpe.MatchCPE(criteria, cpe1, options))
-	fmt.Printf("CPE2在新版本范围内: %t\n", cpe.MatchCPE(criteria, cpe2, options))
+	fmt.Printf("CPE1在新版本范围内: %t\n", cpeskills.MatchCPE(criteria, cpe1, options))
+	fmt.Printf("CPE2在新版本范围内: %t\n", cpeskills.MatchCPE(criteria, cpe2, options))
 
 	/*
 		输出示例:

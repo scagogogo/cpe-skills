@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"strings"
@@ -22,7 +22,7 @@ const CPE23Version = "2.3"
  * 示例:
  *   ```go
  *   // 解析Windows 10的CPE
- *   winCPE, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+ *   winCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
  *   if err != nil {
  *       log.Fatalf("解析CPE失败: %v", err)
  *   }
@@ -30,7 +30,7 @@ const CPE23Version = "2.3"
  *   // 输出: 厂商: microsoft, 产品: windows, 版本: 10
  *
  *   // 解析Adobe Reader的CPE
- *   adobeCPE, err := cpe.ParseCpe23("cpe:2.3:a:adobe:reader:2021.001.20150:*:*:*:*:*:*:*")
+ *   adobeCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:adobe:reader:2021.001.20150:*:*:*:*:*:*:*")
  *   if err != nil {
  *       log.Fatalf("解析CPE失败: %v", err)
  *   }
@@ -105,32 +105,32 @@ func ParseCpe23(cpe23 string) (*CPE, error) {
  * 示例:
  *   ```go
  *   // 创建CPE对象并格式化为CPE 2.3字符串
- *   cpe := &cpe.CPE{
- *       Part:        *cpe.PartApplication,
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
- *       Version:     cpe.Version("10"),
+ *   cpe := &cpeskills.CPE{
+ *       Part:        *cpeskills.PartApplication,
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
+ *       Version:     cpeskills.Version("10"),
  *   }
- *   cpe23String := cpe.FormatCpe23(cpe)
+ *   cpe23String := cpeskills.FormatCpe23(cpe)
  *   fmt.Println(cpe23String)
  *   // 输出: cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
  *
  *   // 对已有CPE 2.3字符串的对象进行格式化
- *   cpe := &cpe.CPE{
+ *   cpe := &cpeskills.CPE{
  *       Cpe23: "cpe:2.3:a:adobe:reader:2021.001.20150:*:*:*:*:*:*:*",
  *   }
- *   cpe23String := cpe.FormatCpe23(cpe)
+ *   cpe23String := cpeskills.FormatCpe23(cpe)
  *   fmt.Println(cpe23String)
  *   // 输出: cpe:2.3:a:adobe:reader:2021.001.20150:*:*:*:*:*:*:*
  *
  *   // 处理带特殊字符的CPE
- *   cpe := &cpe.CPE{
- *       Part:        *cpe.PartOperationSystem,
- *       Vendor:      cpe.Vendor("red_hat"),
- *       ProductName: cpe.Product("enterprise_linux"),
- *       Version:     cpe.Version("8.2"),
+ *   cpe := &cpeskills.CPE{
+ *       Part:        *cpeskills.PartOperationSystem,
+ *       Vendor:      cpeskills.Vendor("red_hat"),
+ *       ProductName: cpeskills.Product("enterprise_linux"),
+ *       Version:     cpeskills.Version("8.2"),
  *   }
- *   cpe23String := cpe.FormatCpe23(cpe)
+ *   cpe23String := cpeskills.FormatCpe23(cpe)
  *   fmt.Println(cpe23String)
  *   // 输出: cpe:2.3:o:red_hat:enterprise_linux:8.2:*:*:*:*:*:*:*
  *   ```

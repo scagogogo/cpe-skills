@@ -25,7 +25,7 @@ func main() {
     fmt.Println("\n1. Downloading NVD CPE Dictionary:")
     
     // Initialize NVD client
-    nvdClient := cpe.NewNVDClient(&cpe.NVDConfig{
+    nvdClient := cpeskills.NewNVDClient(&cpeskills.NVDConfig{
         APIKey:      "", // Optional: Add your NVD API key for higher rate limits
         CacheDir:    "./nvd_cache",
         UpdateInterval: 24 * time.Hour, // Update daily
@@ -158,7 +158,7 @@ func main() {
     fmt.Println("System Vulnerability Assessment:")
     fmt.Printf("Inventory: %d components\n", len(systemInventory))
     
-    assessment := cpe.NewVulnerabilityAssessment()
+    assessment := cpeskills.NewVulnerabilityAssessment()
     
     totalVulns := 0
     criticalVulns := 0
@@ -190,13 +190,13 @@ func main() {
     fmt.Println("\n7. Automated Updates:")
     
     // Set up automatic updates
-    updateConfig := &cpe.UpdateConfig{
+    updateConfig := &cpeskills.UpdateConfig{
         CheckInterval: 6 * time.Hour, // Check every 6 hours
         AutoDownload:  true,
         NotifyOnUpdate: true,
     }
     
-    updater := cpe.NewNVDUpdater(nvdClient, updateConfig)
+    updater := cpeskills.NewNVDUpdater(nvdClient, updateConfig)
     
     fmt.Println("Setting up automated NVD updates...")
     
@@ -227,11 +227,11 @@ func main() {
     // Query for specific vulnerability types
     queries := []struct {
         name  string
-        query cpe.NVDQuery
+        query cpeskills.NVDQuery
     }{
         {
             "Recent Critical Vulnerabilities",
-            cpe.NVDQuery{
+            cpeskills.NVDQuery{
                 CVSSScoreMin: 9.0,
                 PublishedAfter: time.Now().AddDate(0, -3, 0), // Last 3 months
                 Limit: 10,
@@ -239,7 +239,7 @@ func main() {
         },
         {
             "Apache Product Vulnerabilities",
-            cpe.NVDQuery{
+            cpeskills.NVDQuery{
                 CPEVendor: "apache",
                 CVSSScoreMin: 7.0,
                 Limit: 5,
@@ -247,7 +247,7 @@ func main() {
         },
         {
             "Windows OS Vulnerabilities",
-            cpe.NVDQuery{
+            cpeskills.NVDQuery{
                 CPEProduct: "windows",
                 CPEPart: "o", // Operating system
                 Limit: 5,
@@ -278,7 +278,7 @@ func main() {
     fmt.Println("\n9. Export and Reporting:")
     
     // Generate vulnerability report
-    report := cpe.NewVulnerabilityReport()
+    report := cpeskills.NewVulnerabilityReport()
     report.SetTitle("System Vulnerability Assessment Report")
     report.SetGeneratedDate(time.Now())
     
@@ -303,9 +303,9 @@ func main() {
 }
 
 // Helper functions for demo
-func createSampleDictionary() *cpe.CPEDictionary {
-    return &cpe.CPEDictionary{
-        Entries: []*cpe.CPEDictionaryEntry{
+func createSampleDictionary() *cpeskills.CPEDictionary {
+    return &cpeskills.CPEDictionary{
+        Entries: []*cpeskills.CPEDictionaryEntry{
             {
                 CPE23: "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
                 Title: "Microsoft Windows 10",
@@ -320,9 +320,9 @@ func createSampleDictionary() *cpe.CPEDictionary {
     }
 }
 
-func createSampleCVEData() *cpe.CVEData {
-    return &cpe.CVEData{
-        CVEs: []*cpe.CVEEntry{
+func createSampleCVEData() *cpeskills.CVEData {
+    return &cpeskills.CVEData{
+        CVEs: []*cpeskills.CVEEntry{
             {
                 ID: "CVE-2021-44228",
                 Description: "Apache Log4j2 JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints.",

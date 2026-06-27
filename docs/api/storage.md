@@ -60,7 +60,7 @@ Creates a new file-based storage implementation.
 **Example:**
 ```go
 // Create file storage with caching
-storage, err := cpe.NewFileStorage("./cpe-data", true)
+storage, err := cpeskills.NewFileStorage("./cpe-data", true)
 if err != nil {
     log.Fatal(err)
 }
@@ -102,7 +102,7 @@ Stores a CPE object to the file system.
 
 **Example:**
 ```go
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 err := storage.StoreCPE(cpeObj)
 if err != nil {
     log.Printf("Failed to store CPE: %v", err)
@@ -128,7 +128,7 @@ Retrieves a CPE object by its ID (URI).
 ```go
 cpeObj, err := storage.RetrieveCPE("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 if err != nil {
-    if errors.Is(err, cpe.ErrNotFound) {
+    if errors.Is(err, cpeskills.ErrNotFound) {
         fmt.Println("CPE not found")
     } else {
         log.Printf("Failed to retrieve CPE: %v", err)
@@ -157,11 +157,11 @@ Searches for CPEs matching the given criteria.
 **Example:**
 ```go
 // Search for all Microsoft products
-criteria := &cpe.CPE{
-    Vendor: cpe.Vendor("microsoft"),
+criteria := &cpeskills.CPE{
+    Vendor: cpeskills.Vendor("microsoft"),
 }
 
-options := cpe.DefaultMatchOptions()
+options := cpeskills.DefaultMatchOptions()
 results, err := storage.SearchCPE(criteria, options)
 if err != nil {
     log.Fatal(err)
@@ -183,12 +183,12 @@ Performs advanced search with sophisticated matching algorithms.
 
 **Example:**
 ```go
-criteria := &cpe.CPE{
-    Vendor:      cpe.Vendor("microsoft"),
-    ProductName: cpe.Product("windows"),
+criteria := &cpeskills.CPE{
+    Vendor:      cpeskills.Vendor("microsoft"),
+    ProductName: cpeskills.Product("windows"),
 }
 
-options := cpe.NewAdvancedMatchOptions()
+options := cpeskills.NewAdvancedMatchOptions()
 options.MatchMode = "distance"
 options.ScoreThreshold = 0.8
 
@@ -215,14 +215,14 @@ Creates a new in-memory storage implementation (primarily for testing).
 
 **Example:**
 ```go
-storage := cpe.NewMemoryStorage()
+storage := cpeskills.NewMemoryStorage()
 err := storage.Initialize()
 if err != nil {
     log.Fatal(err)
 }
 
 // Use the storage
-cpeObj, _ := cpe.ParseCpe23("cpe:2.3:a:test:product:1.0:*:*:*:*:*:*:*")
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:test:product:1.0:*:*:*:*:*:*:*")
 err = storage.StoreCPE(cpeObj)
 if err != nil {
     log.Fatal(err)
@@ -270,13 +270,13 @@ Sets the cache storage backend and enables caching.
 **Example:**
 ```go
 // Create primary storage
-primaryStorage, _ := cpe.NewFileStorage("./data", false)
+primaryStorage, _ := cpeskills.NewFileStorage("./data", false)
 
 // Create cache storage
-cacheStorage := cpe.NewMemoryStorage()
+cacheStorage := cpeskills.NewMemoryStorage()
 
 // Create storage manager
-manager := cpe.NewStorageManager(primaryStorage)
+manager := cpeskills.NewStorageManager(primaryStorage)
 manager.SetCache(cacheStorage)
 
 // Initialize both storages
@@ -308,7 +308,7 @@ Returns default search options.
 
 **Example:**
 ```go
-options := cpe.DefaultSearchOptions()
+options := cpeskills.DefaultSearchOptions()
 options.Limit = 50
 options.SortBy = "vendor"
 options.SortOrder = "asc"
@@ -350,7 +350,7 @@ var (
 ```go
 cpeObj, err := storage.RetrieveCPE("non-existent-cpe")
 if err != nil {
-    if errors.Is(err, cpe.ErrNotFound) {
+    if errors.Is(err, cpeskills.ErrNotFound) {
         fmt.Println("CPE not found")
     } else {
         log.Printf("Storage error: %v", err)
@@ -371,7 +371,7 @@ import (
 
 func main() {
     // Create and initialize storage
-    storage, err := cpe.NewFileStorage("./cpe-storage", true)
+    storage, err := cpeskills.NewFileStorage("./cpe-storage", true)
     if err != nil {
         log.Fatal(err)
     }
@@ -390,7 +390,7 @@ func main() {
     }
     
     for _, cpeStr := range cpes {
-        cpeObj, err := cpe.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
             log.Printf("Failed to parse %s: %v", cpeStr, err)
             continue
@@ -405,11 +405,11 @@ func main() {
     }
     
     // Search for Microsoft products
-    criteria := &cpe.CPE{
-        Vendor: cpe.Vendor("microsoft"),
+    criteria := &cpeskills.CPE{
+        Vendor: cpeskills.Vendor("microsoft"),
     }
     
-    results, err := storage.SearchCPE(criteria, cpe.DefaultMatchOptions())
+    results, err := storage.SearchCPE(criteria, cpeskills.DefaultMatchOptions())
     if err != nil {
         log.Fatal(err)
     }

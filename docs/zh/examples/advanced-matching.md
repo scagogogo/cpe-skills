@@ -25,7 +25,7 @@ func main() {
     fmt.Println("\n1. 模糊匹配:")
     
     // 创建目标CPE
-    targetCPE, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    targetCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     
     // 创建候选CPE（包含一些变体）
     candidateCPEs := []string{
@@ -41,7 +41,7 @@ func main() {
     fmt.Println("模糊匹配结果:")
     
     for i, candidateStr := range candidateCPEs {
-        candidateCPE, _ := cpe.ParseCpe23(candidateStr)
+        candidateCPE, _ := cpeskills.ParseCpe23(candidateStr)
         
         // 计算相似度分数
         similarity := calculateSimilarity(targetCPE, candidateCPE)
@@ -82,7 +82,7 @@ func main() {
     
     fmt.Println("漏洞范围匹配:")
     for _, softwareStr := range systemSoftware {
-        softwareCPE, _ := cpe.ParseCpe23(softwareStr)
+        softwareCPE, _ := cpeskills.ParseCpe23(softwareStr)
         fmt.Printf("\n检查: %s %s\n", softwareCPE.ProductName, softwareCPE.Version)
         
         vulnerabilityFound := false
@@ -145,14 +145,14 @@ func main() {
     type MatchRule struct {
         Name        string
         Description string
-        Condition   func(*cpe.CPE) bool
+        Condition   func(*cpeskills.CPE) bool
     }
     
     rules := []MatchRule{
         {
             "Web服务器",
             "Apache HTTP Server或Nginx",
-            func(c *cpe.CPE) bool {
+            func(c *cpeskills.CPE) bool {
                 return (c.Vendor == "apache" && c.ProductName == "http_server") ||
                        (c.Vendor == "nginx" && c.ProductName == "nginx")
             },
@@ -160,14 +160,14 @@ func main() {
         {
             "Microsoft产品",
             "任何Microsoft产品",
-            func(c *cpe.CPE) bool {
+            func(c *cpeskills.CPE) bool {
                 return c.Vendor == "microsoft"
             },
         },
         {
             "过时的Java",
             "Java版本低于11",
-            func(c *cpe.CPE) bool {
+            func(c *cpeskills.CPE) bool {
                 if c.Vendor == "oracle" && c.ProductName == "java" {
                     return isVersionLessThan(c.Version, "11.0.0")
                 }
@@ -177,7 +177,7 @@ func main() {
         {
             "关键基础设施",
             "操作系统或网络设备",
-            func(c *cpe.CPE) bool {
+            func(c *cpeskills.CPE) bool {
                 return c.Part.ShortName == "o" || c.Part.ShortName == "h"
             },
         },
@@ -200,7 +200,7 @@ func main() {
         
         matchCount := 0
         for _, itemStr := range inventory {
-            itemCPE, _ := cpe.ParseCpe23(itemStr)
+            itemCPE, _ := cpeskills.ParseCpe23(itemStr)
             if rule.Condition(itemCPE) {
                 fmt.Printf("  ✅ %s %s %s\n", 
                     itemCPE.Vendor, itemCPE.ProductName, itemCPE.Version)
@@ -222,7 +222,7 @@ func main() {
         "part":    0.1,
     }
     
-    referenceCPE, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+    referenceCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
     
     testCPEs := []string{
         "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",   // 完全匹配
@@ -236,7 +236,7 @@ func main() {
     fmt.Println("加权匹配分数:")
     
     for i, testStr := range testCPEs {
-        testCPE, _ := cpe.ParseCpe23(testStr)
+        testCPE, _ := cpeskills.ParseCpe23(testStr)
         score := calculateWeightedScore(referenceCPE, testCPE, fieldWeights)
         
         fmt.Printf("  %d. 分数: %.3f - %s\n", i+1, score, testStr)
@@ -246,20 +246,20 @@ func main() {
     fmt.Println("\n6. 上下文感知匹配:")
     
     // 定义不同的上下文
-    contexts := map[string]func(*cpe.CPE, *cpe.CPE) bool{
-        "安全扫描": func(pattern, target *cpe.CPE) bool {
+    contexts := map[string]func(*cpeskills.CPE, *cpeskills.CPE) bool{
+        "安全扫描": func(pattern, target *cpeskills.CPE) bool {
             // 在安全上下文中，版本必须精确匹配
             return pattern.Vendor == target.Vendor &&
                    pattern.ProductName == target.ProductName &&
                    pattern.Version == target.Version
         },
-        "资产清单": func(pattern, target *cpe.CPE) bool {
+        "资产清单": func(pattern, target *cpeskills.CPE) bool {
             // 在清单上下文中，版本可以是通配符
             return pattern.Vendor == target.Vendor &&
                    pattern.ProductName == target.ProductName &&
                    (pattern.Version == "*" || pattern.Version == target.Version)
         },
-        "兼容性检查": func(pattern, target *cpe.CPE) bool {
+        "兼容性检查": func(pattern, target *cpeskills.CPE) bool {
             // 在兼容性上下文中，允许次版本差异
             if pattern.Vendor != target.Vendor || pattern.ProductName != target.ProductName {
                 return false
@@ -268,8 +268,8 @@ func main() {
         },
     }
     
-    patternCPE, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.*:*:*:*:*:*:*:*")
-    targetCPE, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*")
+    patternCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.*:*:*:*:*:*:*:*")
+    targetCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*")
     
     fmt.Printf("模式: %s\n", patternCPE.GetURI())
     fmt.Printf("目标: %s\n", targetCPE.GetURI())
@@ -287,7 +287,7 @@ func main() {
 }
 
 // 辅助函数：计算CPE相似度
-func calculateSimilarity(cpe1, cpe2 *cpe.CPE) float64 {
+func calculateSimilarity(cpe1, cpe2 *cpeskills.CPE) float64 {
     var score float64
     
     // 供应商匹配 (权重: 30%)
@@ -375,7 +375,7 @@ func isVersionCompatible(required, available string) bool {
 }
 
 // 辅助函数：计算加权分数
-func calculateWeightedScore(ref, test *cpe.CPE, weights map[string]float64) float64 {
+func calculateWeightedScore(ref, test *cpeskills.CPE, weights map[string]float64) float64 {
     var score float64
     
     if ref.Vendor == test.Vendor {

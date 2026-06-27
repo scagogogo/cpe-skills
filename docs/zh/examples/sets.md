@@ -33,13 +33,13 @@ func main() {
     }
     
     // 方法1：从字符串创建集合
-    set1 := cpe.NewCPESetFromStrings(cpeStrings)
+    set1 := cpeskills.NewCPESetFromStrings(cpeStrings)
     fmt.Printf("集合1大小: %d\n", set1.Size())
     
     // 方法2：创建空集合并添加项目
-    set2 := cpe.NewCPESet()
+    set2 := cpeskills.NewCPESet()
     for _, cpeStr := range cpeStrings[:3] { // 添加前3个项目
-        cpeObj, err := cpe.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
             log.Printf("解析%s失败: %v", cpeStr, err)
             continue
@@ -49,54 +49,54 @@ func main() {
     fmt.Printf("集合2大小: %d\n", set2.Size())
     
     // 方法3：从CPE对象切片创建
-    cpeObjects := make([]*cpe.CPE, 0, len(cpeStrings))
+    cpeObjects := make([]*cpeskills.CPE, 0, len(cpeStrings))
     for _, cpeStr := range cpeStrings[2:] { // 添加后3个项目
-        cpeObj, err := cpe.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
             continue
         }
         cpeObjects = append(cpeObjects, cpeObj)
     }
-    set3 := cpe.NewCPESetFromSlice(cpeObjects)
+    set3 := cpeskills.NewCPESetFromSlice(cpeObjects)
     fmt.Printf("集合3大小: %d\n", set3.Size())
     
     // 示例2：集合操作
     fmt.Println("\n2. 集合操作:")
     
     fmt.Println("集合1内容:")
-    set1.ForEach(func(cpe *cpe.CPE) {
-        fmt.Printf("  - %s\n", cpe.GetURI())
+    set1.ForEach(func(cpe *cpeskills.CPE) {
+        fmt.Printf("  - %s\n", cpeskills.GetURI())
     })
     
     fmt.Println("集合2内容:")
-    set2.ForEach(func(cpe *cpe.CPE) {
-        fmt.Printf("  - %s\n", cpe.GetURI())
+    set2.ForEach(func(cpe *cpeskills.CPE) {
+        fmt.Printf("  - %s\n", cpeskills.GetURI())
     })
     
     fmt.Println("集合3内容:")
-    set3.ForEach(func(cpe *cpe.CPE) {
-        fmt.Printf("  - %s\n", cpe.GetURI())
+    set3.ForEach(func(cpe *cpeskills.CPE) {
+        fmt.Printf("  - %s\n", cpeskills.GetURI())
     })
     
     // 并集：两个集合中的所有唯一项目
     unionSet := set2.Union(set3)
     fmt.Printf("\n集合2和集合3的并集 (大小: %d):\n", unionSet.Size())
-    unionSet.ForEach(func(cpe *cpe.CPE) {
-        fmt.Printf("  - %s\n", cpe.GetURI())
+    unionSet.ForEach(func(cpe *cpeskills.CPE) {
+        fmt.Printf("  - %s\n", cpeskills.GetURI())
     })
     
     // 交集：两个集合中都存在的项目
     intersectionSet := set1.Intersection(set2)
     fmt.Printf("\n集合1和集合2的交集 (大小: %d):\n", intersectionSet.Size())
-    intersectionSet.ForEach(func(cpe *cpe.CPE) {
-        fmt.Printf("  - %s\n", cpe.GetURI())
+    intersectionSet.ForEach(func(cpe *cpeskills.CPE) {
+        fmt.Printf("  - %s\n", cpeskills.GetURI())
     })
     
     // 差集：第一个集合中有但第二个集合中没有的项目
     differenceSet := set1.Difference(set2)
     fmt.Printf("\n集合1 - 集合2的差集 (大小: %d):\n", differenceSet.Size())
-    differenceSet.ForEach(func(cpe *cpe.CPE) {
-        fmt.Printf("  - %s\n", cpe.GetURI())
+    differenceSet.ForEach(func(cpe *cpeskills.CPE) {
+        fmt.Printf("  - %s\n", cpeskills.GetURI())
     })
     
     // 示例3：过滤集合
@@ -116,56 +116,56 @@ func main() {
         "cpe:2.3:h:cisco:catalyst_2960:*:*:*:*:*:*:*:*",
     }
     
-    largeSet := cpe.NewCPESetFromStrings(largeSetStrings)
+    largeSet := cpeskills.NewCPESetFromStrings(largeSetStrings)
     fmt.Printf("大集合大小: %d\n", largeSet.Size())
     
     // 按供应商过滤
     microsoftCPEs := largeSet.FilterByVendor("microsoft")
     fmt.Printf("\nMicrosoft CPE (大小: %d):\n", microsoftCPEs.Size())
-    microsoftCPEs.ForEach(func(cpe *cpe.CPE) {
-        fmt.Printf("  - %s\n", cpe.GetURI())
+    microsoftCPEs.ForEach(func(cpe *cpeskills.CPE) {
+        fmt.Printf("  - %s\n", cpeskills.GetURI())
     })
     
     // 按部件过滤（仅应用程序）
     applicationCPEs := largeSet.FilterByPart("a")
     fmt.Printf("\n应用程序CPE (大小: %d):\n", applicationCPEs.Size())
-    applicationCPEs.ForEach(func(cpe *cpe.CPE) {
-        fmt.Printf("  - %s\n", cpe.GetURI())
+    applicationCPEs.ForEach(func(cpe *cpeskills.CPE) {
+        fmt.Printf("  - %s\n", cpeskills.GetURI())
     })
     
     // 按产品模式过滤
     apacheCPEs := largeSet.FilterByProduct("apache")
     fmt.Printf("\nApache CPE (大小: %d):\n", apacheCPEs.Size())
-    apacheCPEs.ForEach(func(cpe *cpe.CPE) {
-        fmt.Printf("  - %s\n", cpe.GetURI())
+    apacheCPEs.ForEach(func(cpe *cpeskills.CPE) {
+        fmt.Printf("  - %s\n", cpeskills.GetURI())
     })
     
     // 自定义过滤函数
-    customFilter := func(cpe *cpe.CPE) bool {
+    customFilter := func(cpe *cpeskills.CPE) bool {
         // 过滤有版本信息的应用程序
-        return cpe.Part.ShortName == "a" && cpe.Version != "*" && cpe.Version != ""
+        return cpeskills.Part.ShortName == "a" && cpeskills.Version != "*" && cpeskills.Version != ""
     }
     
     versionedApps := largeSet.Filter(customFilter)
     fmt.Printf("\n有版本的应用程序 (大小: %d):\n", versionedApps.Size())
-    versionedApps.ForEach(func(cpe *cpe.CPE) {
-        fmt.Printf("  - %s (v%s)\n", cpe.ProductName, cpe.Version)
+    versionedApps.ForEach(func(cpe *cpeskills.CPE) {
+        fmt.Printf("  - %s (v%s)\n", cpeskills.ProductName, cpeskills.Version)
     })
     
     // 示例4：集合转换
     fmt.Println("\n4. 集合转换:")
     
     // 转换以提取供应商信息
-    vendors := largeSet.Map(func(cpe *cpe.CPE) string {
-        return cpe.Vendor
+    vendors := largeSet.Map(func(cpe *cpeskills.CPE) string {
+        return cpeskills.Vendor
     })
     
     uniqueVendors := removeDuplicateStrings(vendors)
     fmt.Printf("唯一供应商: %v\n", uniqueVendors)
     
     // 转换以创建摘要信息
-    summaries := largeSet.Map(func(cpe *cpe.CPE) string {
-        return fmt.Sprintf("%s %s %s", cpe.Vendor, cpe.ProductName, cpe.Version)
+    summaries := largeSet.Map(func(cpe *cpeskills.CPE) string {
+        return fmt.Sprintf("%s %s %s", cpeskills.Vendor, cpeskills.ProductName, cpeskills.Version)
     })
     
     fmt.Println("\nCPE摘要:")
@@ -177,21 +177,21 @@ func main() {
     fmt.Println("\n5. 集合聚合:")
     
     // 按供应商分组
-    vendorGroups := largeSet.GroupBy(func(cpe *cpe.CPE) string {
-        return cpe.Vendor
+    vendorGroups := largeSet.GroupBy(func(cpe *cpeskills.CPE) string {
+        return cpeskills.Vendor
     })
     
     fmt.Println("按供应商分组的CPE:")
     for vendor, cpes := range vendorGroups {
         fmt.Printf("  %s (%d项):\n", vendor, len(cpes))
         for _, cpe := range cpes {
-            fmt.Printf("    - %s\n", cpe.ProductName)
+            fmt.Printf("    - %s\n", cpeskills.ProductName)
         }
     }
     
     // 按部件类型分组
-    partGroups := largeSet.GroupBy(func(cpe *cpe.CPE) string {
-        return cpe.Part.LongName
+    partGroups := largeSet.GroupBy(func(cpe *cpeskills.CPE) string {
+        return cpeskills.Part.LongName
     })
     
     fmt.Println("\n按部件类型分组的CPE:")
@@ -224,7 +224,7 @@ func main() {
     }
     
     // 从文件加载集合
-    loadedSet, err := cpe.LoadCPESetFromFile(filename)
+    loadedSet, err := cpeskills.LoadCPESetFromFile(filename)
     if err != nil {
         log.Printf("加载集合失败: %v", err)
     } else {
@@ -242,13 +242,13 @@ func main() {
     fmt.Println("\n8. 集合比较:")
     
     // 创建两个相似的集合
-    setA := cpe.NewCPESetFromStrings([]string{
+    setA := cpeskills.NewCPESetFromStrings([]string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
     })
     
-    setB := cpe.NewCPESetFromStrings([]string{
+    setB := cpeskills.NewCPESetFromStrings([]string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
         "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",

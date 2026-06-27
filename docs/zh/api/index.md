@@ -92,7 +92,7 @@ import (
 
 func main() {
     // 解析CPE字符串
-    cpeObj, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    cpeObj, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }
@@ -104,7 +104,7 @@ func main() {
     fmt.Printf("版本: %s\n", cpeObj.Version)
     
     // 与另一个CPE匹配
-    pattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+    pattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
     if pattern.Match(cpeObj) {
         fmt.Println("CPE匹配模式")
     }

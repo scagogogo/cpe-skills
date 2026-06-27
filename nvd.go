@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"compress/gzip"
@@ -15,6 +15,27 @@ import (
 
 	"github.com/scagogogo/cve"
 )
+// NVD API 2.0 endpoints (legacy API deprecated since 2024)
+const (
+	// NVDApiBaseURL NVD API 2.0 base URL for CVEs
+	NVDApiBaseURL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
+
+	// NVDApiCPEsURL NVD API 2.0 base URL for CPEs
+	NVDApiCPEsURL = "https://services.nvd.nist.gov/rest/json/cpes/2.0"
+
+	// NVDCPEMatch NVD CPE match data feed URL (legacy, still available)
+	NVDCPEMatch = "https://nvd.nist.gov/feeds/json/cpematch/1.0/nvdcpematch-1.0.json.gz"
+
+	// NVDCPEDict NVD CPE dictionary XML URL (legacy format)
+	NVDCPEDict = "https://nvd.nist.gov/feeds/xml/cpe/dictionary/official-cpe-dictionary_v2.3.xml.gz"
+
+	// NVDCVERecentURL NVD recent CVE data feed URL (legacy format)
+	NVDCVERecentURL = "https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-recent.json.gz"
+
+	// NVDResultsPerPage NVD API 2.0 results per page
+	NVDResultsPerPage = 2000
+)
+
 
 /**
  * NVDFeedOptions 定义美国国家漏洞数据库(NVD)数据Feed的下载和处理选项
@@ -32,10 +53,10 @@ import (
  * 使用示例:
  *   ```go
  *   // 使用默认选项
- *   options := cpe.DefaultNVDFeedOptions()
+ *   options := cpeskills.DefaultNVDFeedOptions()
  *
  *   // 自定义选项
- *   customOptions := &cpe.NVDFeedOptions{
+ *   customOptions := &cpeskills.NVDFeedOptions{
  *       CacheDir: "/tmp/my-nvd-cache",
  *       CacheMaxAge: 48,                     // 缓存48小时有效
  *       MaxConcurrentDownloads: 5,           // 最多5个并发下载
@@ -51,7 +72,7 @@ import (
  *   }
  *
  *   // 下载NVD数据
- *   data, err := cpe.DownloadAllNVDData(customOptions)
+ *   data, err := cpeskills.DownloadAllNVDData(customOptions)
  *   if err != nil {
  *       log.Fatalf("下载NVD数据失败: %v", err)
  *   }
@@ -88,24 +109,6 @@ type NVDFeedOptions struct {
 	HTTPClient *http.Client
 }
 
-// 默认NVD CPE Feed URL
-const (
-	// NVDCPEMatch NVD CPE匹配数据Feed URL
-	// 包含CPE和CVE之间的映射关系
-	NVDCPEMatch = "https://nvd.nist.gov/feeds/json/cpematch/1.0/nvdcpematch-1.0.json.gz"
-
-	// NVDCPEFeedURL NVD CPE数据Feed URL
-	// 包含所有CPE条目的详细信息
-	NVDCPEFeedURL = "https://nvd.nist.gov/feeds/json/cpe/1.0/nvdcpe-1.0.json.gz"
-
-	// NVDCPEDict NVD CPE字典XML URL
-	// 包含官方CPE字典的XML格式数据
-	NVDCPEDict = "https://nvd.nist.gov/feeds/xml/cpe/dictionary/official-cpe-dictionary_v2.3.xml.gz"
-
-	// NVDCVERecentURL NVD最近CVE数据Feed URL
-	// 包含最近添加或更新的CVE条目
-	NVDCVERecentURL = "https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-recent.json.gz"
-)
 
 /**
  * DefaultNVDFeedOptions 返回配置了合理默认值的NVD Feed下载选项
@@ -125,14 +128,14 @@ const (
  * 使用示例:
  *   ```go
  *   // 获取默认选项
- *   options := cpe.DefaultNVDFeedOptions()
+ *   options := cpeskills.DefaultNVDFeedOptions()
  *
  *   // 只修改缓存相关设置，保留其他默认值
  *   options.CacheDir = "/var/cache/nvd-data"
  *   options.CacheMaxAge = 12  // 降低缓存有效期至12小时
  *
  *   // 使用修改后的选项下载数据
- *   dict, err := cpe.DownloadAndParseCPEDict(options)
+ *   dict, err := cpeskills.DownloadAndParseCPEDict(options)
  *   if err != nil {
  *       log.Fatalf("下载CPE字典失败: %v", err)
  *   }
@@ -166,14 +169,14 @@ func DefaultNVDFeedOptions() *NVDFeedOptions {
  * 使用示例:
  *   ```go
  *   // 下载NVD数据
- *   options := cpe.DefaultNVDFeedOptions()
- *   nvdData, err := cpe.DownloadAllNVDData(options)
+ *   options := cpeskills.DefaultNVDFeedOptions()
+ *   nvdData, err := cpeskills.DownloadAllNVDData(options)
  *   if err != nil {
  *       log.Fatalf("下载NVD数据失败: %v", err)
  *   }
  *
  *   // 查找特定CPE相关的CVE
- *   windowsCPE, _ := cpe.ParseCpe23("cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*")
+ *   windowsCPE, _ := cpeskills.ParseCpe23("cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*")
  *   cves := nvdData.FindCVEsForCPE(windowsCPE)
  *   fmt.Printf("找到%d个影响Windows 10的CVE\n", len(cves))
  *   for i, cveID := range cves[:5] { // 只显示前5个
@@ -195,17 +198,17 @@ func DefaultNVDFeedOptions() *NVDFeedOptions {
  *   - FindCVEsForCPE和FindCPEsForCVE方法支持模糊匹配，但可能不如精确匹配准确
  */
 type NVDCPEData struct {
-	// CPEDictionary 包含所有官方注册的CPE条目及其详细信息
-	// 通过此字段可以获取特定CPE的标准化表示和元数据
+	// CPEDictionary contains all officially registered CPE entries
 	CPEDictionary *CPEDictionary
 
-	// CPEMatchData 包含CPE与CVE之间的双向映射关系
-	// 用于快速查找特定CPE关联的漏洞，或特定漏洞影响的产品
+	// CPEMatchData contains bidirectional CPE-CVE mapping
 	CPEMatchData *CPEMatchData
 
-	// DownloadTime 记录数据下载的时间戳
-	// 可用于判断数据的新鲜度，决定是否需要更新
+	// DownloadTime records when the data was downloaded
 	DownloadTime time.Time
+
+	// mu protects concurrent access to cached query results
+	mu sync.RWMutex
 }
 
 /**
@@ -274,11 +277,11 @@ type CPEMatchData struct {
  *
  * 使用示例:
  *   ```go
- *   options := cpe.DefaultNVDFeedOptions()
+ *   options := cpeskills.DefaultNVDFeedOptions()
  *   // 设置缓存目录为当前目录下的cache文件夹
  *   options.CacheDir = "./cache"
  *
- *   cpeDict, err := cpe.DownloadAndParseCPEDict(options)
+ *   cpeDict, err := cpeskills.DownloadAndParseCPEDict(options)
  *   if err != nil {
  *       log.Fatalf("下载CPE字典失败: %v", err)
  *   }
@@ -401,11 +404,11 @@ func DownloadAndParseCPEDict(options *NVDFeedOptions) (*CPEDictionary, error) {
  *
  * 使用示例:
  *   ```go
- *   options := cpe.DefaultNVDFeedOptions()
+ *   options := cpeskills.DefaultNVDFeedOptions()
  *   // 禁用进度显示
  *   options.ShowProgress = false
  *
- *   matchData, err := cpe.DownloadAndParseCPEMatch(options)
+ *   matchData, err := cpeskills.DownloadAndParseCPEMatch(options)
  *   if err != nil {
  *       log.Fatalf("下载CPE匹配数据失败: %v", err)
  *   }
@@ -560,21 +563,21 @@ func DownloadAndParseCPEMatch(options *NVDFeedOptions) (*CPEMatchData, error) {
  *
  * 使用示例:
  *   ```go
- *   options := cpe.DefaultNVDFeedOptions()
+ *   options := cpeskills.DefaultNVDFeedOptions()
  *   // 设置缓存目录和最大缓存期限
  *   options.CacheDir = "./nvd_cache"
  *   options.CacheMaxAge = 7 * 24 * time.Hour // 7天
  *
  *   // 下载所有NVD数据
  *   fmt.Println("开始下载NVD数据...")
- *   nvdData, err := cpe.DownloadAllNVDData(options)
+ *   nvdData, err := cpeskills.DownloadAllNVDData(options)
  *   if err != nil {
  *       log.Fatalf("下载NVD数据失败: %v", err)
  *   }
  *   fmt.Println("NVD数据下载完成!")
  *
  *   // 查找特定产品的漏洞
- *   apacheTomcatCPE, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+ *   apacheTomcatCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
  *   cves := nvdData.FindCVEsForCPE(apacheTomcatCPE)
  *   fmt.Printf("发现Apache Tomcat 9.0.0存在%d个漏洞\n", len(cves))
  *

@@ -35,7 +35,7 @@ import (
 
 func main() {
     // Parse a CPE string
-    cpeObj, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    cpeObj, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }
@@ -46,7 +46,7 @@ func main() {
     fmt.Printf("Version: %s\n", cpeObj.Version)
     
     // Create a pattern for matching
-    pattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+    pattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
     
     // Test matching
     if pattern.Match(cpeObj) {
@@ -102,9 +102,9 @@ Each example follows a consistent structure:
 
 ### Error Handling
 ```go
-cpeObj, err := cpe.ParseCpe23(cpeString)
+cpeObj, err := cpeskills.ParseCpe23(cpeString)
 if err != nil {
-    if cpe.IsInvalidFormatError(err) {
+    if cpeskills.IsInvalidFormatError(err) {
         fmt.Printf("Invalid format: %s\n", cpeString)
         return
     }
@@ -114,7 +114,7 @@ if err != nil {
 
 ### Resource Cleanup
 ```go
-storage, err := cpe.NewFileStorage("./data", true)
+storage, err := cpeskills.NewFileStorage("./data", true)
 if err != nil {
     log.Fatal(err)
 }
@@ -134,7 +134,7 @@ cpeStrings := []string{
 }
 
 for _, cpeStr := range cpeStrings {
-    cpeObj, err := cpe.ParseCpe23(cpeStr)
+    cpeObj, err := cpeskills.ParseCpe23(cpeStr)
     if err != nil {
         log.Printf("Failed to parse %s: %v", cpeStr, err)
         continue
@@ -150,27 +150,27 @@ for _, cpeStr := range cpeStrings {
 ### 1. Always Handle Errors
 ```go
 // Good
-cpeObj, err := cpe.ParseCpe23(input)
+cpeObj, err := cpeskills.ParseCpe23(input)
 if err != nil {
     return fmt.Errorf("failed to parse CPE: %w", err)
 }
 
 // Bad
-cpeObj, _ := cpe.ParseCpe23(input) // Ignoring errors
+cpeObj, _ := cpeskills.ParseCpe23(input) // Ignoring errors
 ```
 
 ### 2. Use Appropriate Storage
 ```go
 // For testing
-storage := cpe.NewMemoryStorage()
+storage := cpeskills.NewMemoryStorage()
 
 // For production
-storage, err := cpe.NewFileStorage("./cpe-data", true)
+storage, err := cpeskills.NewFileStorage("./cpe-data", true)
 ```
 
 ### 3. Validate Input
 ```go
-err := cpe.ValidateCPEString(userInput)
+err := cpeskills.ValidateCPEString(userInput)
 if err != nil {
     return fmt.Errorf("invalid CPE format: %w", err)
 }
@@ -179,7 +179,7 @@ if err != nil {
 ### 4. Use Sets for Collections
 ```go
 // Efficient for large collections
-cpeSet := cpe.NewCPESet()
+cpeSet := cpeskills.NewCPESet()
 cpeSet.Add(cpe1, cpe2, cpe3)
 
 // Filter efficiently
@@ -190,22 +190,22 @@ microsoftCPEs := cpeSet.FilterByVendor("microsoft")
 
 ### 1. Enable Caching
 ```go
-storage, _ := cpe.NewFileStorage("./data", true) // Enable cache
+storage, _ := cpeskills.NewFileStorage("./data", true) // Enable cache
 ```
 
 ### 2. Use Batch Operations
 ```go
 // Better than individual operations
-cpeSet := cpe.FromArray(cpeArray)
+cpeSet := cpeskills.FromArray(cpeArray)
 results := cpeSet.FilterByVendor("microsoft")
 ```
 
 ### 3. Reuse Match Options
 ```go
-options := cpe.DefaultMatchOptions()
+options := cpeskills.DefaultMatchOptions()
 // Reuse options for multiple matches
 for _, cpe := range cpes {
-    if cpe.MatchCPE(pattern, cpe, options) {
+    if cpeskills.MatchCPE(pattern, cpe, options) {
         // Handle match
     }
 }

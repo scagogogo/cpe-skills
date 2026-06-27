@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -47,25 +47,25 @@ func runParse(cmd *cobra.Command, args []string) error {
 }
 
 // parseCPEString 自动检测 CPE 版本并解析
-func parseCPEString(input string) (*cpe.CPE, error) {
+func parseCPEString(input string) (*cpeskills.CPE, error) {
 	if len(input) >= 6 && input[:6] == "cpe:2." {
-		return cpe.ParseCpe23(input)
+		return cpeskills.ParseCpe23(input)
 	}
 	if len(input) >= 5 && input[:5] == "cpe:/" {
-		return cpe.ParseCpe22(input)
+		return cpeskills.ParseCpe22(input)
 	}
 	return nil, fmt.Errorf("unrecognized CPE format: %s (expected CPE 2.2 or 2.3)", input)
 }
 
 // outputConversion 输出格式转换结果
-func outputConversion(c *cpe.CPE, format string) error {
+func outputConversion(c *cpeskills.CPE, format string) error {
 	switch format {
 	case "2.2":
-		fmt.Println(cpe.FormatCpe22(c))
+		fmt.Println(cpeskills.FormatCpe22(c))
 	case "2.3":
-		fmt.Println(cpe.FormatCpe23(c))
+		fmt.Println(cpeskills.FormatCpe23(c))
 	case "wfn":
-		wfn := cpe.FromCPE(c)
+		wfn := cpeskills.FromCPE(c)
 		fmt.Printf("wfn:[part=%s,vendor=%s,product=%s,version=%s,update=%s,edition=%s,language=%s]\n",
 			wfn.Part, wfn.Vendor, wfn.Product, wfn.Version, wfn.Update, wfn.Edition, wfn.Language)
 	default:

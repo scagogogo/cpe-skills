@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 /**
  * Vendor 表示CPE中的产品供应商
@@ -12,20 +12,20 @@ package cpe
  * 示例:
  *   ```go
  *   // 创建一个表示Microsoft产品的CPE
- *   microsoftCPE := &cpe.CPE{
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
+ *   microsoftCPE := &cpeskills.CPE{
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
  *   }
  *
  *   // 在搜索条件中使用特定供应商
- *   searchCriteria := &cpe.CPE{
- *       Vendor:      cpe.Vendor("microsoft"),
+ *   searchCriteria := &cpeskills.CPE{
+ *       Vendor:      cpeskills.Vendor("microsoft"),
  *   }
- *   options := cpe.DefaultMatchOptions()
- *   results := cpe.Search(cpeList, searchCriteria, options)
+ *   options := cpeskills.DefaultMatchOptions()
+ *   results := cpeskills.Search(cpeList, searchCriteria, options)
  *
  *   // 使用标准化函数处理供应商名称
- *   normalizedVendor := cpe.NormalizeComponent("Microsoft Corporation")
+ *   normalizedVendor := cpeskills.NormalizeComponent("Microsoft Corporation")
  *   // 结果为 "microsoft_corporation"
  *   ```
  */

@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
 	// 示例1: 解析CPE 2.3格式字符串
 	fmt.Println("========= 解析 CPE 2.3 格式字符串 =========")
-	cpe23, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpe23, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析CPE 2.3格式失败: %v", err)
 	}
@@ -35,7 +35,7 @@ func main() {
 
 	// 示例2: 解析CPE 2.2格式字符串
 	fmt.Println("========= 解析 CPE 2.2 格式字符串 =========")
-	cpe22, err := cpe.ParseCpe22("cpe:/a:apache:log4j:2.0")
+	cpe22, err := cpeskills.ParseCpe22("cpe:/a:apache:log4j:2.0")
 	if err != nil {
 		log.Fatalf("解析CPE 2.2格式失败: %v", err)
 	}
@@ -60,8 +60,8 @@ func main() {
 
 	// 示例3: 手动创建CPE对象
 	fmt.Println("========= 手动创建CPE对象 =========")
-	manualCpe := &cpe.CPE{
-		Part:        *cpe.PartApplication, // 应用程序
+	manualCpe := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication, // 应用程序
 		Vendor:      "oracle",
 		ProductName: "java",
 		Version:     "1.8.0",
@@ -84,7 +84,7 @@ func main() {
 	cpe22Str := "cpe:/o:microsoft:windows_10:-"
 
 	// 解析CPE 2.2字符串
-	cpe22Obj, err := cpe.ParseCpe22(cpe22Str)
+	cpe22Obj, err := cpeskills.ParseCpe22(cpe22Str)
 	if err != nil {
 		log.Fatalf("解析CPE 2.2字符串失败: %v", err)
 	}
@@ -117,7 +117,7 @@ func main() {
 
 	// 示例5: 处理包含特殊字符的CPE
 	fmt.Println("\n========= 处理特殊字符 =========")
-	specialCpe, err := cpe.ParseCpe23("cpe:2.3:a:example\\.com:product:1\\.0:*:*:*:*:*:*:*")
+	specialCpe, err := cpeskills.ParseCpe23("cpe:2.3:a:example\\.com:product:1\\.0:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析带特殊字符的CPE失败: %v", err)
 	}

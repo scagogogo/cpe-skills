@@ -42,18 +42,18 @@ func NewCPESetFromStrings(cpeStrings []string) *CPESet
 **示例：**
 ```go
 // 创建空集合
-set1 := cpe.NewCPESet()
+set1 := cpeskills.NewCPESet()
 
 // 从切片创建
-cpes := []*cpe.CPE{cpe1, cpe2, cpe3}
-set2 := cpe.NewCPESetFromSlice(cpes)
+cpes := []*cpeskills.CPE{cpe1, cpe2, cpe3}
+set2 := cpeskills.NewCPESetFromSlice(cpes)
 
 // 从字符串创建
 cpeStrings := []string{
     "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
     "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
 }
-set3 := cpe.NewCPESetFromStrings(cpeStrings)
+set3 := cpeskills.NewCPESetFromStrings(cpeStrings)
 
 fmt.Printf("集合大小: %d, %d, %d\n", set1.Size(), set2.Size(), set3.Size())
 ```
@@ -102,11 +102,11 @@ func (s *CPESet) Clear()
 
 **示例：**
 ```go
-set := cpe.NewCPESet()
+set := cpeskills.NewCPESet()
 
 // 添加CPE
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
 
 added1 := set.Add(cpe1)
 added2 := set.Add(cpe2)
@@ -162,13 +162,13 @@ func (s *CPESet) SymmetricDifference(other *CPESet) *CPESet
 **示例：**
 ```go
 // 创建两个集合
-set1 := cpe.NewCPESetFromStrings([]string{
+set1 := cpeskills.NewCPESetFromStrings([]string{
     "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
     "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
     "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
 })
 
-set2 := cpe.NewCPESetFromStrings([]string{
+set2 := cpeskills.NewCPESetFromStrings([]string{
     "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
     "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
     "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",
@@ -230,16 +230,16 @@ func (s *CPESet) IsDisjoint(other *CPESet) bool
 
 **示例：**
 ```go
-setA := cpe.NewCPESetFromStrings([]string{
+setA := cpeskills.NewCPESetFromStrings([]string{
     "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
     "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
 })
 
-setB := cpe.NewCPESetFromStrings([]string{
+setB := cpeskills.NewCPESetFromStrings([]string{
     "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
 })
 
-setC := cpe.NewCPESetFromStrings([]string{
+setC := cpeskills.NewCPESetFromStrings([]string{
     "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
 })
 
@@ -294,7 +294,7 @@ func (s *CPESet) FilterByVersion(version string) *CPESet
 **示例：**
 ```go
 // 创建大集合
-largeSet := cpe.NewCPESetFromStrings([]string{
+largeSet := cpeskills.NewCPESetFromStrings([]string{
     "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
     "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
     "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
@@ -313,8 +313,8 @@ applications := largeSet.FilterByPart("a")
 fmt.Printf("应用程序数量: %d\n", applications.Size())
 
 // 自定义过滤
-versionedApps := largeSet.Filter(func(cpe *cpe.CPE) bool {
-    return cpe.Part.ShortName == "a" && cpe.Version != "*"
+versionedApps := largeSet.Filter(func(cpe *cpeskills.CPE) bool {
+    return cpeskills.Part.ShortName == "a" && cpeskills.Version != "*"
 })
 fmt.Printf("有版本号的应用程序: %d\n", versionedApps.Size())
 ```
@@ -347,7 +347,7 @@ func (s *CPESet) Map(mapper func(*CPE) interface{}) []interface{}
 
 **示例：**
 ```go
-set := cpe.NewCPESetFromStrings([]string{
+set := cpeskills.NewCPESetFromStrings([]string{
     "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
     "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
 })
@@ -361,8 +361,8 @@ stringSlice := set.ToStringSlice()
 fmt.Printf("字符串切片: %v\n", stringSlice)
 
 // 映射转换 - 提取供应商名称
-vendors := set.Map(func(cpe *cpe.CPE) interface{} {
-    return cpe.Vendor
+vendors := set.Map(func(cpe *cpeskills.CPE) interface{} {
+    return cpeskills.Vendor
 })
 fmt.Printf("供应商列表: %v\n", vendors)
 ```
@@ -395,7 +395,7 @@ func (s *CPESet) ForEach(action func(*CPE))
 
 **示例：**
 ```go
-set := cpe.NewCPESetFromStrings([]string{
+set := cpeskills.NewCPESetFromStrings([]string{
     "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
     "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
     "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
@@ -403,8 +403,8 @@ set := cpe.NewCPESetFromStrings([]string{
 })
 
 // 按供应商分组
-vendorGroups := set.GroupBy(func(cpe *cpe.CPE) string {
-    return cpe.Vendor
+vendorGroups := set.GroupBy(func(cpe *cpeskills.CPE) string {
+    return cpeskills.Vendor
 })
 
 fmt.Println("按供应商分组:")
@@ -413,8 +413,8 @@ for vendor, group := range vendorGroups {
 }
 
 // 按组件类型计数
-partCounts := set.CountBy(func(cpe *cpe.CPE) string {
-    return cpe.Part.LongName
+partCounts := set.CountBy(func(cpe *cpeskills.CPE) string {
+    return cpeskills.Part.LongName
 })
 
 fmt.Println("按组件类型计数:")
@@ -424,8 +424,8 @@ for part, count := range partCounts {
 
 // 遍历操作
 fmt.Println("所有CPE:")
-set.ForEach(func(cpe *cpe.CPE) {
-    fmt.Printf("  %s %s\n", cpe.Vendor, cpe.ProductName)
+set.ForEach(func(cpe *cpeskills.CPE) {
+    fmt.Printf("  %s %s\n", cpeskills.Vendor, cpeskills.ProductName)
 })
 ```
 
@@ -459,7 +459,7 @@ type SetStatistics struct {
 
 **示例：**
 ```go
-set := cpe.NewCPESetFromStrings([]string{
+set := cpeskills.NewCPESetFromStrings([]string{
     "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
     "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
     "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
@@ -518,7 +518,7 @@ func (s *CPESet) ExportToJSON(filename string) error
 
 **示例：**
 ```go
-set := cpe.NewCPESetFromStrings([]string{
+set := cpeskills.NewCPESetFromStrings([]string{
     "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
     "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
 })
@@ -532,7 +532,7 @@ if err != nil {
 }
 
 // 从文件加载
-loadedSet, err := cpe.LoadCPESetFromFile("cpe_set.json")
+loadedSet, err := cpeskills.LoadCPESetFromFile("cpe_set.json")
 if err != nil {
     log.Printf("加载失败: %v", err)
 } else {
@@ -573,7 +573,7 @@ func main() {
     }
     
     // 创建集合
-    allCPEs := cpe.NewCPESetFromStrings(cpeStrings)
+    allCPEs := cpeskills.NewCPESetFromStrings(cpeStrings)
     fmt.Printf("创建了包含 %d 个CPE的集合\n", allCPEs.Size())
     
     // 过滤操作
@@ -586,8 +586,8 @@ func main() {
     fmt.Printf("应用程序: %d 个\n", applications.Size())
     
     // 自定义过滤
-    webServers := allCPEs.Filter(func(cpe *cpe.CPE) bool {
-        return cpe.ProductName == "tomcat" || cpe.ProductName == "http_server"
+    webServers := allCPEs.Filter(func(cpe *cpeskills.CPE) bool {
+        return cpeskills.ProductName == "tomcat" || cpeskills.ProductName == "http_server"
     })
     fmt.Printf("Web服务器: %d 个\n", webServers.Size())
     
@@ -609,8 +609,8 @@ func main() {
     // 分组统计
     fmt.Println("\n=== 分组统计 ===")
     
-    vendorGroups := allCPEs.GroupBy(func(cpe *cpe.CPE) string {
-        return cpe.Vendor
+    vendorGroups := allCPEs.GroupBy(func(cpe *cpeskills.CPE) string {
+        return cpeskills.Vendor
     })
     
     fmt.Println("按供应商分组:")
@@ -618,8 +618,8 @@ func main() {
         fmt.Printf("  %s: %d 个产品\n", vendor, group.Size())
         
         // 显示该供应商的产品
-        group.ForEach(func(cpe *cpe.CPE) {
-            fmt.Printf("    - %s %s\n", cpe.ProductName, cpe.Version)
+        group.ForEach(func(cpe *cpeskills.CPE) {
+            fmt.Printf("    - %s %s\n", cpeskills.ProductName, cpeskills.Version)
         })
     }
     
@@ -638,8 +638,8 @@ func main() {
     fmt.Println("\n=== 转换操作 ===")
     
     // 提取供应商列表
-    vendors := allCPEs.Map(func(cpe *cpe.CPE) interface{} {
-        return cpe.Vendor
+    vendors := allCPEs.Map(func(cpe *cpeskills.CPE) interface{} {
+        return cpeskills.Vendor
     })
     
     // 去重
@@ -674,7 +674,7 @@ func main() {
     }
     
     // 从文件加载验证
-    loadedSet, err := cpe.LoadCPESetFromFile("all_cpes.json")
+    loadedSet, err := cpeskills.LoadCPESetFromFile("all_cpes.json")
     if err != nil {
         log.Printf("加载失败: %v", err)
     } else {

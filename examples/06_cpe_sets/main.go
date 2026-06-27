@@ -6,23 +6,23 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 // CPESet 表示CPE对象的集合
 type CPESet struct {
-	cpes []*cpe.CPE
+	cpes []*cpeskills.CPE
 }
 
 // NewCPESet 创建一个新的CPE集合
 func NewCPESet() *CPESet {
 	return &CPESet{
-		cpes: make([]*cpe.CPE, 0),
+		cpes: make([]*cpeskills.CPE, 0),
 	}
 }
 
 // Add 添加一个CPE到集合
-func (s *CPESet) Add(cpe *cpe.CPE) {
+func (s *CPESet) Add(cpe *cpeskills.CPE) {
 	// 检查是否已存在
 	for _, c := range s.cpes {
 		if c.GetURI() == cpe.GetURI() {
@@ -33,7 +33,7 @@ func (s *CPESet) Add(cpe *cpe.CPE) {
 }
 
 // Remove 从集合中移除CPE
-func (s *CPESet) Remove(cpe *cpe.CPE) bool {
+func (s *CPESet) Remove(cpe *cpeskills.CPE) bool {
 	for i, c := range s.cpes {
 		if c.GetURI() == cpe.GetURI() {
 			// 移除元素
@@ -45,7 +45,7 @@ func (s *CPESet) Remove(cpe *cpe.CPE) bool {
 }
 
 // Contains 检查集合是否包含特定CPE
-func (s *CPESet) Contains(cpe *cpe.CPE) bool {
+func (s *CPESet) Contains(cpe *cpeskills.CPE) bool {
 	for _, c := range s.cpes {
 		if c.GetURI() == cpe.GetURI() {
 			return true
@@ -60,10 +60,10 @@ func (s *CPESet) Size() int {
 }
 
 // Filter 根据条件过滤集合
-func (s *CPESet) Filter(criteria *cpe.CPE, options *cpe.MatchOptions) *CPESet {
+func (s *CPESet) Filter(criteria *cpeskills.CPE, options *cpeskills.MatchOptions) *CPESet {
 	result := NewCPESet()
 	for _, c := range s.cpes {
-		if cpe.MatchCPE(criteria, c, options) {
+		if cpeskills.MatchCPE(criteria, c, options) {
 			result.Add(c)
 		}
 	}
@@ -134,27 +134,27 @@ func main() {
 	fmt.Println("\n===== 示例1: 创建CPE集合 =====")
 
 	// 创建一些CPE对象
-	cpeWin10, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpeWin10, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Windows 10 CPE失败: %v", err)
 	}
 
-	cpeWin11, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
+	cpeWin11, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Windows 11 CPE失败: %v", err)
 	}
 
-	cpeAcrobat, err := cpe.ParseCpe23("cpe:2.3:a:adobe:acrobat_reader:dc:*:*:*:*:*:*:*")
+	cpeAcrobat, err := cpeskills.ParseCpe23("cpe:2.3:a:adobe:acrobat_reader:dc:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Acrobat Reader CPE失败: %v", err)
 	}
 
-	cpeJava8, err := cpe.ParseCpe23("cpe:2.3:a:oracle:java:1.8.0:*:*:*:*:*:*:*")
+	cpeJava8, err := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:1.8.0:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Java 8 CPE失败: %v", err)
 	}
 
-	cpeJava11, err := cpe.ParseCpe23("cpe:2.3:a:oracle:java:11.0.0:*:*:*:*:*:*:*")
+	cpeJava11, err := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11.0.0:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Java 11 CPE失败: %v", err)
 	}
@@ -226,8 +226,8 @@ func main() {
 	allSet.Add(cpeAcrobat)
 
 	// 创建过滤条件
-	microsoftCriteria := &cpe.CPE{
-		Part:        *cpe.PartApplication,
+	microsoftCriteria := &cpeskills.CPE{
+		Part:        *cpeskills.PartApplication,
 		Vendor:      "microsoft",
 		ProductName: "windows",
 	}
@@ -238,7 +238,7 @@ func main() {
 	fmt.Printf("过滤后的Microsoft CPE: %s\n", microsoftFiltered)
 
 	// 创建版本范围过滤条件
-	versionOptions := &cpe.MatchOptions{
+	versionOptions := &cpeskills.MatchOptions{
 		VersionRange: true,
 		MinVersion:   "10",
 		MaxVersion:   "10",

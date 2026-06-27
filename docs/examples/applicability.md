@@ -50,7 +50,7 @@ func main() {
         fmt.Printf("  Expression: %s\n", e.expr)
         
         // Parse the expression
-        parsedExpr, err := cpe.ParseApplicabilityExpression(e.expr)
+        parsedExpr, err := cpeskills.ParseApplicabilityExpression(e.expr)
         if err != nil {
             log.Printf("Failed to parse expression: %v", err)
             continue
@@ -76,7 +76,7 @@ func main() {
     
     fmt.Printf("Complex Expression:\n%s\n", complexExpr)
     
-    parsedComplex, err := cpe.ParseApplicabilityExpression(complexExpr)
+    parsedComplex, err := cpeskills.ParseApplicabilityExpression(complexExpr)
     if err != nil {
         log.Printf("Failed to parse complex expression: %v", err)
     } else {
@@ -129,9 +129,9 @@ func main() {
         fmt.Printf("\nTesting system: %s\n", system.name)
         
         // Convert CPE strings to objects
-        systemCPEs := make([]*cpe.CPE, 0, len(system.cpes))
+        systemCPEs := make([]*cpeskills.CPE, 0, len(system.cpes))
         for _, cpeStr := range system.cpes {
-            cpeObj, err := cpe.ParseCpe23(cpeStr)
+            cpeObj, err := cpeskills.ParseCpe23(cpeStr)
             if err != nil {
                 log.Printf("Failed to parse CPE %s: %v", cpeStr, err)
                 continue
@@ -140,7 +140,7 @@ func main() {
         }
         
         // Test applicability
-        applies := cpe.EvaluateApplicability(parsedComplex, systemCPEs)
+        applies := cpeskills.EvaluateApplicability(parsedComplex, systemCPEs)
         
         status := "❌ Not applicable"
         if applies {
@@ -166,7 +166,7 @@ func main() {
     
     fmt.Printf("Java Version Range Expression:\n%s\n", javaRangeExpr)
     
-    javaExpr, err := cpe.ParseApplicabilityExpression(javaRangeExpr)
+    javaExpr, err := cpeskills.ParseApplicabilityExpression(javaRangeExpr)
     if err != nil {
         log.Printf("Failed to parse Java expression: %v", err)
     } else {
@@ -181,8 +181,8 @@ func main() {
         
         fmt.Println("\nTesting Java versions:")
         for _, javaVer := range javaVersions {
-            javaCPE, _ := cpe.ParseCpe23(javaVer)
-            applies := cpe.EvaluateApplicability(javaExpr, []*cpe.CPE{javaCPE})
+            javaCPE, _ := cpeskills.ParseCpe23(javaVer)
+            applies := cpeskills.EvaluateApplicability(javaExpr, []*cpeskills.CPE{javaCPE})
             
             status := "❌"
             if applies {
@@ -208,7 +208,7 @@ func main() {
     
     fmt.Printf("Web Server on Linux Expression:\n%s\n", webServerLinuxExpr)
     
-    webServerExpr, err := cpe.ParseApplicabilityExpression(webServerLinuxExpr)
+    webServerExpr, err := cpeskills.ParseApplicabilityExpression(webServerLinuxExpr)
     if err != nil {
         log.Printf("Failed to parse web server expression: %v", err)
     } else {
@@ -242,13 +242,13 @@ func main() {
         
         fmt.Println("\nTesting server configurations:")
         for _, config := range serverConfigs {
-            configCPEs := make([]*cpe.CPE, 0, len(config.cpes))
+            configCPEs := make([]*cpeskills.CPE, 0, len(config.cpes))
             for _, cpeStr := range config.cpes {
-                cpeObj, _ := cpe.ParseCpe23(cpeStr)
+                cpeObj, _ := cpeskills.ParseCpe23(cpeStr)
                 configCPEs = append(configCPEs, cpeObj)
             }
             
-            applies := cpe.EvaluateApplicability(webServerExpr, configCPEs)
+            applies := cpeskills.EvaluateApplicability(webServerExpr, configCPEs)
             
             status := "❌"
             if applies {
@@ -282,25 +282,25 @@ func main() {
     fmt.Printf("Verbose Expression:\n%s\n", verboseExpr)
     fmt.Printf("Optimized Expression:\n%s\n", optimizedExpr)
     
-    verboseParsed, _ := cpe.ParseApplicabilityExpression(verboseExpr)
-    optimizedParsed, _ := cpe.ParseApplicabilityExpression(optimizedExpr)
+    verboseParsed, _ := cpeskills.ParseApplicabilityExpression(verboseExpr)
+    optimizedParsed, _ := cpeskills.ParseApplicabilityExpression(optimizedExpr)
     
     // Test both expressions
-    testCPEs := []*cpe.CPE{
+    testCPEs := []*cpeskills.CPE{
         mustParse("cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*"),
         mustParse("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*"),
     }
     
-    verboseResult := cpe.EvaluateApplicability(verboseParsed, testCPEs)
-    optimizedResult := cpe.EvaluateApplicability(optimizedParsed, testCPEs)
+    verboseResult := cpeskills.EvaluateApplicability(verboseParsed, testCPEs)
+    optimizedResult := cpeskills.EvaluateApplicability(optimizedParsed, testCPEs)
     
     fmt.Printf("Verbose result: %t\n", verboseResult)
     fmt.Printf("Optimized result: %t\n", optimizedResult)
     fmt.Printf("Results match: %t\n", verboseResult == optimizedResult)
 }
 
-func mustParse(cpeStr string) *cpe.CPE {
-    cpeObj, err := cpe.ParseCpe23(cpeStr)
+func mustParse(cpeStr string) *cpeskills.CPE {
+    cpeObj, err := cpeskills.ParseCpe23(cpeStr)
     if err != nil {
         panic(err)
     }

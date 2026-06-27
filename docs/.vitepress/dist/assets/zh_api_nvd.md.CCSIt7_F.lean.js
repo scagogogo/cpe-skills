@@ -1,0 +1,1 @@
+import{_ as i,o as a,c as n,a0 as h}from"./chunks/framework.CrdfH-8N.js";const g=JSON.parse('{"title":"NVD集成","description":"","frontmatter":{},"headers":[],"relativePath":"zh/api/nvd.md","filePath":"zh/api/nvd.md"}'),k={name:"zh/api/nvd.md"};function t(l,s,p,e,E,r){return a(),n("div",null,s[0]||(s[0]=[h("",106)]))}const y=i(k,[["render",t]]);export{g as __pageData,y as default};

@@ -49,7 +49,7 @@ Implements the `error` interface, returning a formatted error message.
 
 **Example:**
 ```go
-err := cpe.NewInvalidFormatError("invalid:cpe:format")
+err := cpeskills.NewInvalidFormatError("invalid:cpe:format")
 fmt.Printf("Error: %s\n", err.Error())
 // Output: invalid CPE format: invalid:cpe:format
 ```
@@ -68,7 +68,7 @@ Returns the underlying error for error chain unwrapping.
 **Example:**
 ```go
 originalErr := errors.New("underlying issue")
-cpeErr := cpe.NewOperationFailedError("parse", originalErr)
+cpeErr := cpeskills.NewOperationFailedError("parse", originalErr)
 
 unwrapped := cpeErr.Unwrap()
 fmt.Printf("Underlying error: %v\n", unwrapped)
@@ -93,7 +93,7 @@ Creates a parsing error for when CPE string parsing fails.
 
 **Example:**
 ```go
-err := cpe.NewParsingError("invalid:format", errors.New("malformed string"))
+err := cpeskills.NewParsingError("invalid:format", errors.New("malformed string"))
 fmt.Printf("Parsing error: %v\n", err)
 ```
 
@@ -113,7 +113,7 @@ Creates an error for invalid CPE format.
 
 **Example:**
 ```go
-err := cpe.NewInvalidFormatError("not:a:valid:cpe")
+err := cpeskills.NewInvalidFormatError("not:a:valid:cpe")
 fmt.Printf("Format error: %v\n", err)
 ```
 
@@ -133,7 +133,7 @@ Creates an error for invalid CPE part values.
 
 **Example:**
 ```go
-err := cpe.NewInvalidPartError("x") // Valid parts are "a", "h", "o"
+err := cpeskills.NewInvalidPartError("x") // Valid parts are "a", "h", "o"
 fmt.Printf("Part error: %v\n", err)
 ```
 
@@ -154,7 +154,7 @@ Creates an error for invalid attribute values.
 
 **Example:**
 ```go
-err := cpe.NewInvalidAttributeError("vendor", "invalid\x00vendor")
+err := cpeskills.NewInvalidAttributeError("vendor", "invalid\x00vendor")
 fmt.Printf("Attribute error: %v\n", err)
 ```
 
@@ -174,7 +174,7 @@ Creates an error for when a resource is not found.
 
 **Example:**
 ```go
-err := cpe.NewNotFoundError("CPE dictionary")
+err := cpeskills.NewNotFoundError("CPE dictionary")
 fmt.Printf("Not found error: %v\n", err)
 ```
 
@@ -195,7 +195,7 @@ Creates an error for when an operation fails.
 
 **Example:**
 ```go
-err := cpe.NewOperationFailedError("download", errors.New("network timeout"))
+err := cpeskills.NewOperationFailedError("download", errors.New("network timeout"))
 fmt.Printf("Operation error: %v\n", err)
 ```
 
@@ -217,8 +217,8 @@ Checks if an error is a parsing error.
 
 **Example:**
 ```go
-_, err := cpe.ParseCpe23("invalid:format")
-if cpe.IsParsingError(err) {
+_, err := cpeskills.ParseCpe23("invalid:format")
+if cpeskills.IsParsingError(err) {
     fmt.Println("This is a parsing error")
 }
 ```
@@ -311,7 +311,7 @@ These can be used with `errors.Is()` for checking:
 **Example:**
 ```go
 cpe, err := storage.RetrieveCPE("non-existent")
-if errors.Is(err, cpe.ErrNotFound) {
+if errors.Is(err, cpeskills.ErrNotFound) {
     fmt.Println("CPE not found in storage")
 }
 ```
@@ -322,9 +322,9 @@ if errors.Is(err, cpe.ErrNotFound) {
 
 ```go
 // Parse CPE and handle errors
-cpeObj, err := cpe.ParseCpe23("invalid:format")
+cpeObj, err := cpeskills.ParseCpe23("invalid:format")
 if err != nil {
-    if cpe.IsInvalidFormatError(err) {
+    if cpeskills.IsInvalidFormatError(err) {
         fmt.Println("Invalid CPE format provided")
     } else {
         fmt.Printf("Other parsing error: %v\n", err)
@@ -337,9 +337,9 @@ if err != nil {
 
 ```go
 // Get detailed error information
-_, err := cpe.ParseCpe23("cpe:2.3:x:vendor:product:1.0:*:*:*:*:*:*:*")
+_, err := cpeskills.ParseCpe23("cpe:2.3:x:vendor:product:1.0:*:*:*:*:*:*:*")
 if err != nil {
-    if cpeErr, ok := err.(*cpe.CPEError); ok {
+    if cpeErr, ok := err.(*cpeskills.CPEError); ok {
         fmt.Printf("Error type: %d\n", cpeErr.Type)
         fmt.Printf("Message: %s\n", cpeErr.Message)
         fmt.Printf("CPE string: %s\n", cpeErr.CPEString)
@@ -358,13 +358,13 @@ if err != nil {
 err := someComplexOperation()
 if err != nil {
     // Check for specific error types in the chain
-    var cpeErr *cpe.CPEError
+    var cpeErr *cpeskills.CPEError
     if errors.As(err, &cpeErr) {
         fmt.Printf("CPE error found: %s\n", cpeErr.Message)
     }
     
     // Check for storage errors
-    if errors.Is(err, cpe.ErrNotFound) {
+    if errors.Is(err, cpeskills.ErrNotFound) {
         fmt.Println("Resource not found")
     }
 }
@@ -374,14 +374,14 @@ if err != nil {
 
 ```go
 func handleCPEOperation(cpeString string) {
-    cpeObj, err := cpe.ParseCpe23(cpeString)
+    cpeObj, err := cpeskills.ParseCpe23(cpeString)
     if err != nil {
         switch {
-        case cpe.IsInvalidFormatError(err):
+        case cpeskills.IsInvalidFormatError(err):
             fmt.Printf("Invalid format: %s\n", cpeString)
-        case cpe.IsInvalidPartError(err):
+        case cpeskills.IsInvalidPartError(err):
             fmt.Printf("Invalid part in: %s\n", cpeString)
-        case cpe.IsParsingError(err):
+        case cpeskills.IsParsingError(err):
             fmt.Printf("General parsing error: %v\n", err)
         default:
             fmt.Printf("Unexpected error: %v\n", err)
@@ -411,39 +411,39 @@ func main() {
     
     // Invalid format error
     fmt.Println("\n1. Invalid Format Error:")
-    _, err := cpe.ParseCpe23("invalid:format")
+    _, err := cpeskills.ParseCpe23("invalid:format")
     if err != nil {
-        if cpe.IsInvalidFormatError(err) {
+        if cpeskills.IsInvalidFormatError(err) {
             fmt.Printf("✓ Detected invalid format error: %v\n", err)
         }
     }
     
     // Invalid part error
     fmt.Println("\n2. Invalid Part Error:")
-    _, err = cpe.ParseCpe23("cpe:2.3:x:vendor:product:1.0:*:*:*:*:*:*:*")
+    _, err = cpeskills.ParseCpe23("cpe:2.3:x:vendor:product:1.0:*:*:*:*:*:*:*")
     if err != nil {
-        if cpe.IsInvalidPartError(err) {
+        if cpeskills.IsInvalidPartError(err) {
             fmt.Printf("✓ Detected invalid part error: %v\n", err)
         }
     }
     
     // Storage error simulation
     fmt.Println("\n3. Storage Error:")
-    storage := cpe.NewMemoryStorage()
+    storage := cpeskills.NewMemoryStorage()
     storage.Initialize()
     
     _, err = storage.RetrieveCPE("non-existent-cpe")
     if err != nil {
-        if errors.Is(err, cpe.ErrNotFound) {
+        if errors.Is(err, cpeskills.ErrNotFound) {
             fmt.Printf("✓ Detected not found error: %v\n", err)
         }
     }
     
     // Detailed error information
     fmt.Println("\n4. Detailed Error Information:")
-    _, err = cpe.ParseCpe23("cpe:2.3:invalid:vendor:product:1.0:*:*:*:*:*:*:*")
+    _, err = cpeskills.ParseCpe23("cpe:2.3:invalid:vendor:product:1.0:*:*:*:*:*:*:*")
     if err != nil {
-        if cpeErr, ok := err.(*cpe.CPEError); ok {
+        if cpeErr, ok := err.(*cpeskills.CPEError); ok {
             fmt.Printf("Error Type: %d\n", cpeErr.Type)
             fmt.Printf("Message: %s\n", cpeErr.Message)
             fmt.Printf("CPE String: %s\n", cpeErr.CPEString)
@@ -462,16 +462,16 @@ func main() {
     }
     
     for _, tc := range testCases {
-        _, err := cpe.ParseCpe23(tc.input)
+        _, err := cpeskills.ParseCpe23(tc.input)
         if err != nil {
             fmt.Printf("Input: %s (%s)\n", tc.input, tc.description)
             
             switch {
-            case cpe.IsInvalidFormatError(err):
+            case cpeskills.IsInvalidFormatError(err):
                 fmt.Println("  → Invalid format error")
-            case cpe.IsInvalidPartError(err):
+            case cpeskills.IsInvalidPartError(err):
                 fmt.Println("  → Invalid part error")
-            case cpe.IsParsingError(err):
+            case cpeskills.IsParsingError(err):
                 fmt.Println("  → General parsing error")
             default:
                 fmt.Println("  → Other error type")
@@ -481,7 +481,7 @@ func main() {
     
     // Successful operation
     fmt.Println("\n6. Successful Operation:")
-    cpeObj, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    cpeObj, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     if err != nil {
         fmt.Printf("Unexpected error: %v\n", err)
     } else {

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 	fmt.Println("\n===== 示例1: 创建文件存储 =====")
 
 	// 初始化文件存储
-	storage, err := cpe.NewFileStorage(tempDir, true)
+	storage, err := cpeskills.NewFileStorage(tempDir, true)
 	if err != nil {
 		log.Fatalf("初始化文件存储失败: %v", err)
 	}
@@ -39,17 +39,17 @@ func main() {
 	fmt.Println("\n===== 示例2: 存储CPE =====")
 
 	// 创建一些CPE对象
-	cpeWin10, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+	cpeWin10, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Windows 10 CPE失败: %v", err)
 	}
 
-	cpeAcrobat, err := cpe.ParseCpe23("cpe:2.3:a:adobe:acrobat_reader:dc:*:*:*:*:*:*:*")
+	cpeAcrobat, err := cpeskills.ParseCpe23("cpe:2.3:a:adobe:acrobat_reader:dc:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Acrobat Reader CPE失败: %v", err)
 	}
 
-	cpeJava8, err := cpe.ParseCpe23("cpe:2.3:a:oracle:java:1.8.0:*:*:*:*:*:*:*")
+	cpeJava8, err := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:1.8.0:*:*:*:*:*:*:*")
 	if err != nil {
 		log.Fatalf("解析Java 8 CPE失败: %v", err)
 	}
@@ -140,7 +140,7 @@ func main() {
 	}
 
 	// 搜索特定Vendor的CPE
-	microsoftCriteria := &cpe.CPE{
+	microsoftCriteria := &cpeskills.CPE{
 		Vendor: "microsoft",
 	}
 
@@ -259,7 +259,7 @@ func main() {
 	fmt.Println("\n===== 示例7: 文件存储的位置和文件名格式 =====")
 
 	// 检查单个CPE文件的内容
-	cpeFilePath := filepath.Join(tempDir, cpe.URIToFSString(cpeJava8.GetURI()))
+	cpeFilePath := filepath.Join(tempDir, cpeskills.URIToFSString(cpeJava8.GetURI()))
 	fileContent, err := os.ReadFile(cpeFilePath)
 	if err != nil {
 		log.Fatalf("读取CPE文件内容失败: %v", err)
@@ -271,11 +271,11 @@ func main() {
 	// 打印存储格式转换
 	fmt.Printf("\nCPE URI到文件名的转换:\n")
 	fmt.Printf("CPE URI: %s\n", cpeJava8.GetURI())
-	fmt.Printf("文件名: %s\n", cpe.URIToFSString(cpeJava8.GetURI()))
+	fmt.Printf("文件名: %s\n", cpeskills.URIToFSString(cpeJava8.GetURI()))
 
 	fmt.Printf("\n文件名到CPE URI的转换:\n")
-	fileName := cpe.URIToFSString(cpeJava8.GetURI())
-	uri := cpe.FSStringToURI(fileName)
+	fileName := cpeskills.URIToFSString(cpeJava8.GetURI())
+	uri := cpeskills.FSStringToURI(fileName)
 	fmt.Printf("文件名: %s\n", fileName)
 	fmt.Printf("CPE URI: %s\n", uri)
 

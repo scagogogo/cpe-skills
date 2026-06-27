@@ -26,7 +26,7 @@ Parses a CPE 2.3 format string and converts it to a CPE structure.
 **Example:**
 ```go
 // Parse Windows 10 CPE
-winCPE, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+winCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 if err != nil {
     log.Fatalf("Failed to parse CPE: %v", err)
 }
@@ -36,13 +36,13 @@ fmt.Printf("Product: %s\n", winCPE.ProductName) // windows
 fmt.Printf("Version: %s\n", winCPE.Version)     // 10
 
 // Parse Adobe Reader CPE
-adobeCPE, err := cpe.ParseCpe23("cpe:2.3:a:adobe:reader:2021.001.20150:*:*:*:*:*:*:*")
+adobeCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:adobe:reader:2021.001.20150:*:*:*:*:*:*:*")
 if err != nil {
     log.Fatalf("Failed to parse CPE: %v", err)
 }
 
 // Parse operating system CPE
-osCPE, err := cpe.ParseCpe23("cpe:2.3:o:microsoft:windows:10:1909:*:*:*:*:*:*")
+osCPE, err := cpeskills.ParseCpe23("cpe:2.3:o:microsoft:windows:10:1909:*:*:*:*:*:*")
 if err != nil {
     log.Fatalf("Failed to parse CPE: %v", err)
 }
@@ -96,7 +96,7 @@ Parses a CPE 2.2 format string and converts it to a CPE structure.
 **Example:**
 ```go
 // Parse basic CPE 2.2 format
-tomcatCPE, err := cpe.ParseCpe22("cpe:/a:apache:tomcat:8.5.0")
+tomcatCPE, err := cpeskills.ParseCpe22("cpe:/a:apache:tomcat:8.5.0")
 if err != nil {
     log.Fatalf("Failed to parse CPE: %v", err)
 }
@@ -107,13 +107,13 @@ fmt.Printf("Product: %s\n", tomcatCPE.ProductName) // tomcat
 fmt.Printf("Version: %s\n", tomcatCPE.Version)     // 8.5.0
 
 // Parse complex CPE 2.2 with more fields
-complexCPE, err := cpe.ParseCpe22("cpe:/a:apache:tomcat:8.5.0:beta:enterprise:en")
+complexCPE, err := cpeskills.ParseCpe22("cpe:/a:apache:tomcat:8.5.0:beta:enterprise:en")
 if err != nil {
     log.Fatalf("Failed to parse CPE: %v", err)
 }
 
 // Parse CPE 2.2 with special characters
-specialCPE, err := cpe.ParseCpe22("cpe:/a:vendor:product~name:1.0")
+specialCPE, err := cpeskills.ParseCpe22("cpe:/a:vendor:product~name:1.0")
 if err != nil {
     log.Fatalf("Failed to parse CPE: %v", err)
 }
@@ -149,14 +149,14 @@ Converts a CPE object to CPE 2.3 format string.
 
 **Example:**
 ```go
-cpeObj := &cpe.CPE{
-    Part:        *cpe.PartApplication,
-    Vendor:      cpe.Vendor("microsoft"),
-    ProductName: cpe.Product("windows"),
-    Version:     cpe.Version("10"),
+cpeObj := &cpeskills.CPE{
+    Part:        *cpeskills.PartApplication,
+    Vendor:      cpeskills.Vendor("microsoft"),
+    ProductName: cpeskills.Product("windows"),
+    Version:     cpeskills.Version("10"),
 }
 
-cpe23String := cpe.FormatCpe23(cpeObj)
+cpe23String := cpeskills.FormatCpe23(cpeObj)
 fmt.Println(cpe23String) // cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
 ```
 
@@ -176,14 +176,14 @@ Converts a CPE object to CPE 2.2 format string.
 
 **Example:**
 ```go
-cpeObj := &cpe.CPE{
-    Part:        *cpe.PartApplication,
-    Vendor:      cpe.Vendor("apache"),
-    ProductName: cpe.Product("tomcat"),
-    Version:     cpe.Version("8.5.0"),
+cpeObj := &cpeskills.CPE{
+    Part:        *cpeskills.PartApplication,
+    Vendor:      cpeskills.Vendor("apache"),
+    ProductName: cpeskills.Product("tomcat"),
+    Version:     cpeskills.Version("8.5.0"),
 }
 
-cpe22String := cpe.FormatCpe22(cpeObj)
+cpe22String := cpeskills.FormatCpe22(cpeObj)
 fmt.Println(cpe22String) // cpe:/a:apache:tomcat:8.5.0
 ```
 
@@ -206,7 +206,7 @@ Converts a CPE 2.2 format string to CPE 2.3 format.
 **Example:**
 ```go
 cpe22 := "cpe:/a:apache:tomcat:8.5.0"
-cpe23 := cpe.ConvertCpe22ToCpe23(cpe22)
+cpe23 := cpeskills.ConvertCpe22ToCpe23(cpe22)
 fmt.Println(cpe23) // cpe:2.3:a:apache:tomcat:8.5.0:*:*:*:*:*:*:*
 ```
 
@@ -230,11 +230,11 @@ The library automatically handles escape sequences in CPE strings:
 
 ```go
 // Handle parsing errors
-cpeObj, err := cpe.ParseCpe23("invalid:format")
+cpeObj, err := cpeskills.ParseCpe23("invalid:format")
 if err != nil {
-    if cpe.IsInvalidFormatError(err) {
+    if cpeskills.IsInvalidFormatError(err) {
         fmt.Println("Invalid CPE format")
-    } else if cpe.IsInvalidPartError(err) {
+    } else if cpeskills.IsInvalidPartError(err) {
         fmt.Println("Invalid part value")
     } else {
         fmt.Printf("Other error: %v\n", err)
@@ -270,7 +270,7 @@ func main() {
     }
     
     for _, example := range examples {
-        cpeObj, err := cpe.ParseCpe23(example)
+        cpeObj, err := cpeskills.ParseCpe23(example)
         if err != nil {
             log.Printf("Failed to parse %s: %v", example, err)
             continue
@@ -286,13 +286,13 @@ func main() {
     
     // Parse CPE 2.2 format
     cpe22Example := "cpe:/a:apache:tomcat:8.5.0"
-    cpe22Obj, err := cpe.ParseCpe22(cpe22Example)
+    cpe22Obj, err := cpeskills.ParseCpe22(cpe22Example)
     if err != nil {
         log.Fatal(err)
     }
     
     // Convert to CPE 2.3
-    cpe23String := cpe.FormatCpe23(cpe22Obj)
+    cpe23String := cpeskills.FormatCpe23(cpe22Obj)
     fmt.Printf("CPE 2.2: %s\n", cpe22Example)
     fmt.Printf("CPE 2.3: %s\n", cpe23String)
 }

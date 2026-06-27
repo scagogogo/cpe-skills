@@ -43,7 +43,7 @@ type NVDConfig struct {
 
 **示例：**
 ```go
-config := &cpe.NVDConfig{
+config := &cpeskills.NVDConfig{
     APIKey:         "your-api-key", // 可选
     CacheDir:       "./nvd_cache",
     UpdateInterval: 24 * time.Hour,
@@ -51,7 +51,7 @@ config := &cpe.NVDConfig{
     Timeout:        30 * time.Second,
 }
 
-client := cpe.NewNVDClient(config)
+client := cpeskills.NewNVDClient(config)
 ```
 
 ## CPE字典下载
@@ -176,7 +176,7 @@ type NVDQuery struct {
 **示例：**
 ```go
 // 查询Apache Tomcat的漏洞
-query := cpe.NVDQuery{
+query := cpeskills.NVDQuery{
     CPEVendor:    "apache",
     CPEProduct:   "tomcat",
     CVSSScoreMin: 7.0, // 只查询高危漏洞
@@ -335,7 +335,7 @@ func (u *NVDUpdater) StopAutoUpdate() error
 **示例：**
 ```go
 // 配置自动更新
-updateConfig := &cpe.UpdateConfig{
+updateConfig := &cpeskills.UpdateConfig{
     CheckInterval:  6 * time.Hour, // 每6小时检查一次
     AutoDownload:   true,
     NotifyOnUpdate: true,
@@ -344,7 +344,7 @@ updateConfig := &cpe.UpdateConfig{
 }
 
 // 创建更新器
-updater := cpe.NewNVDUpdater(client, updateConfig)
+updater := cpeskills.NewNVDUpdater(client, updateConfig)
 
 // 启动自动更新
 err := updater.StartAutoUpdate()
@@ -453,12 +453,12 @@ func IsAPIError(err error) bool
 ```go
 _, err := client.DownloadCPEDictionary()
 if err != nil {
-    if cpe.IsRateLimitError(err) {
+    if cpeskills.IsRateLimitError(err) {
         fmt.Println("遇到速率限制，请稍后重试")
         time.Sleep(time.Minute)
-    } else if cpe.IsNetworkError(err) {
+    } else if cpeskills.IsNetworkError(err) {
         fmt.Println("网络错误，检查网络连接")
-    } else if cpe.IsAPIError(err) {
+    } else if cpeskills.IsAPIError(err) {
         fmt.Printf("API错误: %v\n", err)
     } else {
         fmt.Printf("未知错误: %v\n", err)
@@ -482,14 +482,14 @@ func main() {
     fmt.Println("=== NVD集成示例 ===")
     
     // 创建NVD客户端
-    config := &cpe.NVDConfig{
+    config := &cpeskills.NVDConfig{
         CacheDir:       "./nvd_cache",
         UpdateInterval: 24 * time.Hour,
         EnableCache:    true,
         Timeout:        30 * time.Second,
     }
     
-    client := cpe.NewNVDClient(config)
+    client := cpeskills.NewNVDClient(config)
     
     // 下载CPE字典
     fmt.Println("下载CPE字典...")
@@ -512,7 +512,7 @@ func main() {
     
     // 查询漏洞
     fmt.Println("\n=== 漏洞查询示例 ===")
-    query := cpe.NVDQuery{
+    query := cpeskills.NVDQuery{
         CPEVendor:    "apache",
         CPEProduct:   "tomcat",
         CVSSScoreMin: 7.0,
@@ -572,11 +572,11 @@ func main() {
     fmt.Printf("缓存命中率: %.2f%%\n", cacheStats.HitRate*100)
 }
 
-func createSampleDictionary() *cpe.CPEDictionary {
+func createSampleDictionary() *cpeskills.CPEDictionary {
     // 创建示例字典用于演示
-    dict := cpe.NewCPEDictionary()
+    dict := cpeskills.NewCPEDictionary()
     
-    entries := []*cpe.CPEDictionaryEntry{
+    entries := []*cpeskills.CPEDictionaryEntry{
         {
             CPE23: "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
             Title: "Apache Tomcat 9.0.0",

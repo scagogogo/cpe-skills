@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -56,7 +56,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		scanner = bufio.NewScanner(os.Stdin)
 	}
 
-	var matches []*cpe.CPE
+	var matches []*cpeskills.CPE
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -70,11 +70,11 @@ func runSearch(cmd *cobra.Command, args []string) error {
 
 		matched := false
 		if searchAdvanced {
-			opts := cpe.NewAdvancedMatchOptions()
+			opts := cpeskills.NewAdvancedMatchOptions()
 			opts.UseFuzzyMatch = searchFuzzy
-			matched = cpe.AdvancedMatchCPE(criteria, target, opts)
+			matched = cpeskills.AdvancedMatchCPE(criteria, target, opts)
 		} else {
-			matched = cpe.MatchCPE(criteria, target, nil)
+			matched = cpeskills.MatchCPE(criteria, target, nil)
 		}
 
 		if matched {

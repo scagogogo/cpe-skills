@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/scagogogo/cpe-skills"
+	cpeskills "github.com/scagogogo/cpe-skills"
 	"github.com/spf13/cobra"
 )
 
@@ -46,7 +46,7 @@ func runDictParse(cmd *cobra.Command, args []string) error {
 	}
 	defer func() { _ = f.Close() }()
 
-	dict, err := cpe.ParseDictionary(f)
+	dict, err := cpeskills.ParseDictionary(f)
 	if err != nil {
 		return fmt.Errorf("parsing dictionary: %w", err)
 	}
@@ -81,7 +81,7 @@ func runDictSearch(cmd *cobra.Command, args []string) error {
 	}
 	defer func() { _ = f.Close() }()
 
-	dict, err := cpe.ParseDictionary(f)
+	dict, err := cpeskills.ParseDictionary(f)
 	if err != nil {
 		return fmt.Errorf("parsing dictionary: %w", err)
 	}

@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 /**
  * Part 表示CPE标识中的组件类型
@@ -14,17 +14,17 @@ package cpe
  * 示例:
  *   ```go
  *   // 创建一个表示应用程序类型的CPE
- *   appCPE := &cpe.CPE{
- *       Part:        *cpe.PartApplication, // 使用预定义的应用程序类型
- *       Vendor:      cpe.Vendor("adobe"),
- *       ProductName: cpe.Product("acrobat_reader"),
+ *   appCPE := &cpeskills.CPE{
+ *       Part:        *cpeskills.PartApplication, // 使用预定义的应用程序类型
+ *       Vendor:      cpeskills.Vendor("adobe"),
+ *       ProductName: cpeskills.Product("acrobat_reader"),
  *   }
  *
  *   // 创建一个表示操作系统类型的CPE
- *   osCPE := &cpe.CPE{
- *       Part:        *cpe.PartOperationSystem, // 使用预定义的操作系统类型
- *       Vendor:      cpe.Vendor("microsoft"),
- *       ProductName: cpe.Product("windows"),
+ *   osCPE := &cpeskills.CPE{
+ *       Part:        *cpeskills.PartOperationSystem, // 使用预定义的操作系统类型
+ *       Vendor:      cpeskills.Vendor("microsoft"),
+ *       ProductName: cpeskills.Product("windows"),
  *   }
  *   ```
  */
@@ -50,10 +50,10 @@ var (
 	 * 示例:
 	 *   ```go
 	 *   // 表示Chrome浏览器的CPE
-	 *   chromeCPE := &cpe.CPE{
-	 *       Part:        *cpe.PartApplication,
-	 *       Vendor:      cpe.Vendor("google"),
-	 *       ProductName: cpe.Product("chrome"),
+	 *   chromeCPE := &cpeskills.CPE{
+	 *       Part:        *cpeskills.PartApplication,
+	 *       Vendor:      cpeskills.Vendor("google"),
+	 *       ProductName: cpeskills.Product("chrome"),
 	 *   }
 	 *   ```
 	 */
@@ -72,10 +72,10 @@ var (
 	 * 示例:
 	 *   ```go
 	 *   // 表示Cisco路由器的CPE
-	 *   routerCPE := &cpe.CPE{
-	 *       Part:        *cpe.PartHardware,
-	 *       Vendor:      cpe.Vendor("cisco"),
-	 *       ProductName: cpe.Product("rv340"),
+	 *   routerCPE := &cpeskills.CPE{
+	 *       Part:        *cpeskills.PartHardware,
+	 *       Vendor:      cpeskills.Vendor("cisco"),
+	 *       ProductName: cpeskills.Product("rv340"),
 	 *   }
 	 *   ```
 	 */
@@ -94,11 +94,11 @@ var (
 	 * 示例:
 	 *   ```go
 	 *   // 表示Ubuntu Linux的CPE
-	 *   ubuntuCPE := &cpe.CPE{
-	 *       Part:        *cpe.PartOperationSystem,
-	 *       Vendor:      cpe.Vendor("canonical"),
-	 *       ProductName: cpe.Product("ubuntu_linux"),
-	 *       Version:     cpe.Version("20.04"),
+	 *   ubuntuCPE := &cpeskills.CPE{
+	 *       Part:        *cpeskills.PartOperationSystem,
+	 *       Vendor:      cpeskills.Vendor("canonical"),
+	 *       ProductName: cpeskills.Product("ubuntu_linux"),
+	 *       Version:     cpeskills.Version("20.04"),
 	 *   }
 	 *   ```
 	 */

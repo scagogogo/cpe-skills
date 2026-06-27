@@ -24,9 +24,9 @@ func main() {
     fmt.Println("\n1. 基本匹配:")
     
     // 创建测试CPE
-    cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-    cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-    cpe3, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
+    cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
     
     fmt.Printf("CPE1: %s\n", cpe1.GetURI())
     fmt.Printf("CPE2: %s\n", cpe2.GetURI())
@@ -40,7 +40,7 @@ func main() {
     fmt.Println("\n2. 通配符匹配:")
     
     // 创建通配符模式
-    pattern, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+    pattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
     
     testCPEs := []string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
@@ -53,7 +53,7 @@ func main() {
     fmt.Println("匹配结果:")
     
     for i, cpeStr := range testCPEs {
-        testCPE, _ := cpe.ParseCpe23(cpeStr)
+        testCPE, _ := cpeskills.ParseCpe23(cpeStr)
         match := pattern.Match(testCPE)
         
         status := "❌"
@@ -78,10 +78,10 @@ func main() {
     
     for _, version := range versions {
         cpeStr := fmt.Sprintf("%s:%s:*:*:*:*:*:*:*", baseProduct, version)
-        testCPE, _ := cpe.ParseCpe23(cpeStr)
+        testCPE, _ := cpeskills.ParseCpe23(cpeStr)
         
         // 简单的版本模式匹配
-        match := cpe.MatchVersionPattern(testCPE.Version, targetPattern)
+        match := cpeskills.MatchVersionPattern(testCPE.Version, targetPattern)
         
         status := "❌"
         if match {
@@ -104,7 +104,7 @@ func main() {
     // 只匹配应用程序
     fmt.Println("应用程序组件:")
     for i, cpeStr := range mixedCPEs {
-        testCPE, _ := cpe.ParseCpe23(cpeStr)
+        testCPE, _ := cpeskills.ParseCpe23(cpeStr)
         
         if testCPE.Part.ShortName == "a" {
             fmt.Printf("  ✅ %d. %s %s\n", i+1, testCPE.Vendor, testCPE.ProductName)
@@ -122,7 +122,7 @@ func main() {
         fmt.Printf("\n%s 产品:\n", vendor)
         
         for i, cpeStr := range mixedCPEs {
-            testCPE, _ := cpe.ParseCpe23(cpeStr)
+            testCPE, _ := cpeskills.ParseCpe23(cpeStr)
             
             if testCPE.Vendor == vendor {
                 fmt.Printf("  ✅ %d. %s (%s)\n", i+1, testCPE.ProductName, testCPE.Part.LongName)
@@ -134,32 +134,32 @@ func main() {
     fmt.Println("\n6. 批量匹配:")
     
     // 创建CPE列表
-    cpeList := []*cpe.CPE{}
+    cpeList := []*cpeskills.CPE{}
     for _, cpeStr := range mixedCPEs {
-        testCPE, _ := cpe.ParseCpe23(cpeStr)
+        testCPE, _ := cpeskills.ParseCpe23(cpeStr)
         cpeList = append(cpeList, testCPE)
     }
     
     // 定义匹配条件
     matchConditions := []struct {
         name      string
-        condition func(*cpe.CPE) bool
+        condition func(*cpeskills.CPE) bool
     }{
         {
             "Microsoft产品",
-            func(c *cpe.CPE) bool { return c.Vendor == "microsoft" },
+            func(c *cpeskills.CPE) bool { return c.Vendor == "microsoft" },
         },
         {
             "应用程序",
-            func(c *cpe.CPE) bool { return c.Part.ShortName == "a" },
+            func(c *cpeskills.CPE) bool { return c.Part.ShortName == "a" },
         },
         {
             "版本10",
-            func(c *cpe.CPE) bool { return c.Version == "10" },
+            func(c *cpeskills.CPE) bool { return c.Version == "10" },
         },
         {
             "网络设备",
-            func(c *cpe.CPE) bool { return c.Part.ShortName == "h" },
+            func(c *cpeskills.CPE) bool { return c.Part.ShortName == "h" },
         },
     }
     

@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"encoding/xml"
@@ -21,15 +21,15 @@ import (
  * 示例:
  *   ```go
  *   // 创建一个新的CPE字典
- *   dict := &cpe.CPEDictionary{
+ *   dict := &cpeskills.CPEDictionary{
  *       GeneratedAt:    time.Now(),
  *       SchemaVersion:  "2.3",
- *       Items:          make([]*cpe.CPEItem, 0),
+ *       Items:          make([]*cpeskills.CPEItem, 0),
  *   }
  *
  *   // 添加CPE项
- *   windowsCPE, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
- *   dictItem := &cpe.CPEItem{
+ *   windowsCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+ *   dictItem := &cpeskills.CPEItem{
  *       Name:  windowsCPE.Cpe23,
  *       Title: "Microsoft Windows 10",
  *       CPE:   windowsCPE,
@@ -37,7 +37,7 @@ import (
  *   dict.Items = append(dict.Items, dictItem)
  *
  *   // 保存字典到存储
- *   storage, _ := cpe.NewFileStorage("/tmp/cpe-storage", true)
+ *   storage, _ := cpeskills.NewFileStorage("/tmp/cpe-storage", true)
  *   err := storage.StoreDictionary(dict)
  *   if err != nil {
  *       log.Fatalf("保存字典失败: %v", err)
@@ -142,7 +142,7 @@ type XMLReference struct {
  *   defer file.Close()
  *
  *   // 解析字典
- *   dictionary, err := cpe.ParseDictionary(file)
+ *   dictionary, err := cpeskills.ParseDictionary(file)
  *   if err != nil {
  *       log.Fatalf("解析字典失败: %v", err)
  *   }

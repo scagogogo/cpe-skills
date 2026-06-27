@@ -25,7 +25,7 @@ func main() {
     fmt.Println("\n1. 文件存储:")
     
     // 创建文件存储
-    fileStorage, err := cpe.NewFileStorage("./cpe_data", true) // 启用缓存
+    fileStorage, err := cpeskills.NewFileStorage("./cpe_data", true) // 启用缓存
     if err != nil {
         log.Fatal(err)
     }
@@ -51,7 +51,7 @@ func main() {
     // 存储CPE数据
     fmt.Println("\n存储CPE数据:")
     for i, cpeStr := range testCPEs {
-        cpeObj, err := cpe.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
             log.Printf("解析CPE %s失败: %v", cpeStr, err)
             continue
@@ -68,7 +68,7 @@ func main() {
     // 检索CPE数据
     fmt.Println("\n检索CPE数据:")
     for i, cpeStr := range testCPEs[:3] { // 检索前3个
-        cpeObj, _ := cpe.ParseCpe23(cpeStr)
+        cpeObj, _ := cpeskills.ParseCpe23(cpeStr)
         
         retrieved, err := fileStorage.Retrieve(cpeObj.GetURI())
         if err != nil {
@@ -95,13 +95,13 @@ func main() {
     // 示例2：内存存储
     fmt.Println("\n2. 内存存储:")
     
-    memoryStorage := cpe.NewMemoryStorage()
+    memoryStorage := cpeskills.NewMemoryStorage()
     
     // 批量存储到内存
     fmt.Println("批量存储到内存:")
-    cpeObjects := make([]*cpe.CPE, 0, len(testCPEs))
+    cpeObjects := make([]*cpeskills.CPE, 0, len(testCPEs))
     for _, cpeStr := range testCPEs {
-        cpeObj, _ := cpe.ParseCpe23(cpeStr)
+        cpeObj, _ := cpeskills.ParseCpe23(cpeStr)
         cpeObjects = append(cpeObjects, cpeObj)
     }
     
@@ -153,10 +153,10 @@ func main() {
     fmt.Println("\n4. 高级查询:")
     
     // 构建复杂查询
-    query := cpe.NewQuery().
-        Filter("vendor", cpe.OpEquals, "apache").
-        Filter("part", cpe.OpEquals, "a").
-        SortBy("product", cpe.SortAsc).
+    query := cpeskills.NewQuery().
+        Filter("vendor", cpeskills.OpEquals, "apache").
+        Filter("part", cpeskills.OpEquals, "a").
+        SortBy("product", cpeskills.SortAsc).
         Limit(10)
     
     fmt.Println("执行高级查询 (Apache应用程序):")
@@ -181,7 +181,7 @@ func main() {
         fmt.Println("开始事务操作:")
         
         // 在事务中添加新CPE
-        newCPE, _ := cpe.ParseCpe23("cpe:2.3:a:mozilla:firefox:95.0:*:*:*:*:*:*:*")
+        newCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:mozilla:firefox:95.0:*:*:*:*:*:*:*")
         err = tx.Store(newCPE)
         if err != nil {
             tx.Rollback()
@@ -212,7 +212,7 @@ func main() {
     }
     
     // 创建新的存储实例用于恢复测试
-    restoreStorage, err := cpe.NewFileStorage("./cpe_restore", false)
+    restoreStorage, err := cpeskills.NewFileStorage("./cpe_restore", false)
     if err != nil {
         log.Printf("创建恢复存储失败: %v", err)
     } else {
@@ -243,11 +243,11 @@ func main() {
     fmt.Println("创建索引:")
     indexes := []struct {
         field string
-        type_ cpe.IndexType
+        type_ cpeskills.IndexType
     }{
-        {"vendor", cpe.IndexTypeBTree},
-        {"product", cpe.IndexTypeBTree},
-        {"version", cpe.IndexTypeHash},
+        {"vendor", cpeskills.IndexTypeBTree},
+        {"product", cpeskills.IndexTypeBTree},
+        {"version", cpeskills.IndexTypeHash},
     }
     
     for _, idx := range indexes {
@@ -280,11 +280,11 @@ func main() {
     
     // 批量插入测试
     batchSize := 100
-    batchCPEs := make([]*cpe.CPE, 0, batchSize)
+    batchCPEs := make([]*cpeskills.CPE, 0, batchSize)
     
     for i := 0; i < batchSize; i++ {
         cpeStr := fmt.Sprintf("cpe:2.3:a:test:product_%d:1.0.%d:*:*:*:*:*:*:*", i, i)
-        cpeObj, _ := cpe.ParseCpe23(cpeStr)
+        cpeObj, _ := cpeskills.ParseCpe23(cpeStr)
         batchCPEs = append(batchCPEs, cpeObj)
     }
     
@@ -307,7 +307,7 @@ func main() {
     fmt.Println("\n9. 存储配置:")
     
     // 创建带自定义配置的存储
-    config := &cpe.StorageConfig{
+    config := &cpeskills.StorageConfig{
         Type:        "file",
         Path:        "./cpe_custom",
         EnableCache: true,
@@ -319,7 +319,7 @@ func main() {
         },
     }
     
-    customStorage, err := cpe.NewStorageFromConfig(config)
+    customStorage, err := cpeskills.NewStorageFromConfig(config)
     if err != nil {
         log.Printf("创建自定义存储失败: %v", err)
     } else {
@@ -332,7 +332,7 @@ func main() {
             fmt.Println("✅ 自定义存储配置成功")
             
             // 测试自定义存储
-            testCPE, _ := cpe.ParseCpe23("cpe:2.3:a:custom:test:1.0:*:*:*:*:*:*:*")
+            testCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:custom:test:1.0:*:*:*:*:*:*:*")
             err = customStorage.Store(testCPE)
             if err != nil {
                 log.Printf("自定义存储测试失败: %v", err)

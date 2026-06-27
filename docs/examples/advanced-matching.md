@@ -24,7 +24,7 @@ func main() {
     fmt.Println("\n1. Fuzzy Matching:")
     
     // Target CPE with slight variations
-    targetCPE, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+    targetCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
     
     // Test CPEs with variations
     testCPEs := []string{
@@ -39,14 +39,14 @@ func main() {
     fmt.Println("Fuzzy matching results:")
     
     for i, testCPEStr := range testCPEs {
-        testCPE, err := cpe.ParseCpe23(testCPEStr)
+        testCPE, err := cpeskills.ParseCpe23(testCPEStr)
         if err != nil {
             log.Printf("Failed to parse %s: %v", testCPEStr, err)
             continue
         }
         
         // Calculate fuzzy match score (0.0 to 1.0)
-        score := cpe.FuzzyMatch(targetCPE, testCPE)
+        score := cpeskills.FuzzyMatch(targetCPE, testCPE)
         
         var status string
         switch {
@@ -105,12 +105,12 @@ func main() {
     
     fmt.Println("Pattern matching results:")
     for _, target := range testTargets {
-        targetCPE, _ := cpe.ParseCpe23(target)
+        targetCPE, _ := cpeskills.ParseCpe23(target)
         fmt.Printf("\nTarget: %s\n", target)
         
         for _, pattern := range patterns {
-            patternCPE, _ := cpe.ParseCpe23(pattern.pattern)
-            matches := cpe.MatchPattern(targetCPE, patternCPE)
+            patternCPE, _ := cpeskills.ParseCpe23(pattern.pattern)
+            matches := cpeskills.MatchPattern(targetCPE, patternCPE)
             
             status := "❌"
             if matches {
@@ -149,11 +149,11 @@ func main() {
     
     fmt.Println("Semantic matching examples:")
     for i, rule := range semanticRules {
-        primaryCPE, _ := cpe.ParseCpe23(rule.primary)
-        equivalentCPE, _ := cpe.ParseCpe23(rule.equivalent)
+        primaryCPE, _ := cpeskills.ParseCpe23(rule.primary)
+        equivalentCPE, _ := cpeskills.ParseCpe23(rule.equivalent)
         
         // Test semantic matching
-        matches := cpe.SemanticMatch(primaryCPE, equivalentCPE)
+        matches := cpeskills.SemanticMatch(primaryCPE, equivalentCPE)
         
         status := "❌"
         if matches {
@@ -196,11 +196,11 @@ func main() {
     
     fmt.Println("Version range matching:")
     for _, test := range testVersions {
-        testCPE, _ := cpe.ParseCpe23(test.cpe)
+        testCPE, _ := cpeskills.ParseCpe23(test.cpe)
         fmt.Printf("\nTesting: %s %s (v%s)\n", testCPE.Vendor, testCPE.ProductName, test.version)
         
         for _, vrange := range versionRanges {
-            inRange := cpe.IsVersionInRange(test.version, vrange.minVer, vrange.maxVer)
+            inRange := cpeskills.IsVersionInRange(test.version, vrange.minVer, vrange.maxVer)
             
             status := "❌"
             if inRange {
@@ -215,14 +215,14 @@ func main() {
     fmt.Println("\n5. Weighted Matching:")
     
     // Define matching weights for different components
-    weights := cpe.MatchWeights{
+    weights := cpeskills.MatchWeights{
         Part:    0.1,  // Part is less important
         Vendor:  0.3,  // Vendor is important
         Product: 0.4,  // Product is most important
         Version: 0.2,  // Version is moderately important
     }
     
-    referenceCPE, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+    referenceCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
     
     candidateCPEs := []string{
         "cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*",     // Same product, different version
@@ -235,8 +235,8 @@ func main() {
     fmt.Println("Weighted matching scores:")
     
     for i, candidateStr := range candidateCPEs {
-        candidateCPE, _ := cpe.ParseCpe23(candidateStr)
-        score := cpe.WeightedMatch(referenceCPE, candidateCPE, weights)
+        candidateCPE, _ := cpeskills.ParseCpe23(candidateStr)
+        score := cpeskills.WeightedMatch(referenceCPE, candidateCPE, weights)
         
         fmt.Printf("  %d. Score: %.3f - %s\n", i+1, score, candidateCPE.GetURI())
     }
@@ -245,7 +245,7 @@ func main() {
     fmt.Println("\n6. Contextual Matching:")
     
     // Define context for matching
-    context := cpe.MatchContext{
+    context := cpeskills.MatchContext{
         Environment: "production",
         Platform:    "linux",
         Purpose:     "web_server",
@@ -254,23 +254,23 @@ func main() {
     // CPEs with context information
     contextualCPEs := []struct {
         cpe     string
-        context cpe.MatchContext
+        context cpeskills.MatchContext
     }{
         {
             "cpe:2.3:a:apache:http_server:2.4.41:*:*:*:*:*:*:*",
-            cpe.MatchContext{Environment: "production", Platform: "linux", Purpose: "web_server"},
+            cpeskills.MatchContext{Environment: "production", Platform: "linux", Purpose: "web_server"},
         },
         {
             "cpe:2.3:a:apache:http_server:2.4.41:*:*:*:*:*:*:*",
-            cpe.MatchContext{Environment: "development", Platform: "linux", Purpose: "web_server"},
+            cpeskills.MatchContext{Environment: "development", Platform: "linux", Purpose: "web_server"},
         },
         {
             "cpe:2.3:a:nginx:nginx:1.18.0:*:*:*:*:*:*:*",
-            cpe.MatchContext{Environment: "production", Platform: "linux", Purpose: "web_server"},
+            cpeskills.MatchContext{Environment: "production", Platform: "linux", Purpose: "web_server"},
         },
         {
             "cpe:2.3:a:microsoft:iis:10.0:*:*:*:*:*:*:*",
-            cpe.MatchContext{Environment: "production", Platform: "windows", Purpose: "web_server"},
+            cpeskills.MatchContext{Environment: "production", Platform: "windows", Purpose: "web_server"},
         },
     }
     
@@ -278,8 +278,8 @@ func main() {
     fmt.Println("Contextual matching results:")
     
     for i, item := range contextualCPEs {
-        itemCPE, _ := cpe.ParseCpe23(item.cpe)
-        contextMatch := cpe.ContextualMatch(context, item.context)
+        itemCPE, _ := cpeskills.ParseCpe23(item.cpe)
+        contextMatch := cpeskills.ContextualMatch(context, item.context)
         
         var status string
         switch {
@@ -302,10 +302,10 @@ func main() {
     fmt.Println("\n7. ML-Enhanced Matching:")
     
     // Simulate ML model predictions
-    mlModel := cpe.NewMLMatchingModel()
+    mlModel := cpeskills.NewMLMatchingModel()
     
     // Train with sample data (in real implementation, this would use actual training data)
-    trainingPairs := []cpe.MatchingPair{
+    trainingPairs := []cpeskills.MatchingPair{
         {
             CPE1: mustParseCPE("cpe:2.3:a:apache:tomcat:8.5.0:*:*:*:*:*:*:*"),
             CPE2: mustParseCPE("cpe:2.3:a:apache:tomcat:8.5.1:*:*:*:*:*:*:*"),
@@ -343,8 +343,8 @@ func main() {
         
         fmt.Println("ML matching predictions:")
         for i, pair := range testPairs {
-            cpe1, _ := cpe.ParseCpe23(pair.cpe1)
-            cpe2, _ := cpe.ParseCpe23(pair.cpe2)
+            cpe1, _ := cpeskills.ParseCpe23(pair.cpe1)
+            cpe2, _ := cpeskills.ParseCpe23(pair.cpe2)
             
             prediction := mlModel.Predict(cpe1, cpe2)
             
@@ -356,8 +356,8 @@ func main() {
     }
 }
 
-func mustParseCPE(cpeStr string) *cpe.CPE {
-    cpeObj, err := cpe.ParseCpe23(cpeStr)
+func mustParseCPE(cpeStr string) *cpeskills.CPE {
+    cpeObj, err := cpeskills.ParseCpe23(cpeStr)
     if err != nil {
         panic(err)
     }

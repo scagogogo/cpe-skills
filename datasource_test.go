@@ -1,4 +1,4 @@
-package cpe
+package cpeskills
 
 import (
 	"compress/gzip"

@@ -30,7 +30,7 @@ Creates a new empty CPE set.
 **Example:**
 ```go
 // Create a new empty set
-set := cpe.NewCPESet()
+set := cpeskills.NewCPESet()
 fmt.Printf("Created empty set with %d items\n", set.Size())
 ```
 
@@ -51,13 +51,13 @@ Creates a CPE set from an array of CPE objects.
 **Example:**
 ```go
 // Create CPEs
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
-cpe3, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 
 // Create set from array
-cpeArray := []*cpe.CPE{cpe1, cpe2, cpe3}
-set := cpe.FromArray(cpeArray)
+cpeArray := []*cpeskills.CPE{cpe1, cpe2, cpe3}
+set := cpeskills.FromArray(cpeArray)
 fmt.Printf("Created set with %d items\n", set.Size())
 ```
 
@@ -84,7 +84,7 @@ cpeStrings := []string{
     "cpe:2.3:o:linux:kernel:5.4:*:*:*:*:*:*:*",
 }
 
-set, err := cpe.FromStrings(cpeStrings)
+set, err := cpeskills.FromStrings(cpeStrings)
 if err != nil {
     log.Fatal(err)
 }
@@ -110,9 +110,9 @@ Adds one or more CPE objects to the set.
 
 **Example:**
 ```go
-set := cpe.NewCPESet()
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+set := cpeskills.NewCPESet()
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 
 // Add single CPE
 set.Add(cpe1)
@@ -139,8 +139,8 @@ Removes a CPE object from the set.
 
 **Example:**
 ```go
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-set := cpe.NewCPESet()
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+set := cpeskills.NewCPESet()
 set.Add(cpe1)
 
 removed := set.Remove(cpe1)
@@ -164,10 +164,10 @@ Checks if the set contains a specific CPE object.
 
 **Example:**
 ```go
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 
-set := cpe.NewCPESet()
+set := cpeskills.NewCPESet()
 set.Add(cpe1)
 
 fmt.Printf("Contains Windows: %t\n", set.Contains(cpe1))
@@ -206,7 +206,7 @@ Removes all CPE objects from the set.
 
 **Example:**
 ```go
-set := cpe.NewCPESet()
+set := cpeskills.NewCPESet()
 // ... add some CPEs ...
 
 fmt.Printf("Size before clear: %d\n", set.Size())
@@ -234,12 +234,12 @@ Returns a new set containing all CPEs from both sets.
 **Example:**
 ```go
 // Create two sets
-set1 := cpe.NewCPESet()
-set2 := cpe.NewCPESet()
+set1 := cpeskills.NewCPESet()
+set2 := cpeskills.NewCPESet()
 
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
-cpe3, _ := cpe.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
 
 set1.Add(cpe1, cpe2)
 set2.Add(cpe2, cpe3) // cpe2 is in both sets
@@ -267,12 +267,12 @@ Returns a new set containing only CPEs that exist in both sets.
 
 **Example:**
 ```go
-set1 := cpe.NewCPESet()
-set2 := cpe.NewCPESet()
+set1 := cpeskills.NewCPESet()
+set2 := cpeskills.NewCPESet()
 
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
-cpe3, _ := cpe.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
 
 set1.Add(cpe1, cpe2)
 set2.Add(cpe2, cpe3)
@@ -298,12 +298,12 @@ Returns a new set containing CPEs that are in this set but not in the other set.
 
 **Example:**
 ```go
-set1 := cpe.NewCPESet()
-set2 := cpe.NewCPESet()
+set1 := cpeskills.NewCPESet()
+set2 := cpeskills.NewCPESet()
 
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
-cpe3, _ := cpe.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
 
 set1.Add(cpe1, cpe2)
 set2.Add(cpe2, cpe3)
@@ -329,12 +329,12 @@ Returns a new set containing CPEs that are in either set but not in both.
 
 **Example:**
 ```go
-set1 := cpe.NewCPESet()
-set2 := cpe.NewCPESet()
+set1 := cpeskills.NewCPESet()
+set2 := cpeskills.NewCPESet()
 
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
-cpe3, _ := cpe.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
 
 set1.Add(cpe1, cpe2)
 set2.Add(cpe2, cpe3)
@@ -362,15 +362,15 @@ Returns a new set containing only CPEs that match the predicate function.
 
 **Example:**
 ```go
-set := cpe.NewCPESet()
-cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
-cpe3, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+set := cpeskills.NewCPESet()
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 
 set.Add(cpe1, cpe2, cpe3)
 
 // Filter for Microsoft products
-microsoftSet := set.Filter(func(c *cpe.CPE) bool {
+microsoftSet := set.Filter(func(c *cpeskills.CPE) bool {
     return string(c.Vendor) == "microsoft"
 })
 
@@ -421,13 +421,13 @@ Returns a new set containing only CPEs of the specified part type.
 
 **Example:**
 ```go
-set := cpe.NewCPESet()
+set := cpeskills.NewCPESet()
 // ... add various CPEs ...
 
 // Filter by different criteria
 microsoftCPEs := set.FilterByVendor("microsoft")
 windowsCPEs := set.FilterByProduct("windows")
-applicationCPEs := set.FilterByPart(cpe.PartApplication)
+applicationCPEs := set.FilterByPart(cpeskills.PartApplication)
 
 fmt.Printf("Microsoft CPEs: %d\n", microsoftCPEs.Size())
 fmt.Printf("Windows CPEs: %d\n", windowsCPEs.Size())
@@ -453,15 +453,15 @@ Filters the set using advanced matching criteria.
 
 **Example:**
 ```go
-set := cpe.NewCPESet()
+set := cpeskills.NewCPESet()
 // ... populate set ...
 
 // Create advanced matching criteria
-criteria := &cpe.CPE{
-    Vendor: cpe.Vendor("microsoft"),
+criteria := &cpeskills.CPE{
+    Vendor: cpeskills.Vendor("microsoft"),
 }
 
-options := cpe.NewAdvancedMatchOptions()
+options := cpeskills.NewAdvancedMatchOptions()
 options.MatchMode = "distance"
 options.ScoreThreshold = 0.8
 
@@ -488,8 +488,8 @@ Finds CPEs in the set that are related to the given CPE.
 
 **Example:**
 ```go
-targetCPE, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
-relatedSet := cpe.FindRelated(targetCPE, set, cpe.DefaultMatchOptions())
+targetCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+relatedSet := cpeskills.FindRelated(targetCPE, set, cpeskills.DefaultMatchOptions())
 
 fmt.Printf("Found %d related CPEs\n", relatedSet.Size())
 ```
@@ -520,7 +520,7 @@ Converts the set to an array of CPE strings.
 
 **Example:**
 ```go
-set := cpe.NewCPESet()
+set := cpeskills.NewCPESet()
 // ... populate set ...
 
 // Convert to array
@@ -547,17 +547,17 @@ import (
 
 func main() {
     // Create CPE objects
-    cpe1, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-    cpe2, _ := cpe.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
-    cpe3, _ := cpe.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
-    cpe4, _ := cpe.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
+    cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+    cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+    cpe4, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
     
     // Create sets
     fmt.Println("=== Creating Sets ===")
-    set1 := cpe.NewCPESet()
+    set1 := cpeskills.NewCPESet()
     set1.Add(cpe1, cpe2, cpe3)
     
-    set2 := cpe.NewCPESet()
+    set2 := cpeskills.NewCPESet()
     set2.Add(cpe3, cpe4)
     
     fmt.Printf("Set1 size: %d\n", set1.Size())
@@ -579,18 +579,18 @@ func main() {
     fmt.Printf("Microsoft products: %d\n", microsoftSet.Size())
     
     // Custom filter
-    applicationSet := set1.Filter(func(c *cpe.CPE) bool {
+    applicationSet := set1.Filter(func(c *cpeskills.CPE) bool {
         return c.Part.ShortName == "a"
     })
     fmt.Printf("Applications: %d\n", applicationSet.Size())
     
     // Advanced filtering
     fmt.Println("\n=== Advanced Filtering ===")
-    criteria := &cpe.CPE{
-        Vendor: cpe.Vendor("microsoft"),
+    criteria := &cpeskills.CPE{
+        Vendor: cpeskills.Vendor("microsoft"),
     }
     
-    options := cpe.NewAdvancedMatchOptions()
+    options := cpeskills.NewAdvancedMatchOptions()
     options.MatchMode = "exact"
     
     advancedFiltered := set1.AdvancedFilter(criteria, options)
@@ -618,7 +618,7 @@ func main() {
         "cpe:2.3:a:mozilla:firefox:94.0:*:*:*:*:*:*:*",
     }
     
-    browserSet, err := cpe.FromStrings(cpeStrings2)
+    browserSet, err := cpeskills.FromStrings(cpeStrings2)
     if err != nil {
         log.Fatal(err)
     }

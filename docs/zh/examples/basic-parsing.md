@@ -34,7 +34,7 @@ func main() {
     for i, cpeStr := range cpe23Examples {
         fmt.Printf("\n示例 %d: %s\n", i+1, cpeStr)
         
-        cpeObj, err := cpe.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
             log.Printf("解析失败: %v", err)
             continue
@@ -66,7 +66,7 @@ func main() {
     for i, cpeStr := range cpe22Examples {
         fmt.Printf("\n示例 %d: %s\n", i+1, cpeStr)
         
-        cpeObj, err := cpe.ParseCpe22(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe22(cpeStr)
         if err != nil {
             log.Printf("解析失败: %v", err)
             continue
@@ -94,11 +94,11 @@ func main() {
         fmt.Printf("\n无效示例 %d: %s\n", i+1, invalidCPE)
         
         // 首先尝试解析为CPE 2.3
-        _, err := cpe.ParseCpe23(invalidCPE)
+        _, err := cpeskills.ParseCpe23(invalidCPE)
         if err != nil {
-            if cpe.IsInvalidFormatError(err) {
+            if cpeskills.IsInvalidFormatError(err) {
                 fmt.Printf("  ❌ 无效的CPE 2.3格式: %v\n", err)
-            } else if cpe.IsInvalidPartError(err) {
+            } else if cpeskills.IsInvalidPartError(err) {
                 fmt.Printf("  ❌ 无效的部件值: %v\n", err)
             } else {
                 fmt.Printf("  ❌ 其他解析错误: %v\n", err)
@@ -109,7 +109,7 @@ func main() {
     // 示例4：处理解析的CPE对象
     fmt.Println("\n4. 处理解析的CPE对象：")
     
-    windowsCPE, err := cpe.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    windowsCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }
@@ -121,13 +121,13 @@ func main() {
     
     // 修改CPE
     windowsCPE.Version = "11"
-    fmt.Printf("修改后的CPE: %s\n", cpe.FormatCpe23(windowsCPE))
+    fmt.Printf("修改后的CPE: %s\n", cpeskills.FormatCpe23(windowsCPE))
     
     // 示例5：格式转换
     fmt.Println("\n5. 格式转换：")
     
     // 解析CPE 2.2并转换为2.3
-    tomcatCPE, err := cpe.ParseCpe22("cpe:/a:apache:tomcat:9.0.0")
+    tomcatCPE, err := cpeskills.ParseCpe22("cpe:/a:apache:tomcat:9.0.0")
     if err != nil {
         log.Fatal(err)
     }
@@ -136,13 +136,13 @@ func main() {
     fmt.Printf("转换为CPE 2.3: %s\n", tomcatCPE.Cpe23)
     
     // 转换回CPE 2.2格式
-    cpe22Format := cpe.FormatCpe22(tomcatCPE)
+    cpe22Format := cpeskills.FormatCpe22(tomcatCPE)
     fmt.Printf("转换回CPE 2.2: %s\n", cpe22Format)
     
     // 示例6：特殊值
     fmt.Println("\n6. 特殊值：")
     
-    specialCPE, err := cpe.ParseCpe23("cpe:2.3:a:*:*:*:*:*:*:*:*:*:*")
+    specialCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:*:*:*:*:*:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }
@@ -151,7 +151,7 @@ func main() {
     fmt.Printf("供应商（通配符）: %s\n", specialCPE.Vendor)
     fmt.Printf("产品（通配符）: %s\n", specialCPE.ProductName)
     
-    naCPE, err := cpe.ParseCpe23("cpe:2.3:a:vendor:product:-:-:-:*:*:*:*:*")
+    naCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:vendor:product:-:-:-:*:*:*:*:*")
     if err != nil {
         log.Fatal(err)
     }

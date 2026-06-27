@@ -74,7 +74,7 @@ Returns default NVD feed options.
 
 **Example:**
 ```go
-options := cpe.DefaultNVDFeedOptions()
+options := cpeskills.DefaultNVDFeedOptions()
 options.CacheDir = "./nvd-cache"
 options.ShowProgress = true
 options.Timeout = 30 * time.Second
@@ -101,11 +101,11 @@ Downloads and parses all NVD CPE data (dictionary and match data).
 ```go
 // Download all NVD data
 fmt.Println("Downloading NVD data...")
-options := cpe.DefaultNVDFeedOptions()
+options := cpeskills.DefaultNVDFeedOptions()
 options.CacheDir = "./nvd-cache"
 options.ShowProgress = true
 
-nvdData, err := cpe.DownloadAllNVDData(options)
+nvdData, err := cpeskills.DownloadAllNVDData(options)
 if err != nil {
     log.Fatalf("Failed to download NVD data: %v", err)
 }
@@ -132,7 +132,7 @@ Downloads and parses only the CPE dictionary.
 
 **Example:**
 ```go
-dictionary, err := cpe.DownloadAndParseCPEDict(options)
+dictionary, err := cpeskills.DownloadAndParseCPEDict(options)
 if err != nil {
     log.Fatal(err)
 }
@@ -157,7 +157,7 @@ Downloads and parses only the CPE match data.
 
 **Example:**
 ```go
-matchData, err := cpe.DownloadAndParseCPEMatch(options)
+matchData, err := cpeskills.DownloadAndParseCPEMatch(options)
 if err != nil {
     log.Fatal(err)
 }
@@ -184,7 +184,7 @@ Finds all CVEs associated with a specific CPE.
 **Example:**
 ```go
 // Find CVEs for Apache Log4j
-log4jCPE, _ := cpe.ParseCpe23("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+log4jCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
 cves := nvdData.FindCVEsForCPE(log4jCPE)
 
 fmt.Printf("Found %d CVEs for Apache Log4j 2.0:\n", len(cves))
@@ -215,7 +215,7 @@ affectedCPEs := nvdData.FindCPEsForCVE("CVE-2021-44228")
 
 fmt.Printf("CVE-2021-44228 affects %d CPEs:\n", len(affectedCPEs))
 for _, cpe := range affectedCPEs[:10] { // Show first 10
-    fmt.Printf("- %s\n", cpe.GetURI())
+    fmt.Printf("- %s\n", cpeskills.GetURI())
 }
 ```
 
@@ -311,7 +311,7 @@ type UpdateInfo struct {
 
 **Example:**
 ```go
-updateInfo, err := cpe.CheckForUpdates(options)
+updateInfo, err := cpeskills.CheckForUpdates(options)
 if err != nil {
     log.Printf("Failed to check for updates: %v", err)
 } else {
@@ -342,7 +342,7 @@ Updates stored NVD data if newer versions are available.
 **Example:**
 ```go
 // Check and update NVD data
-err := cpe.UpdateNVDData(storage, options)
+err := cpeskills.UpdateNVDData(storage, options)
 if err != nil {
     log.Printf("Failed to update NVD data: %v", err)
 } else {
@@ -356,14 +356,14 @@ The library automatically caches downloaded NVD data to improve performance:
 
 ```go
 // Configure caching
-options := cpe.DefaultNVDFeedOptions()
+options := cpeskills.DefaultNVDFeedOptions()
 options.CacheDir = "./nvd-cache"
 
 // First download will fetch from NVD
-nvdData1, _ := cpe.DownloadAllNVDData(options)
+nvdData1, _ := cpeskills.DownloadAllNVDData(options)
 
 // Subsequent downloads will use cache if data is fresh
-nvdData2, _ := cpe.DownloadAllNVDData(options)
+nvdData2, _ := cpeskills.DownloadAllNVDData(options)
 ```
 
 ## Complete Example
@@ -379,13 +379,13 @@ import (
 
 func main() {
     // Configure NVD options
-    options := cpe.DefaultNVDFeedOptions()
+    options := cpeskills.DefaultNVDFeedOptions()
     options.CacheDir = "./nvd-cache"
     options.ShowProgress = true
     
     // Download NVD data
     fmt.Println("Downloading NVD data...")
-    nvdData, err := cpe.DownloadAllNVDData(options)
+    nvdData, err := cpeskills.DownloadAllNVDData(options)
     if err != nil {
         log.Fatalf("Failed to download NVD data: %v", err)
     }
@@ -402,7 +402,7 @@ func main() {
     
     fmt.Println("\nVulnerability Analysis:")
     for _, cpeStr := range systemCPEs {
-        cpeObj, err := cpe.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
             log.Printf("Failed to parse %s: %v", cpeStr, err)
             continue
