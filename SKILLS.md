@@ -4,7 +4,7 @@ A comprehensive Go SDK for CPE (Common Platform Enumeration) — providing parsi
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/scagogogo/cpe-skills.svg)](https://pkg.go.dev/github.com/scagogogo/cpe-skills)
 [![Go Report Card](https://goreportcard.com/badge/github.com/scagogogo/cpe-skills)](https://goreportcard.com/report/github.com/scagogogo/cpe-skills)
-[![Test Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/scagogogo/cpe-skills)
+[![Test Coverage](https://img.shields.io/badge/coverage-%E2%89%A5_91%25-brightgreen)](https://github.com/scagogogo/cpe-skills/actions)
 
 ## Installation
 
@@ -255,7 +255,7 @@ cpe dict --nvd
 
 ## Supported Platforms
 
-The CLI tool (`cpe`) is available for the following platforms via GitHub Releases:
+The CLI tool (`cpe`) is available for **108 prebuilt binaries** across the following platforms via GitHub Releases:
 
 | OS | Architectures |
 |----|---------------|

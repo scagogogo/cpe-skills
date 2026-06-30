@@ -1,1 +1,0 @@
-import{_ as i,o as a,c as n,a0 as h}from"./chunks/framework.CrdfH-8N.js";const g=JSON.parse('{"title":"WFN格式","description":"","frontmatter":{},"headers":[],"relativePath":"zh/api/wfn.md","filePath":"zh/api/wfn.md"}'),k={name:"zh/api/wfn.md"};function l(t,s,p,e,E,r){return a(),n("div",null,s[0]||(s[0]=[h("",104)]))}const F=i(k,[["render",l]]);export{g as __pageData,F as default};

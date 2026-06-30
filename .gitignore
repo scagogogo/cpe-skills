@@ -1,9 +1,9 @@
 # Dependencies
-docs/node_modules/
 website/node_modules/
 
-# Build output
-docs/.vitepress/dist/
+# VitePress build output & cache
+website/.vitepress/dist/
+website/.vitepress/cache/
 website/dist/
 
 # Coverage
