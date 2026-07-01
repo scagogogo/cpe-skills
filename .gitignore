@@ -10,6 +10,10 @@ website/dist/
 coverage.out
 coverage_final.out
 
+# Local build artifacts
+/cpe
+/cpe.exe
+
 # OS
 .DS_Store
 Thumbs.db

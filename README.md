@@ -1,15 +1,17 @@
 # cpe-skills
 
-> A comprehensive CPE (Common Platform Enumeration) toolkit for cybersecurity — parsing, matching, generation, vulnerability correlation, SBOM, and beyond. **AI-first**: designed for AI agents to consume directly.
+> A comprehensive CPE (Common Platform Enumeration) toolkit for cybersecurity — parsing, matching, generation, vulnerability correlation, SBOM, and beyond. **AI-native**: designed for AI agents to consume directly via SKILLS, Go SDK, CLI, and MCP.
 
 <div align="center">
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/scagogogo/cpe-skills.svg)](https://pkg.go.dev/github.com/scagogogo/cpe-skills)
 [![Go Report Card](https://goreportcard.com/badge/github.com/scagogogo/cpe-skills)](https://goreportcard.com/report/github.com/scagogogo/cpe-skills)
 [![Test Coverage](https://img.shields.io/badge/coverage-%E2%89%A5_91%25-brightgreen)](https://github.com/scagogogo/cpe-skills/actions)
+[![Tests](https://img.shields.io/badge/tests-1258-brightgreen)](https://github.com/scagogogo/cpe-skills/actions)
 [![Release](https://img.shields.io/github/v/release/scagogogo/cpe-skills?include_prereleases)](https://github.com/scagogogo/cpe-skills/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-108-blue)](https://github.com/scagogogo/cpe-skills/releases)
+[![MCP](https://img.shields.io/badge/MCP-server-purple)](#mcp)
 
 **[Website](https://scagogogo.github.io/cpe-skills/) · [简体中文](README_zh.md) · [SKILLS](SKILLS.md) · [Docs](https://scagogogo.github.io/cpe-skills/en/) · [Releases](https://github.com/scagogogo/cpe-skills/releases)**
 
@@ -19,31 +21,51 @@
 
 <!-- AI-SUMMARY-START -->
 
-> This block is structured for machine consumption. AI agents can extract project metadata, integration paths, and capabilities directly from it.
+> 🤖 **This block is structured for machine consumption.** AI agents can extract project metadata, integration paths, capabilities, and entry-point functions directly. Everything below is verified against the source — no aspirational features.
 
 | Field | Value |
 |-------|-------|
 | **Project** | cpe-skills |
-| **One-liner** | Comprehensive CPE (Common Platform Enumeration) toolkit for cybersecurity — parsing, matching, generation, vulnerability correlation, SBOM, VEX. |
-| **Language** | Go (`module github.com/scagogogo/cpe-skills`, requires Go ≥ 1.18) |
-| **Coverage** | ≥ 91% (CI gate at 99.9% on main package) |
+| **One-liner** | CPE (Common Platform Enumeration) toolkit — parsing, matching, generation, vulnerability correlation, SBOM, VEX. |
+| **Language** | Go (`module github.com/scagogogo/cpe-skills`, requires **Go ≥ 1.23**) |
+| **MCP SDK** | `github.com/modelcontextprotocol/go-sdk` v1.0.0 |
+| **Coverage** | ≥ 91% (CI gate at 90% on main package) |
+| **Test cases** | 1258 |
+| **Exported symbols** | ~1470 |
 | **Platforms** | 108 prebuilt binaries per release — 9 OSes × 13 architectures |
 | **License** | MIT |
 | **Website** | https://scagogogo.github.io/cpe-skills/ |
 | **Repo** | https://github.com/scagogogo/cpe-skills |
+| **API stability** | Package-level API is stable; functions are additive and backward-compatible across minor releases. |
 
-### Integration Paths (4 ways to use)
+### Integration Paths (4 ways to use — all implemented)
 
-| Path | Best for | Install / Config |
-|------|----------|------------------|
-| **SKILLS** | AI / LLM agents | `https://github.com/scagogogo/cpe-skills` |
-| **Go SDK** | Go applications | `go get github.com/scagogogo/cpe-skills` |
-| **CLI** | Shell / CI / scripts | `go install github.com/scagogogo/cpe-skills/cmd/cpe@latest` (or download binary from Releases) |
-| **MCP** | MCP-compatible AI clients | `command: cpe`, `args: ["mcp", "serve"]` |
+| Path | Best for | Install / Config | Entry point |
+|------|----------|------------------|-------------|
+| **SKILLS** | AI / LLM agents | `https://github.com/scagogogo/cpe-skills` | [SKILLS.md](SKILLS.md) |
+| **Go SDK** | Go applications | `go get github.com/scagogogo/cpe-skills` | `cpeskills.Parse` |
+| **CLI** | Shell / CI / scripts | `go install github.com/scagogogo/cpe-skills/cmd/cpe@latest` | `cpe parse/match/search/dict` |
+| **MCP** | MCP-compatible AI clients | `command: cpe`, `args: ["mcp", "serve"]` | `cpe mcp serve` (6 tools) |
 
-### Capabilities (11 categories)
+### MCP Tools (exposed by `cpe mcp serve`)
 
-`Parsing` · `Matching (NISTIR 7696)` · `Generation & Builder` · `WFN Binding & Escaping` · `Validation & Normalization` · `Storage & Index` · `Vulnerability Correlation (NVD/OSV/EPSS/KEV)` · `SBOM & PURL` · `Risk Scoring & VEX` · `Export (JSON/CSV/SARIF)` · `Infrastructure (Sets/Applicability/Errors/Logging)`
+`parse_cpe` · `format_cpe` · `match_cpe` · `validate_cpe` · `generate_cpe` · `compare_versions`
+
+### Capabilities (11 categories) → entry functions
+
+| Category | Entry functions |
+|----------|----------------|
+| **Parsing** | `Parse`, `ParseCpe22`, `ParseCpe23`, `MustParse` |
+| **Matching (NISTIR 7696)** | `Match`, `MatchCPE`, `QuickMatch`, `AdvancedMatchCPE`, `BatchMatchCPEs` |
+| **Generation & Builder** | `GenerateCPE`, `FuzzyGenerateCPE`, `NewBuilder`, `RandomCPE` |
+| **WFN Binding & Escaping** | `BindToFS`, `BindToURI`, `UnbindFS`, `FromCPE` |
+| **Validation & Normalization** | `ValidateCPE`, `NormalizeCPE`, `NormalizeVendorName`, `NormalizeProductName` |
+| **Storage & Index** | `NewMemoryStorage`, `NewFileStorage`, `NewCPEIndex`, `ParseDictionary` |
+| **Vulnerability Correlation** | `CreateNVDDataSource`, `NewOSVClient`, `NewEPSSClient`, `NewKEVClient` |
+| **SBOM & PURL** | `NewSBOM`, `ParseCycloneDXJSON`, `ParseSPDXJSON`, `CPEToPURL`, `PURLToCPE` |
+| **Risk Scoring & VEX** | `NewDefaultRiskScorer`, `ScoreComponents`, `NewVEXDocument`, `GenerateVEXFromFindings` |
+| **Export** | `ExportToJSON`, `ExportToCSV`, `ExportToSARIF`, `ExportSBOMToCycloneDX` |
+| **Infrastructure** | `NewCPESet`, `ParseExpression`, `NewParsingError`, `SetLogger` |
 
 ### Platform Matrix (108 binaries)
 
@@ -130,6 +152,86 @@ cpe search --vendor apache --product log4j
   }
 }
 ```
+
+Once connected, the AI client can call these tools:
+- `parse_cpe {cpe}` — parse a CPE into components
+- `format_cpe {cpe, to}` — convert between 2.2/2.3/wfn
+- `match_cpe {criteria, target, ignore_version?}` — NISTIR 7696 matching
+- `validate_cpe {cpe}` — validate a CPE string
+- `generate_cpe {part, vendor, product, version}` — build a CPE
+- `compare_versions {a, b, min?, max?}` — compare version strings
+
+---
+
+## AI Agent Workflow Example
+
+A typical AI agent workflow using cpe-skills to triage a vulnerable dependency:
+
+```mermaid
+flowchart LR
+    A[User: is log4j 2.14.1 vulnerable?] --> B[Agent calls parse_cpe]
+    B --> C[Generate CPE for log4j 2.14.1]
+    C --> D[Query NVD/OSV by CPE]
+    D --> E{CVE found?}
+    E -- yes --> F[match_cpe to confirm affected]
+    F --> G[Report CVE + remediation]
+    E -- no --> H[Report: not vulnerable]
+```
+
+As Claude Code skills, the agent can be invoked in natural language:
+- *"Parse this CPE string and tell me the vendor/product/version"*
+- *"Check if this component's CPE matches any known vulnerable CPE"*
+- *"Generate a CPE for Apache log4j 2.14.1"*
+- *"Convert this CPE 2.2 string to 2.3 format"*
+
+---
+
+## Recipes (task-driven code snippets for AI agents)
+
+### Detect if a component is affected by a CVE
+
+```go
+c, _ := cpeskills.Parse("cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*")
+nvd := cpeskills.CreateNVDDataSource("")
+search := cpeskills.NewMultiSourceSearch([]*cpeskills.VulnDataSource{nvd})
+findings, _ := search.SearchByCPE(c) // returns matching CVEs
+```
+
+### Generate an SBOM from a lockfile
+
+```go
+components, _ := cpeskills.ParseManifestFile("go.sum", content)
+sbom, _ := cpeskills.BuildSBOMFromManifest("go.sum", content, "my-app")
+json, _ := cpeskills.ExportSBOMToCycloneDX(sbom)
+```
+
+### Prioritize vulnerabilities by risk
+
+```go
+scorer := cpeskills.NewDefaultRiskScorer()
+scores := cpeskills.ScoreComponents(components, nvdData)
+cpeskills.SortByRisk(scores)
+critical := cpeskills.FilterByPriority(scores, cpeskills.RiskCritical)
+```
+
+### Bridge CPE ↔ PURL (package URL)
+
+```go
+purl, confidence, _ := cpeskills.CPEToPURL(cpe)    // CPE → PURL
+cpe, confidence, _ := cpeskills.PURLToCPE(purl)    // PURL → CPE
+```
+
+### Match with version-range criteria
+
+```go
+matched := cpeskills.MatchCPE(criteria, target, &cpeskills.MatchOptions{
+    VersionRange: true,
+    MinVersion:   "2.0",
+    MaxVersion:   "3.0",
+})
+```
+
+> More recipes (WFN conversion, VEX, export, sets, applicability) on the [website guide](https://scagogogo.github.io/cpe-skills/en/guide/).
 
 ---
 

@@ -1,15 +1,17 @@
 # cpe-skills
 
-> 全面的网络安全 CPE（通用平台枚举）工具包 —— 解析、匹配、生成、漏洞关联、SBOM 及更多能力。**AI 优先**：专为 AI Agent 直接消费而设计。
+> 全面的网络安全 CPE（通用平台枚举）工具包 —— 解析、匹配、生成、漏洞关联、SBOM 及更多能力。**AI 原生**：专为 AI Agent 通过 SKILLS、Go SDK、CLI、MCP 直接消费而设计。
 
 <div align="center">
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/scagogogo/cpe-skills.svg)](https://pkg.go.dev/github.com/scagogogo/cpe-skills)
 [![Go Report Card](https://goreportcard.com/badge/github.com/scagogogo/cpe-skills)](https://goreportcard.com/report/github.com/scagogogo/cpe-skills)
 [![Test Coverage](https://img.shields.io/badge/coverage-%E2%89%A5_91%25-brightgreen)](https://github.com/scagogogo/cpe-skills/actions)
+[![Tests](https://img.shields.io/badge/tests-1258-brightgreen)](https://github.com/scagogogo/cpe-skills/actions)
 [![Release](https://img.shields.io/github/v/release/scagogogo/cpe-skills?include_prereleases)](https://github.com/scagogogo/cpe-skills/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platforms](https://img.shields.io/badge/platforms-108-blue)](https://github.com/scagogogo/cpe-skills/releases)
+[![MCP](https://img.shields.io/badge/MCP-server-purple)](#mcp)
 
 **[官网](https://scagogogo.github.io/cpe-skills/) · [English](README.md) · [SKILLS](SKILLS.md) · [文档](https://scagogogo.github.io/cpe-skills/zh/) · [发布](https://github.com/scagogogo/cpe-skills/releases)**
 
@@ -19,31 +21,51 @@
 
 <!-- AI-SUMMARY-START -->
 
-> 本区块为机器可消费的结构化摘要，AI Agent 可直接提取项目元数据、集成方式与能力清单。
+> 🤖 **本区块为机器可消费的结构化摘要。** AI Agent 可直接提取项目元数据、集成方式、能力与入口函数。以下内容均与源码核对，无任何愿景性功能。
 
 | 字段 | 值 |
 |------|-----|
 | **项目** | cpe-skills |
-| **一句话定位** | 全面的 CPE（通用平台枚举）工具包 —— 解析、匹配、生成、漏洞关联、SBOM、VEX。 |
-| **语言** | Go（`module github.com/scagogogo/cpe-skills`，要求 Go ≥ 1.18） |
-| **覆盖率** | ≥ 91%（CI 对主包门槛 99.9%） |
+| **一句话定位** | CPE（通用平台枚举）工具包 —— 解析、匹配、生成、漏洞关联、SBOM、VEX。 |
+| **语言** | Go（`module github.com/scagogogo/cpe-skills`，要求 **Go ≥ 1.23**） |
+| **MCP SDK** | `github.com/modelcontextprotocol/go-sdk` v1.0.0 |
+| **覆盖率** | ≥ 91%（CI 对主包门槛 90%） |
+| **测试用例** | 1258 |
+| **导出符号** | ~1470 |
 | **平台** | 每次发布 108 个预编译二进制 —— 9 个操作系统 × 13 种架构 |
 | **许可证** | MIT |
 | **官网** | https://scagogogo.github.io/cpe-skills/ |
 | **仓库** | https://github.com/scagogogo/cpe-skills |
+| **API 稳定性** | 包级 API 稳定；跨小版本函数为增量式、向后兼容。 |
 
-### 集成方式（4 种使用途径）
+### 集成方式（4 条路径 —— 均已实现）
 
-| 路径 | 适用场景 | 安装 / 配置 |
-|------|----------|-------------|
-| **SKILLS** | AI / LLM Agent | `https://github.com/scagogogo/cpe-skills` |
-| **Go SDK** | Go 应用 | `go get github.com/scagogogo/cpe-skills` |
-| **CLI** | Shell / CI / 脚本 | `go install github.com/scagogogo/cpe-skills/cmd/cpe@latest`（或从 Releases 下载二进制） |
-| **MCP** | 兼容 MCP 的 AI 客户端 | `command: cpe`, `args: ["mcp", "serve"]` |
+| 路径 | 适用场景 | 安装 / 配置 | 入口 |
+|------|----------|-------------|------|
+| **SKILLS** | AI / LLM Agent | `https://github.com/scagogogo/cpe-skills` | [SKILLS.md](SKILLS.md) |
+| **Go SDK** | Go 应用 | `go get github.com/scagogogo/cpe-skills` | `cpeskills.Parse` |
+| **CLI** | Shell / CI / 脚本 | `go install github.com/scagogogo/cpe-skills/cmd/cpe@latest` | `cpe parse/match/search/dict` |
+| **MCP** | 兼容 MCP 的 AI 客户端 | `command: cpe`, `args: ["mcp", "serve"]` | `cpe mcp serve`（6 个工具） |
 
-### 能力（11 类）
+### MCP 工具（由 `cpe mcp serve` 暴露）
 
-`解析` · `匹配（NISTIR 7696）` · `生成与构建` · `WFN 绑定与转义` · `校验与归一化` · `存储与索引` · `漏洞关联（NVD/OSV/EPSS/KEV）` · `SBOM 与 PURL` · `风险评分与 VEX` · `导出（JSON/CSV/SARIF）` · `基础设施（集合/适用性/错误/日志）`
+`parse_cpe` · `format_cpe` · `match_cpe` · `validate_cpe` · `generate_cpe` · `compare_versions`
+
+### 能力（11 类）→ 入口函数
+
+| 类别 | 入口函数 |
+|------|---------|
+| **解析** | `Parse`, `ParseCpe22`, `ParseCpe23`, `MustParse` |
+| **匹配（NISTIR 7696）** | `Match`, `MatchCPE`, `QuickMatch`, `AdvancedMatchCPE`, `BatchMatchCPEs` |
+| **生成与构建** | `GenerateCPE`, `FuzzyGenerateCPE`, `NewBuilder`, `RandomCPE` |
+| **WFN 绑定与转义** | `BindToFS`, `BindToURI`, `UnbindFS`, `FromCPE` |
+| **校验与归一化** | `ValidateCPE`, `NormalizeCPE`, `NormalizeVendorName`, `NormalizeProductName` |
+| **存储与索引** | `NewMemoryStorage`, `NewFileStorage`, `NewCPEIndex`, `ParseDictionary` |
+| **漏洞关联** | `CreateNVDDataSource`, `NewOSVClient`, `NewEPSSClient`, `NewKEVClient` |
+| **SBOM 与 PURL** | `NewSBOM`, `ParseCycloneDXJSON`, `ParseSPDXJSON`, `CPEToPURL`, `PURLToCPE` |
+| **风险评分与 VEX** | `NewDefaultRiskScorer`, `ScoreComponents`, `NewVEXDocument`, `GenerateVEXFromFindings` |
+| **导出** | `ExportToJSON`, `ExportToCSV`, `ExportToSARIF`, `ExportSBOMToCycloneDX` |
+| **基础设施** | `NewCPESet`, `ParseExpression`, `NewParsingError`, `SetLogger` |
 
 ### 平台矩阵（108 个二进制）
 
@@ -130,6 +152,86 @@ cpe search --vendor apache --product log4j
   }
 }
 ```
+
+连接后，AI 客户端可调用以下工具：
+- `parse_cpe {cpe}` — 解析 CPE 为各组件
+- `format_cpe {cpe, to}` — 在 2.2/2.3/wfn 间转换
+- `match_cpe {criteria, target, ignore_version?}` — NISTIR 7696 匹配
+- `validate_cpe {cpe}` — 校验 CPE 字符串
+- `generate_cpe {part, vendor, product, version}` — 生成 CPE
+- `compare_versions {a, b, min?, max?}` — 比较版本字符串
+
+---
+
+## AI Agent 工作流示例
+
+AI Agent 使用 cpe-skills 分诊脆弱依赖的典型工作流：
+
+```mermaid
+flowchart LR
+    A[用户: log4j 2.14.1 有漏洞吗?] --> B[Agent 调用 parse_cpe]
+    B --> C[为 log4j 2.14.1 生成 CPE]
+    C --> D[按 CPE 查询 NVD/OSV]
+    D --> E{找到 CVE?}
+    E -- 是 --> F[match_cpe 确认受影响]
+    F --> G[报告 CVE + 修复建议]
+    E -- 否 --> H[报告: 无漏洞]
+```
+
+作为 Claude Code skills，可用自然语言调用 Agent：
+- *"解析这个 CPE 字符串，告诉我厂商/产品/版本"*
+- *"检查这个组件的 CPE 是否匹配已知漏洞 CPE"*
+- *"为 Apache log4j 2.14.1 生成 CPE"*
+- *"把这个 CPE 2.2 字符串转成 2.3 格式"*
+
+---
+
+## 任务配方（面向 AI Agent 的问题驱动代码片段）
+
+### 检测组件是否受某 CVE 影响
+
+```go
+c, _ := cpeskills.Parse("cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*")
+nvd := cpeskills.CreateNVDDataSource("")
+search := cpeskills.NewMultiSourceSearch([]*cpeskills.VulnDataSource{nvd})
+findings, _ := search.SearchByCPE(c) // 返回匹配的 CVE
+```
+
+### 从 lockfile 生成 SBOM
+
+```go
+components, _ := cpeskills.ParseManifestFile("go.sum", content)
+sbom, _ := cpeskills.BuildSBOMFromManifest("go.sum", content, "my-app")
+json, _ := cpeskills.ExportSBOMToCycloneDX(sbom)
+```
+
+### 按风险优先级排序漏洞
+
+```go
+scorer := cpeskills.NewDefaultRiskScorer()
+scores := cpeskills.ScoreComponents(components, nvdData)
+cpeskills.SortByRisk(scores)
+critical := cpeskills.FilterByPriority(scores, cpeskills.RiskCritical)
+```
+
+### CPE ↔ PURL（包 URL）桥接
+
+```go
+purl, confidence, _ := cpeskills.CPEToPURL(cpe)    // CPE → PURL
+cpe, confidence, _ := cpeskills.PURLToCPE(purl)    // PURL → CPE
+```
+
+### 按版本范围匹配
+
+```go
+matched := cpeskills.MatchCPE(criteria, target, &cpeskills.MatchOptions{
+    VersionRange: true,
+    MinVersion:   "2.0",
+    MaxVersion:   "3.0",
+})
+```
+
+> 更多配方（WFN 转换、VEX、导出、集合、适用性）见[官网指南](https://scagogogo.github.io/cpe-skills/zh/guide/)。
 
 ---
 

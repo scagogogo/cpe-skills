@@ -251,6 +251,25 @@ cpe search --vendor apache --product log4j
 
 # Look up CPE dictionary
 cpe dict --nvd
+
+# Run as an MCP server (exposes parse_cpe, match_cpe, format_cpe,
+# validate_cpe, generate_cpe, compare_versions as MCP tools over stdio)
+cpe mcp serve
+```
+
+### MCP Integration
+
+`cpe mcp serve` starts an MCP (Model Context Protocol) server on stdio. Add it to your MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "cpe-skills": {
+      "command": "cpe",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
 ```
 
 ## Supported Platforms
