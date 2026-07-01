@@ -8,9 +8,6 @@ hero:
   name: cpe-skills
   text: 面向网络安全与 AI 的 CPE 工具包
   tagline: 全面的 CPE（通用平台枚举）工具包 —— 解析、匹配、生成、漏洞关联、SBOM，以及 4 条集成路径（SKILLS / Go SDK / CLI / MCP）。
-  image:
-    src: /architecture_zh.png
-    alt: cpe-skills 架构图
   actions:
     - theme: brand
       text: 快速开始
@@ -143,9 +140,104 @@ flowchart TD
     Risk --> Export[导出 JSON / CSV / SARIF / VEX]
 ```
 
+## 架构
+
+```mermaid
+flowchart LR
+    subgraph Input
+        S1[CPE 2.2 URI]
+        S2[CPE 2.3 FS]
+        S3[产品信息]
+        S4[Lockfile / Manifest]
+    end
+    subgraph Core["CPE 核心引擎"]
+        P[解析与校验]
+        M[NISTIR 7696 匹配]
+        G[生成 / 构建]
+        W[WFN 绑定与转义]
+        N[归一化]
+    end
+    subgraph Correlation["漏洞关联"]
+        V[漏洞]
+        NVD[NVD]
+        OSV[OSV]
+        EPSS[EPSS]
+        KEV[CISA KEV]
+    end
+    subgraph SupplyChain["供应链"]
+        SB[SBOM CycloneDX/SPDX]
+        PU[CPE ↔ PURL]
+        DG[依赖图]
+    end
+    subgraph Output["输出"]
+        R[风险与 VEX]
+        E[导出 JSON/CSV/SARIF]
+    end
+    S1 --> P
+    S2 --> P
+    S3 --> G
+    S4 --> SB
+    P --> M
+    P --> W
+    P --> N
+    M --> V
+    V --> NVD
+    V --> OSV
+    V --> EPSS
+    V --> KEV
+    SB --> PU
+    SB --> DG
+    V --> R
+    SB --> R
+    R --> E
+```
+
 ## 功能脑图
 
-![功能树](/feature_tree_zh.png)
+```mermaid
+mindmap
+  root((cpe-skills))
+    解析
+      CPE 2.2 URI
+      CPE 2.3 FS
+      自动识别
+      WFN 绑定
+    匹配
+      NISTIR 7696
+      Exact / Subset / Superset
+      模糊与正则
+      批量
+    生成
+      从产品信息
+      模板
+      Fluent Builder
+      模糊生成
+    漏洞
+      NVD
+      OSV
+      EPSS 评分
+      CISA KEV
+    SBOM
+      CycloneDX
+      SPDX
+      CPE ↔ PURL
+      依赖图
+    风险与 VEX
+      风险评分
+      可达性
+      VEX 声明
+      修复建议
+    导出
+      JSON
+      CSV
+      SARIF
+      SBOM 格式
+    基础设施
+      CPE 集合
+      适用性
+      结构化错误
+      日志
+```
 
 ## 文档
 

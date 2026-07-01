@@ -241,9 +241,104 @@ CPE (Common Platform Enumeration) is the NIST-standard naming scheme (NIST IR 76
 
 Working with CPE is hard: two incompatible formats (2.2 URI vs 2.3 Formatted String), complex WFN binding rules, multi-source vulnerability data (NVD, OSV, EPSS, KEV), and SBOM ↔ PURL bridging. **cpe-skills solves all of this** with a single toolkit covering the full CPE lifecycle, exposed through 4 integration paths.
 
-![Architecture](https://scagogogo.github.io/cpe-skills/architecture_en.png)
+### Architecture
 
-![Feature Tree](https://scagogogo.github.io/cpe-skills/feature_tree_en.png)
+```mermaid
+flowchart LR
+    subgraph Input
+        S1[CPE 2.2 URI]
+        S2[CPE 2.3 FS]
+        S3[Product Info]
+        S4[Lockfile / Manifest]
+    end
+    subgraph Core["CPE Core Engine"]
+        P[Parse & Validate]
+        M[NISTIR 7696 Match]
+        G[Generate / Build]
+        W[WFN Bind & Escape]
+        N[Normalize]
+    end
+    subgraph Correlation
+        V[Vulnerability]
+        NVD[NVD]
+        OSV[OSV]
+        EPSS[EPSS]
+        KEV[CISA KEV]
+    end
+    subgraph SupplyChain["Supply Chain"]
+        SB[SBOM CycloneDX/SPDX]
+        PU[CPE ↔ PURL]
+        DG[Dependency Graph]
+    end
+    subgraph Output
+        R[Risk & VEX]
+        E[Export JSON/CSV/SARIF]
+    end
+    S1 --> P
+    S2 --> P
+    S3 --> G
+    S4 --> SB
+    P --> M
+    P --> W
+    P --> N
+    M --> V
+    V --> NVD
+    V --> OSV
+    V --> EPSS
+    V --> KEV
+    SB --> PU
+    SB --> DG
+    V --> R
+    SB --> R
+    R --> E
+```
+
+### Feature Mind Map
+
+```mermaid
+mindmap
+  root((cpe-skills))
+    Parsing
+      CPE 2.2 URI
+      CPE 2.3 FS
+      Auto-detect
+      WFN binding
+    Matching
+      NISTIR 7696
+      Exact / Subset / Superset
+      Fuzzy & Regex
+      Batch
+    Generation
+      From product info
+      Templates
+      Fluent Builder
+      Fuzzy generate
+    Vulnerability
+      NVD
+      OSV
+      EPSS scoring
+      CISA KEV
+    SBOM
+      CycloneDX
+      SPDX
+      CPE ↔ PURL
+      Dependency graph
+    Risk & VEX
+      Risk scoring
+      Reachability
+      VEX statements
+      Remediation
+    Export
+      JSON
+      CSV
+      SARIF
+      SBOM formats
+    Infrastructure
+      CPE Sets
+      Applicability
+      Structured errors
+      Logging
+```
 
 ---
 

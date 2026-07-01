@@ -8,9 +8,6 @@ hero:
   name: cpe-skills
   text: CPE Toolkit for Cybersecurity & AI
   tagline: A comprehensive CPE (Common Platform Enumeration) toolkit — parsing, matching, generation, vulnerability correlation, SBOM, and 4 integration paths (SKILLS / Go SDK / CLI / MCP).
-  image:
-    src: /architecture_en.png
-    alt: cpe-skills architecture
   actions:
     - theme: brand
       text: Get Started
@@ -143,9 +140,104 @@ flowchart TD
     Risk --> Export[Export JSON / CSV / SARIF / VEX]
 ```
 
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Input
+        S1[CPE 2.2 URI]
+        S2[CPE 2.3 FS]
+        S3[Product Info]
+        S4[Lockfile / Manifest]
+    end
+    subgraph Core["CPE Core Engine"]
+        P[Parse & Validate]
+        M[NISTIR 7696 Match]
+        G[Generate / Build]
+        W[WFN Bind & Escape]
+        N[Normalize]
+    end
+    subgraph Correlation
+        V[Vulnerability]
+        NVD[NVD]
+        OSV[OSV]
+        EPSS[EPSS]
+        KEV[CISA KEV]
+    end
+    subgraph SupplyChain["Supply Chain"]
+        SB[SBOM CycloneDX/SPDX]
+        PU[CPE ↔ PURL]
+        DG[Dependency Graph]
+    end
+    subgraph Output
+        R[Risk & VEX]
+        E[Export JSON/CSV/SARIF]
+    end
+    S1 --> P
+    S2 --> P
+    S3 --> G
+    S4 --> SB
+    P --> M
+    P --> W
+    P --> N
+    M --> V
+    V --> NVD
+    V --> OSV
+    V --> EPSS
+    V --> KEV
+    SB --> PU
+    SB --> DG
+    V --> R
+    SB --> R
+    R --> E
+```
+
 ## Feature Mind Map
 
-![Feature Tree](/feature_tree_en.png)
+```mermaid
+mindmap
+  root((cpe-skills))
+    Parsing
+      CPE 2.2 URI
+      CPE 2.3 FS
+      Auto-detect
+      WFN binding
+    Matching
+      NISTIR 7696
+      Exact / Subset / Superset
+      Fuzzy & Regex
+      Batch
+    Generation
+      From product info
+      Templates
+      Fluent Builder
+      Fuzzy generate
+    Vulnerability
+      NVD
+      OSV
+      EPSS scoring
+      CISA KEV
+    SBOM
+      CycloneDX
+      SPDX
+      CPE ↔ PURL
+      Dependency graph
+    Risk & VEX
+      Risk scoring
+      Reachability
+      VEX statements
+      Remediation
+    Export
+      JSON
+      CSV
+      SARIF
+      SBOM formats
+    Infrastructure
+      CPE Sets
+      Applicability
+      Structured errors
+      Logging
+```
 
 ## Documentation
 
