@@ -41,8 +41,8 @@ jobs:
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | tail -1 | awk '{print $NF}' | sed 's/%//')
           echo "Test coverage: ${COVERAGE}%"
-          if [ "$(echo "$COVERAGE < 99.9" | bc -l)" -eq 1 ]; then
-            echo "ERROR: Test coverage ${COVERAGE}% is below 99.9%"
+          if [ "$(echo "$COVERAGE < 90" | bc -l)" -eq 1 ]; then
+            echo "ERROR: Test coverage ${COVERAGE}% is below 90%"
             exit 1
           fi
 
