@@ -377,6 +377,29 @@ func main() {
 }
 ```
 
+## 预期输出
+
+```
+=== CPE存储操作示例 ===
+
+1. 文件存储:
+✅ 文件存储初始化成功
+
+存储CPE数据:
+  ✅ 1. 已存储: microsoft windows
+  ✅ 2. 已存储: apache tomcat
+  ✅ 3. 已存储: oracle java
+  ✅ 4. 已存储: canonical ubuntu
+  ✅ 5. 已存储: cisco catalyst_2960
+
+检索CPE数据:
+  ✅ 1. 检索到: microsoft windows 10
+  ✅ 2. 检索到: apache tomcat 9.0.0
+  ✅ 3. 检索到: oracle java 11.0.12
+
+...
+```
+
 ## 关键概念
 
 ### 1. 存储后端

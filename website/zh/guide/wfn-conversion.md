@@ -285,6 +285,43 @@ func main() {
 }
 ```
 
+## 预期输出
+
+```
+=== WFN转换示例 ===
+
+1. CPE到WFN转换:
+
+示例 1: cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
+  原始CPE: cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
+  WFN格式: wfn:[part="a",vendor="microsoft",product="windows",version="10",update=ANY,edition=ANY,language=ANY,sw_edition=ANY,target_sw=ANY,target_hw=ANY,other=ANY]
+  部件:     a
+  供应商:   microsoft
+  产品:     windows
+  版本:     10
+
+2. WFN到CPE转换:
+WFN: wfn:[part="a",vendor="adobe",product="reader",version="2021.001.20150",update=ANY,edition=ANY,language=ANY,sw_edition=ANY,target_sw=ANY,target_hw=ANY,other=ANY]
+CPE 2.3: cpe:2.3:a:adobe:reader:2021.001.20150:*:*:*:*:*:*:*
+CPE 2.2: cpe:/a:adobe:reader:2021.001.20150
+
+3. WFN属性值:
+  ANY: '*' - 匹配任意值
+  NA: '-' - 不适用
+  字面值: 'windows' - 字面字符串值
+  转义值: 'special\~chars' - 转义特殊字符
+
+4. WFN匹配:
+源WFN: wfn:[part="a",vendor="microsoft",product=ANY,version=ANY]
+匹配目标:
+  ✅ 目标 1: wfn:[part="a",vendor="microsoft",product="windows",version="10"]
+  ✅ 目标 2: wfn:[part="a",vendor="microsoft",product="office",version="2019"]
+  ❌ 目标 3: wfn:[part="a",vendor="oracle",product="java",version="11"]
+  ❌ 目标 4: wfn:[part="o",vendor="microsoft",product="windows",version="10"]
+
+...
+```
+
 ## 关键概念
 
 ### 1. WFN结构

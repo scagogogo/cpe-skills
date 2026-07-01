@@ -429,6 +429,13 @@ func calculateWeightedScore(ref, test *cpeskills.CPE, weights map[string]float64
 4. **验证结果**: 始终验证匹配结果的准确性
 5. **性能优化**: 对大数据集使用索引和缓存
 
+## 性能考虑
+
+1. **缓存**: 缓存开销较大的匹配计算结果
+2. **索引**: 对大型数据集使用合适的数据结构
+3. **并行处理**: 将匹配任务分布到多个 CPU 核心
+4. **提前终止**: 当置信度足够时停止处理
+
 ## 下一步
 
 - 学习[NVD集成](./nvd-integration.md)获取实际漏洞数据
