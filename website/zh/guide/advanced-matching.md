@@ -6,6 +6,32 @@
 
 高级匹配超越了基本的字符串比较，提供了智能匹配算法，可以处理版本范围、同义词、模糊匹配和复杂的匹配条件。
 
+下图勾勒了高级匹配管线：输入一对 CPE，字段级匹配选项控制每个字段是忽略、精确匹配还是通配，然后选择匹配模式，计算匹配得分或距离，最终输出带评分的匹配结果。
+
+```mermaid
+flowchart TD
+    IN["输入 CPE 对"]
+    OPT["字段级匹配选项（每字段：忽略 / 精确 / 通配）"]
+    MODE{"选择匹配模式"}
+    EXACT["精确 Exact"]
+    SUB["子集 Subset"]
+    SUP["超集 Superset"]
+    DIST["距离 Distance"]
+    SCORE["计算得分 / 距离"]
+    OUT["带评分的匹配结果"]
+    IN --> OPT
+    OPT --> MODE
+    MODE --> EXACT
+    MODE --> SUB
+    MODE --> SUP
+    MODE --> DIST
+    EXACT --> SCORE
+    SUB --> SCORE
+    SUP --> SCORE
+    DIST --> SCORE
+    SCORE --> OUT
+```
+
 ## 完整示例
 
 ```go

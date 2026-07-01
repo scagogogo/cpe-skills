@@ -2,6 +2,32 @@
 
 本页面描述了CPE库与美国国家漏洞数据库(NVD)的集成功能，包括数据下载、更新和漏洞查询。
 
+下图展示了 NVD 数据流：下载并解析数据源，将结果写入缓存，基于缓存查询漏洞，更新器负责检查并应用新数据。
+
+```mermaid
+sequenceDiagram
+    participant App as "客户端 App"
+    participant Client as "NVDClient"
+    participant API as "NVD API"
+    participant Cache as "CacheManager 缓存"
+
+    App->>Client: DownloadCPEDictionary / DownloadCVEData
+    Client->>API: HTTP 请求 (数据源)
+    API-->>Client: 原始数据源
+    Client->>Client: 解析响应
+    Client->>Cache: 存储解析后的数据
+
+    App->>Client: QueryVulnerabilities / GetCVEDetails
+    Client->>Cache: 查找
+    Cache-->>Client: 缓存结果
+    Client-->>App: 漏洞 / CVE 详情
+
+    App->>Client: CheckForUpdates
+    Client->>API: 查询最新时间戳
+    API-->>Client: 最后修改信息
+    Client->>Cache: NVDUpdater 应用更新
+```
+
 ## NVD客户端
 
 ### NVDClient

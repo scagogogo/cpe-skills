@@ -6,6 +6,23 @@
 
 Well-Formed Name (WFN) 是CPE的规范内部表示格式，提供了一种标准化的方式来表示CPE组件，使匹配和比较操作更加高效和可靠。
 
+WFN 对象是一个中心转换枢纽：任意 CPE 表示都可以转换为 WFN，WFN 也可以序列化回任意格式。WFN 对象之间还可以直接进行匹配。
+
+```mermaid
+flowchart LR
+    FromCPE["FromCPE"] --> WFN
+    From23["FromCPE23String"] --> WFN
+    From22["FromCPE22String"] --> WFN
+
+    WFN["WFN 对象 (规范形式)"]
+
+    WFN --> ToCPE["ToCPE"]
+    WFN --> To23["ToCPE23String"]
+    WFN --> To22["ToCPE22String"]
+
+    WFN -. "WFNMatch (WFN 间匹配)" .- WFN
+```
+
 ### WFN结构
 
 ```go

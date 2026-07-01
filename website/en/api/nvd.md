@@ -2,6 +2,32 @@
 
 The CPE library provides comprehensive integration with the National Vulnerability Database (NVD), including downloading CPE feeds, parsing vulnerability data, and mapping CPEs to CVEs.
 
+The sequence below shows the NVD data flow: feeds are downloaded and parsed, results are cached, vulnerabilities are queried against the cache, and the updater checks for and applies new data.
+
+```mermaid
+sequenceDiagram
+    participant App as "Client App"
+    participant Client as "NVDClient"
+    participant API as "NVD API"
+    participant Cache as "CacheManager"
+
+    App->>Client: DownloadCPEDictionary / DownloadCVEData
+    Client->>API: HTTP request (feeds)
+    API-->>Client: raw feed data
+    Client->>Client: parse response
+    Client->>Cache: store parsed data
+
+    App->>Client: QueryVulnerabilities / GetCVEDetails
+    Client->>Cache: lookup
+    Cache-->>Client: cached results
+    Client-->>App: vulnerabilities / CVE details
+
+    App->>Client: CheckForUpdates
+    Client->>API: query latest timestamp
+    API-->>Client: last-modified info
+    Client->>Cache: NVDUpdater applies updates
+```
+
 ## NVD Data Types
 
 ### NVDCPEData

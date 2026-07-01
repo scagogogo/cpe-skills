@@ -6,6 +6,23 @@ This example demonstrates how to use CPE Applicability Language for expressing c
 
 CPE Applicability Language allows you to create sophisticated expressions that define when a particular piece of information (like a vulnerability) applies to a system. It supports logical operators (AND, OR, NOT) and complex nested conditions.
 
+An applicability expression is parsed into a logical expression tree. The diagram below shows how a rule like `(CPE_A AND CPE_B) OR (NOT CPE_C)` is represented: an `OR` root combines an `AND` branch and a `NOT` branch, with concrete CPE names as the leaves.
+
+```mermaid
+flowchart TD
+    ROOT{"OR"}
+    AND_NODE{"AND"}
+    NOT_NODE{"NOT"}
+    A["CPE_A: windows 10"]
+    B["CPE_B: internet_explorer"]
+    C["CPE_C: windows_update kb5005565"]
+    ROOT --> AND_NODE
+    ROOT --> NOT_NODE
+    AND_NODE --> A
+    AND_NODE --> B
+    NOT_NODE --> C
+```
+
 ## Complete Example
 
 ```go

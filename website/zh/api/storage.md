@@ -2,6 +2,36 @@
 
 本页面描述了CPE库中用于数据持久化的存储接口和实现，包括文件存储、内存存储等多种存储后端。
 
+下面的类图展示了存储体系结构：`FileStorage` 与 `MemoryStorage` 实现 `Storage` 接口，而 `StorageManager` 组合了一个主存储后端和一个可选的缓存后端。
+
+```mermaid
+classDiagram
+    class Storage {
+        <<interface>>
+        +Initialize() error
+        +Close() error
+        +Store(cpe) error
+        +Retrieve(id) CPE
+        +Search(query) CPE
+    }
+    class FileStorage {
+        +string BaseDir
+        +bool EnableCache
+    }
+    class MemoryStorage {
+        +Store(cpe) error
+    }
+    class StorageManager {
+        +Storage Primary
+        +Storage Cache
+        +bool CacheEnabled
+        +SetCache(cache)
+    }
+    Storage <|.. FileStorage
+    Storage <|.. MemoryStorage
+    StorageManager o-- Storage : "主存储 + 缓存"
+```
+
 ## 存储接口
 
 ### Storage

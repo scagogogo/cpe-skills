@@ -2,6 +2,20 @@
 
 The CPE library provides comprehensive parsing capabilities for both CPE 2.2 and CPE 2.3 formats, converting string representations into structured `CPE` objects.
 
+The diagram below illustrates how parsing and formatting are inverse operations, and how `ConvertCpe22ToCpe23` bridges the two string formats:
+
+```mermaid
+flowchart LR
+    Str23["CPE 2.3 String"]
+    Str22["CPE 2.2 String"]
+    Obj["CPE Object"]
+    Str23 -- "ParseCpe23" --> Obj
+    Str22 -- "ParseCpe22" --> Obj
+    Obj -- "FormatCpe23" --> Str23
+    Obj -- "FormatCpe22" --> Str22
+    Str22 -- "ConvertCpe22ToCpe23" --> Str23
+```
+
 ## CPE 2.3 Parsing
 
 ### ParseCpe23

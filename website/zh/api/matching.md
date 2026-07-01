@@ -2,6 +2,25 @@
 
 本页面描述了CPE库中用于比较和匹配CPE对象的各种算法和函数。
 
+下图展示了高级匹配的流程：两个 CPE 在四种模式之一下进行比较，所选模式决定返回布尔判定还是相似度得分。
+
+```mermaid
+flowchart TD
+    Start["两个 CPE (criteria, target)"]
+    Mode{"选择 MatchMode"}
+    Exact["精确: 各字段全等"]
+    Subset["子集: target 落在 criteria 内"]
+    Superset["超集: criteria 落在 target 内"]
+    Distance["距离: 计算相似度得分"]
+    Bool["返回 bool"]
+    Score["得分与 ScoreThreshold 比较"]
+    Start --> Mode
+    Mode -- "exact" --> Exact --> Bool
+    Mode -- "subset" --> Subset --> Bool
+    Mode -- "superset" --> Superset --> Bool
+    Mode -- "distance" --> Distance --> Score --> Bool
+```
+
 ## 基本匹配函数
 
 ### Match

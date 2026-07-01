@@ -2,6 +2,43 @@
 
 本页面描述了CPE库中用于处理CPE集合的功能，包括集合创建、操作、过滤和分析。
 
+下面的类图按用途对 `CPESet` 的方法进行分组：创建、基础操作、集合运算与过滤：
+
+```mermaid
+classDiagram
+    class CPESet {
+        +NewCPESet() CPESet
+        +NewCPESetFromSlice() CPESet
+        +NewCPESetFromStrings() CPESet
+        +Add() bool
+        +Remove() bool
+        +Contains() bool
+        +Size() int
+        +Clear()
+        +Union() CPESet
+        +Intersection() CPESet
+        +Difference() CPESet
+        +SymmetricDifference() CPESet
+        +Filter() CPESet
+        +FilterByVendor() CPESet
+        +FilterByProduct() CPESet
+        +FilterByPart() CPESet
+    }
+    note for CPESet "创建: NewCPESet / NewCPESetFromSlice / NewCPESetFromStrings\n基础操作: Add / Remove / Contains\n集合运算: Union / Intersection / Difference\n过滤: Filter / FilterByVendor / FilterByProduct"
+```
+
+下图展示了两个输入集合 A、B 上的三种核心集合运算：
+
+```mermaid
+flowchart LR
+    A["集合 A"] --> U["并集 (A 或 B)"]
+    B["集合 B"] --> U
+    A --> I["交集 (A 且 B)"]
+    B --> I
+    A --> D["差集 (A 去除 B)"]
+    B --> D
+```
+
 ## CPE集合
 
 ### CPESet

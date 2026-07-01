@@ -2,6 +2,49 @@
 
 The CPE library provides a comprehensive error handling system with structured error types for different failure scenarios.
 
+The class diagram below shows how `CPEError` carries an `ErrorType` field, and how each `NewXxxError` constructor is paired with an `IsXxxError` checker:
+
+```mermaid
+classDiagram
+    class CPEError {
+        +ErrorType Type
+        +string Message
+        +string CPEString
+        +error Err
+        +Error() string
+        +Unwrap() error
+    }
+    class ErrorType {
+        <<enumeration>>
+        ErrorTypeParsingFailed
+        ErrorTypeInvalidFormat
+        ErrorTypeInvalidPart
+        ErrorTypeInvalidAttribute
+        ErrorTypeNotFound
+        ErrorTypeOperationFailed
+    }
+    class Constructors {
+        +NewParsingError()
+        +NewInvalidFormatError()
+        +NewInvalidPartError()
+        +NewInvalidAttributeError()
+        +NewNotFoundError()
+        +NewOperationFailedError()
+    }
+    class Checkers {
+        +IsParsingError() bool
+        +IsInvalidFormatError() bool
+        +IsInvalidPartError() bool
+        +IsInvalidAttributeError() bool
+        +IsNotFoundError() bool
+        +IsOperationFailedError() bool
+    }
+    CPEError o-- ErrorType : Type field
+    Constructors ..> CPEError : create
+    Checkers ..> CPEError : inspect
+    Constructors ..> Checkers : paired NewXxx / IsXxx
+```
+
 ## Error Types
 
 ### ErrorType

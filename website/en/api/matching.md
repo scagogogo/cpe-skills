@@ -2,6 +2,25 @@
 
 The CPE library provides sophisticated matching capabilities for comparing CPE objects, including basic matching, advanced matching with various algorithms, and version comparison.
 
+The flowchart below shows the advanced matching flow: two CPEs are compared under one of four modes, and the selected mode determines whether a boolean verdict or a similarity score is returned.
+
+```mermaid
+flowchart TD
+    Start["Two CPEs (criteria, target)"]
+    Mode{"Select MatchMode"}
+    Exact["Exact: every field equal"]
+    Subset["Subset: target within criteria"]
+    Superset["Superset: criteria within target"]
+    Distance["Distance: similarity score"]
+    Bool["Return bool"]
+    Score["Score vs ScoreThreshold"]
+    Start --> Mode
+    Mode -- "exact" --> Exact --> Bool
+    Mode -- "subset" --> Subset --> Bool
+    Mode -- "superset" --> Superset --> Bool
+    Mode -- "distance" --> Distance --> Score --> Bool
+```
+
 ## Basic Matching
 
 ### CPE.Match

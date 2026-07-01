@@ -10,6 +10,33 @@ CPE matching allows you to compare CPE objects to determine if they represent th
 - **Advanced Matching**: Fuzzy matching, regex patterns, and scoring
 - **Version Comparison**: Semantic version comparison and ranges
 
+The diagram below shows how two CPEs are compared component by component to derive their relationship:
+
+```mermaid
+flowchart TD
+    Start(["Source CPE + Target CPE"]) --> Loop["Compare each component"]
+    Loop --> Check{"Component values"}
+    Check -->|"wildcard * or -"| Wild["Treated as match / any"]
+    Check -->|"exact value"| Exact["Require identical value"]
+    Wild --> Agg["Aggregate results"]
+    Exact --> Agg
+    Agg --> Rel{"Overall relation"}
+    Rel --> Equal["Equal"]
+    Rel --> Subset["Subset"]
+    Rel --> Superset["Superset"]
+    Rel --> Disjoint["Disjoint"]
+```
+
+The next diagram summarizes how to pick a matching mode:
+
+```mermaid
+flowchart LR
+    Need(["What do you need?"]) --> A["Exact: all fields identical"]
+    Need --> B["Subset: target narrower than criteria"]
+    Need --> C["Superset: target broader than criteria"]
+    Need --> D["Distance: similarity score above threshold"]
+```
+
 ## Complete Example
 
 ```go

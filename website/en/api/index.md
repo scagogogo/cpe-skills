@@ -17,6 +17,35 @@ The library is organized into several key areas:
 - **[Sets](./sets.md)** - CPE set operations
 - **[Errors](./errors.md)** - Error types and handling
 
+The following mind map gives a bird's-eye view of how the API modules are organized:
+
+```mermaid
+mindmap
+  root(("CPE Skills API"))
+    Core Types
+      CPE
+      WFN
+      Part
+    Parsing
+      ParseCpe23
+      ParseCpe22
+      Convert
+    Matching
+      Exact
+      Subset
+      Superset
+      Distance
+    Storage
+      FileStorage
+      MemoryStorage
+    Dictionary
+    NVD Integration
+    WFN
+    Validation
+    Sets
+    Errors
+```
+
 ## Quick Reference
 
 ### Core Functions

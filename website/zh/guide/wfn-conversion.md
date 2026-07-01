@@ -6,6 +6,16 @@
 
 Well-Formed Name (WFN) 是CPE的内部标准表示格式，提供了一种规范化的方式来表示CPE组件，使匹配和比较操作更加高效和可靠。
 
+下图以 WFN 为中心展示了三种格式的互转，绑定（bind）与解绑（unbind）操作在 WFN 与各外部表示之间转换：
+
+```mermaid
+flowchart LR
+    URI["CPE 2.2 URI"] -->|"解绑 unbind"| WFN["WFN（Well-Formed Name）"]
+    WFN -->|"绑定 bind"| URI
+    WFN -->|"绑定 bind"| FS["CPE 2.3 格式化字符串"]
+    FS -->|"解绑 unbind"| WFN
+```
+
 ## 完整示例
 
 ```go

@@ -2,6 +2,23 @@
 
 The CPE library provides comprehensive support for Well-Formed Names (WFN), which are the canonical internal representation of CPE names as defined in the CPE specification.
 
+The WFN object acts as a central conversion hub: any CPE representation can be turned into a WFN, and a WFN can be serialized back into any format. WFN objects can also be matched directly against each other.
+
+```mermaid
+flowchart LR
+    FromCPE["FromCPE"] --> WFN
+    From23["FromCPE23String"] --> WFN
+    From22["FromCPE22String"] --> WFN
+
+    WFN["WFN object (canonical form)"]
+
+    WFN --> ToCPE["ToCPE"]
+    WFN --> To23["ToCPE23String"]
+    WFN --> To22["ToCPE22String"]
+
+    WFN -. "WFNMatch (WFN-to-WFN matching)" .- WFN
+```
+
 ## WFN Structure
 
 ### WFN

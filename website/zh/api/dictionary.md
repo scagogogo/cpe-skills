@@ -2,6 +2,45 @@
 
 本页面描述了CPE库中用于管理CPE字典的功能，包括字典的加载、搜索、验证和维护。
 
+下图展示了 CPE 字典的生命周期：从解析原始 XML，到内存中的各类操作，再到合并与导出。
+
+```mermaid
+flowchart TD
+    subgraph "解析"
+        XML["NVD XML 数据源"]
+        Parse["ParseDictionary / FromFile"]
+        XML --> Parse
+    end
+
+    Parse --> Dict["CPEDictionary (内存对象)"]
+
+    subgraph "操作"
+        Search["Search (搜索条目)"]
+        Filter["Filter (条件过滤)"]
+        Stats["Stats (统计聚合)"]
+    end
+
+    Dict --> Search
+    Dict --> Filter
+    Dict --> Stats
+
+    subgraph "合并"
+        Merge["Merge (合并多个字典)"]
+    end
+
+    Search --> Merge
+    Filter --> Merge
+    Dict --> Merge
+
+    subgraph "输出"
+        Export["Export (导出)"]
+        Store["存储 / 文件"]
+    end
+
+    Merge --> Export
+    Export --> Store
+```
+
 ## CPE字典结构
 
 ### CPEDictionary

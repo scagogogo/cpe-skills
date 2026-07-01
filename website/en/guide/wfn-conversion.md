@@ -6,6 +6,16 @@ This example demonstrates how to work with Well-Formed Names (WFN), the internal
 
 Well-Formed Names (WFN) are the canonical internal representation of CPE names. They provide a standardized way to represent CPE components that makes matching and comparison operations more efficient and reliable.
 
+The diagram below shows WFN as the hub of the three formats, with bind and unbind operations converting to and from each external representation:
+
+```mermaid
+flowchart LR
+    URI["CPE 2.2 URI"] -->|"unbind"| WFN["WFN (Well-Formed Name)"]
+    WFN -->|"bind"| URI
+    WFN -->|"bind"| FS["CPE 2.3 formatted string"]
+    FS -->|"unbind"| WFN
+```
+
 ## Complete Example
 
 ```go

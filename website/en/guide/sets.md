@@ -6,6 +6,41 @@ This example demonstrates how to work with collections of CPE objects using the 
 
 CPE Sets provide a powerful way to manage collections of CPE objects, perform set operations (union, intersection, difference), and apply bulk transformations and filters.
 
+The diagram below shows how two CPE sets A and B combine under the four set operations, each producing its own result set.
+
+```mermaid
+flowchart LR
+    A["Set A"]
+    B["Set B"]
+    U["Union: A or B"]
+    I["Intersection: A and B"]
+    D["Difference: A minus B"]
+    S["SymmetricDifference: A xor B"]
+    A --> U
+    B --> U
+    A --> I
+    B --> I
+    A --> D
+    B --> D
+    A --> S
+    B --> S
+```
+
+Sets are typically processed through a pipeline: create the set, add or remove elements, apply set operations, filter, and finally run statistical analysis.
+
+```mermaid
+flowchart TD
+    C["Create set"]
+    M["Add / Remove elements"]
+    O["Set operations"]
+    F["Filter"]
+    ST["Statistical analysis"]
+    C --> M
+    M --> O
+    O --> F
+    F --> ST
+```
+
 ## Complete Example
 
 ```go

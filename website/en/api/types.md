@@ -2,6 +2,46 @@
 
 This section documents the core data structures and type definitions used throughout the CPE library.
 
+The class diagram below shows how the core types relate to each other. A `CPE` can be converted to a `WFN`, while a `CPEDictionary` holds many `CPEItem` entries.
+
+```mermaid
+classDiagram
+    class CPE {
+        +string Cpe23
+        +Part Part
+        +Vendor Vendor
+        +Product ProductName
+        +Version Version
+        +Update Update
+        +Edition Edition
+        +Language Language
+        +string SoftwareEdition
+        +string TargetSoftware
+        +string TargetHardware
+        +string Other
+        +Match(other) bool
+        +ToWFN() WFN
+    }
+    class WFN {
+        +string Part
+        +string Vendor
+        +string Product
+        +string Version
+        +String() string
+    }
+    class CPEDictionary {
+        +string SchemaVersion
+        +Items CPEItem
+    }
+    class CPEItem {
+        +string Name
+        +string Title
+        +bool Deprecated
+    }
+    CPE ..> WFN : "converts to"
+    CPEDictionary "1" --> "*" CPEItem : "contains"
+```
+
 ## CPE Structure
 
 The `CPE` struct is the central data structure representing a Common Platform Enumeration entry.

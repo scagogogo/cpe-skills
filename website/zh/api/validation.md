@@ -2,6 +2,34 @@
 
 本页面描述了CPE库中用于验证CPE数据完整性和正确性的各种验证功能。
 
+下图展示了验证流程：从单字段的组件级验证，逐级递进到 CPE 整体验证、格式验证、规范化，最后到批量验证：
+
+```mermaid
+flowchart TD
+    Start(["验证入口"]) --> Comp["组件级验证"]
+    Comp --> C1["ValidatePart"]
+    Comp --> C2["ValidateVendor"]
+    Comp --> C3["ValidateProduct"]
+    Comp --> C4["ValidateVersion"]
+    C1 --> CPE["CPE 整体验证"]
+    C2 --> CPE
+    C3 --> CPE
+    C4 --> CPE
+    CPE --> V1["ValidateCPE (对象)"]
+    CPE --> V2["ValidateCPEString"]
+    V1 --> Fmt["格式验证"]
+    V2 --> Fmt
+    Fmt --> F1["IsCPE23Format"]
+    Fmt --> F2["IsCPE22Format"]
+    F1 --> Norm["规范化"]
+    F2 --> Norm
+    Norm --> N1["NormalizeComponent"]
+    Norm --> N2["NormalizeCPE"]
+    N1 --> Batch["批量验证"]
+    N2 --> Batch
+    Batch --> B1["ValidateCPEList"]
+```
+
 ## 基本验证
 
 ### ValidateCPE

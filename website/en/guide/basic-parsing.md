@@ -8,6 +8,28 @@ The CPE library supports parsing Common Platform Enumeration strings in two stan
 - **CPE 2.3**: `cpe:2.3:part:vendor:product:version:update:edition:language:sw_edition:target_sw:target_hw:other`
 - **CPE 2.2**: `cpe:/part:vendor:product:version:update:edition:language`
 
+The diagram below shows how a raw CPE string flows through the parser to become a structured CPE object:
+
+```mermaid
+flowchart TD
+    Start(["CPE string input"]) --> Prefix{"Detect prefix"}
+    Prefix -->|"cpe:2.3:"| FS["CPE 2.3 formatted string"]
+    Prefix -->|"cpe:/"| URI["CPE 2.2 URI"]
+    FS --> Split["Split on colon into components"]
+    URI --> Split
+    Split --> Unescape["Unescape special characters"]
+    Unescape --> Build["Build CPE object (11 fields)"]
+    Build --> Fields["part / vendor / product / version / update / edition / language / sw_edition / target_sw / target_hw / other"]
+    Build --> Done(["Parsed CPE object"])
+```
+
+The next diagram shows the 13-segment ordering of a CPE 2.3 formatted string:
+
+```mermaid
+flowchart LR
+    P0["cpe"] --> P1["2.3"] --> P2["part"] --> P3["vendor"] --> P4["product"] --> P5["version"] --> P6["update"] --> P7["edition"] --> P8["language"] --> P9["sw_edition"] --> P10["target_sw"] --> P11["target_hw"] --> P12["other"]
+```
+
 ## Complete Example
 
 ```go

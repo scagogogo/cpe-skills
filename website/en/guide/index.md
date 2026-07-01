@@ -1,6 +1,23 @@
-# Examples
+# Guide
 
 This section provides practical examples demonstrating how to use the CPE library in real-world scenarios. Each example includes complete, runnable code with explanations.
+
+The mind map below gives an overview of the topics covered in this guide:
+
+```mermaid
+mindmap
+  root(("CPE Skills Guide"))
+    Parsing
+    Matching
+    WFN Conversion
+    Version Comparison
+    Applicability Language
+    Set Operations
+    Advanced Matching
+    Storage
+    NVD Integration
+    CVE Mapping
+```
 
 ## Available Examples
 

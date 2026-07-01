@@ -2,6 +2,46 @@
 
 本页面描述了CPE库中的核心数据类型和结构体，这些是使用库时需要了解的基本构建块。
 
+下面的类图展示了核心类型之间的关系：`CPE` 可以转换为 `WFN`，而 `CPEDictionary` 包含多个 `CPEItem` 条目。
+
+```mermaid
+classDiagram
+    class CPE {
+        +string Cpe23
+        +Part Part
+        +Vendor Vendor
+        +Product ProductName
+        +Version Version
+        +Update Update
+        +Edition Edition
+        +Language Language
+        +string SoftwareEdition
+        +string TargetSoftware
+        +string TargetHardware
+        +string Other
+        +Match(other) bool
+        +ToWFN() WFN
+    }
+    class WFN {
+        +string Part
+        +string Vendor
+        +string Product
+        +string Version
+        +String() string
+    }
+    class CPEDictionary {
+        +string SchemaVersion
+        +Items CPEItem
+    }
+    class CPEItem {
+        +string Name
+        +string Title
+        +bool Deprecated
+    }
+    CPE ..> WFN : "转换为"
+    CPEDictionary "1" --> "*" CPEItem : "包含"
+```
+
 ## CPE 结构体
 
 ### CPE

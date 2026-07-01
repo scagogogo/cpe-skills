@@ -9,6 +9,34 @@ The CPE library provides a flexible storage interface with multiple implementati
 - **Memory Storage**: In-memory storage for testing and temporary data
 - **Storage Manager**: Coordinated storage with primary and cache backends
 
+The following diagram shows the storage architecture and how the concrete backends relate to the `Storage` interface:
+
+```mermaid
+classDiagram
+    class Storage {
+        <<interface>>
+        +Save(cpe) error
+        +Load(id) CPE
+        +Delete(id) error
+        +List() list
+    }
+    class FileStorage {
+        +Initialize() error
+        +Close() error
+    }
+    class MemoryStorage {
+        +Initialize() error
+        +Close() error
+    }
+    class StorageManager {
+        +primary Storage
+        +cache Storage
+    }
+    Storage <|.. FileStorage
+    Storage <|.. MemoryStorage
+    StorageManager o-- Storage
+```
+
 ## Complete Example
 
 ```go

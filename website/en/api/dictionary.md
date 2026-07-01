@@ -2,6 +2,45 @@
 
 The CPE library provides comprehensive support for CPE dictionaries, including parsing NVD XML dictionaries, managing dictionary entries, and performing dictionary-based operations.
 
+The diagram below shows the lifecycle of a CPE dictionary, from parsing raw XML through in-memory operations to merging and exporting.
+
+```mermaid
+flowchart TD
+    subgraph "Parse"
+        XML["NVD XML source"]
+        Parse["ParseDictionary / FromFile"]
+        XML --> Parse
+    end
+
+    Parse --> Dict["CPEDictionary (in memory)"]
+
+    subgraph "Operate"
+        Search["Search (query entries)"]
+        Filter["Filter (predicate)"]
+        Stats["Stats (aggregate counts)"]
+    end
+
+    Dict --> Search
+    Dict --> Filter
+    Dict --> Stats
+
+    subgraph "Merge"
+        Merge["Merge (combine dictionaries)"]
+    end
+
+    Search --> Merge
+    Filter --> Merge
+    Dict --> Merge
+
+    subgraph "Output"
+        Export["Export"]
+        Store["Storage / File"]
+    end
+
+    Merge --> Export
+    Export --> Store
+```
+
 ## Dictionary Types
 
 ### CPEDictionary

@@ -8,6 +8,28 @@ CPE库支持解析两种标准格式的通用平台枚举字符串：
 - **CPE 2.3**: `cpe:2.3:part:vendor:product:version:update:edition:language:sw_edition:target_sw:target_hw:other`
 - **CPE 2.2**: `cpe:/part:vendor:product:version:update:edition:language`
 
+下图展示了原始 CPE 字符串如何经过解析器变成结构化的 CPE 对象：
+
+```mermaid
+flowchart TD
+    Start(["CPE 字符串输入"]) --> Prefix{"判断前缀"}
+    Prefix -->|"cpe:2.3:"| FS["CPE 2.3 格式化字符串"]
+    Prefix -->|"cpe:/"| URI["CPE 2.2 URI"]
+    FS --> Split["按冒号拆分组件"]
+    URI --> Split
+    Split --> Unescape["反转义特殊字符"]
+    Unescape --> Build["构建 CPE 对象（11 个字段）"]
+    Build --> Fields["部件 / 供应商 / 产品 / 版本 / 更新 / 版本号 / 语言 / 软件版本 / 目标软件 / 目标硬件 / 其他"]
+    Build --> Done(["解析完成的 CPE 对象"])
+```
+
+下图展示了 CPE 2.3 格式化字符串的 13 段顺序结构：
+
+```mermaid
+flowchart LR
+    P0["cpe"] --> P1["2.3"] --> P2["部件"] --> P3["供应商"] --> P4["产品"] --> P5["版本"] --> P6["更新"] --> P7["版本号"] --> P8["语言"] --> P9["软件版本"] --> P10["目标软件"] --> P11["目标硬件"] --> P12["其他"]
+```
+
 ## 完整示例
 
 ```go

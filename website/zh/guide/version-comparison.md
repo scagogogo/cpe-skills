@@ -6,6 +6,25 @@
 
 版本比较在处理CPE数据进行漏洞管理和软件清单时至关重要。CPE库提供了多种方法来比较版本并确定兼容性。
 
+下图展示了两个版本字符串如何逐段比较，以及比较结果如何用于范围判定：
+
+```mermaid
+flowchart TD
+    Start(["版本 A + 版本 B"]) --> Split["按分隔符拆分（. 和 -）"]
+    Split --> Loop["逐段比较"]
+    Loop --> Kind{"段类型"}
+    Kind -->|"数字段"| Num["按数值比较"]
+    Kind -->|"含字母段"| Alpha["按字典序比较"]
+    Num --> Result{"比较结果"}
+    Alpha --> Result
+    Result -->|"A < B"| Neg["返回 -1"]
+    Result -->|"A = B"| Zero["返回 0"]
+    Result -->|"A > B"| Pos["返回 1"]
+    Neg --> Range["范围判定：min <= v <= max"]
+    Zero --> Range
+    Pos --> Range
+```
+
 ## 完整示例
 
 ```go

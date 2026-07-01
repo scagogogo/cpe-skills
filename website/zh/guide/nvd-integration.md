@@ -6,6 +6,22 @@
 
 NVD集成功能允许您从官方来源获取最新的CPE字典和CVE数据，进行漏洞评估和安全分析。
 
+下图展示了 NVD 数据从下载到查询与分析的整体流转过程：
+
+```mermaid
+flowchart TD
+    A["NVD 数据源"] --> B["CPE 字典"]
+    A --> C["CVE 数据"]
+    B --> D["解析"]
+    C --> D
+    D --> E["存储 / 缓存"]
+    E --> F{"查询"}
+    F --> G["FindCVEsForCPE 按 CPE 查漏洞"]
+    F --> H["FindCPEsForCVE 按 CVE 查受影响 CPE"]
+    G --> I["漏洞分析"]
+    H --> I
+```
+
 ## 完整示例
 
 ```go

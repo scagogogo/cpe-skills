@@ -6,6 +6,32 @@ This example demonstrates sophisticated CPE matching techniques including fuzzy 
 
 Advanced matching goes beyond simple string comparison to provide intelligent matching capabilities that can handle variations, patterns, and complex matching scenarios commonly encountered in real-world applications.
 
+The diagram below outlines the advanced matching pipeline: a CPE pair enters, per-field match options control whether each field is ignored, matched exactly, or wildcarded, a matching mode is selected, a score or distance is computed, and the scored result is returned.
+
+```mermaid
+flowchart TD
+    IN["Input CPE pair"]
+    OPT["Field match options (ignore / exact / wildcard per field)"]
+    MODE{"Select matching mode"}
+    EXACT["Exact"]
+    SUB["Subset"]
+    SUP["Superset"]
+    DIST["Distance"]
+    SCORE["Compute score / distance"]
+    OUT["Match result with score"]
+    IN --> OPT
+    OPT --> MODE
+    MODE --> EXACT
+    MODE --> SUB
+    MODE --> SUP
+    MODE --> DIST
+    EXACT --> SCORE
+    SUB --> SCORE
+    SUP --> SCORE
+    DIST --> SCORE
+    SCORE --> OUT
+```
+
 ## Complete Example
 
 ```go

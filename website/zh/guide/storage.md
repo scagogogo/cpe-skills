@@ -6,6 +6,34 @@
 
 CPE存储功能提供了多种后端选项来持久化CPE数据，支持CRUD操作、批量处理、索引和查询功能。
 
+下图展示了存储架构，以及各具体后端与 `Storage` 接口之间的关系：
+
+```mermaid
+classDiagram
+    class Storage {
+        <<interface>>
+        +Save(cpe) error
+        +Load(id) CPE
+        +Delete(id) error
+        +List() list
+    }
+    class FileStorage {
+        +Initialize() error
+        +Close() error
+    }
+    class MemoryStorage {
+        +Initialize() error
+        +Close() error
+    }
+    class StorageManager {
+        +primary Storage
+        +cache Storage
+    }
+    Storage <|.. FileStorage
+    Storage <|.. MemoryStorage
+    StorageManager o-- Storage
+```
+
 ## 完整示例
 
 ```go

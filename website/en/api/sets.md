@@ -2,6 +2,43 @@
 
 The CPE library provides powerful set operations for managing collections of CPE objects, including union, intersection, difference, and advanced filtering capabilities.
 
+The class diagram below groups the `CPESet` methods by purpose — creating sets, basic operations, set algebra, and filtering:
+
+```mermaid
+classDiagram
+    class CPESet {
+        +NewCPESet() CPESet
+        +FromArray() CPESet
+        +FromStrings() CPESet
+        +Add() CPESet
+        +Remove() bool
+        +Contains() bool
+        +Size() int
+        +Clear()
+        +Union() CPESet
+        +Intersection() CPESet
+        +Difference() CPESet
+        +SymmetricDifference() CPESet
+        +Filter() CPESet
+        +FilterByVendor() CPESet
+        +FilterByProduct() CPESet
+        +FilterByPart() CPESet
+    }
+    note for CPESet "Creating: NewCPESet / FromArray / FromStrings\nBasic: Add / Remove / Contains\nSet ops: Union / Intersection / Difference\nFiltering: Filter / FilterByVendor / FilterByProduct"
+```
+
+And the flow below illustrates the three core set operations over two input sets A and B:
+
+```mermaid
+flowchart LR
+    A["Set A"] --> U["Union (A or B)"]
+    B["Set B"] --> U
+    A --> I["Intersection (A and B)"]
+    B --> I
+    A --> D["Difference (A minus B)"]
+    B --> D
+```
+
 ## CPESet Structure
 
 ### CPESet

@@ -2,6 +2,20 @@
 
 本页面描述了CPE库中用于解析CPE字符串的函数和方法，包括CPE 2.2和2.3格式的解析功能。
 
+下图展示了解析与格式化互为逆过程，以及 `ConvertCpe22ToCpe23` 如何在两种字符串格式之间转换：
+
+```mermaid
+flowchart LR
+    Str23["CPE 2.3 字符串"]
+    Str22["CPE 2.2 字符串"]
+    Obj["CPE 对象"]
+    Str23 -- "ParseCpe23" --> Obj
+    Str22 -- "ParseCpe22" --> Obj
+    Obj -- "FormatCpe23" --> Str23
+    Obj -- "FormatCpe22" --> Str22
+    Str22 -- "ConvertCpe22ToCpe23" --> Str23
+```
+
 ## 主要解析函数
 
 ### ParseCpe23

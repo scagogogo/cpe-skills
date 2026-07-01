@@ -2,6 +2,53 @@
 
 本页面描述了CPE库中的错误处理机制，包括错误类型、错误检查和错误恢复策略。
 
+下面的类图展示了 `CPEError` 如何携带 `ErrorType` 字段，以及构造函数（NewXxx）与检查函数（IsXxx）成对存在的关系：
+
+```mermaid
+classDiagram
+    class CPEError {
+        +ErrorType Type
+        +string Message
+        +string Field
+        +string Value
+        +error Cause
+        +time.Time Timestamp
+        +Error() string
+        +GetType() ErrorType
+        +Is(ErrorType) bool
+        +Wrap(error) CPEError
+    }
+    class ErrorType {
+        <<enumeration>>
+        ErrorTypeInvalidFormat
+        ErrorTypeInvalidPart
+        ErrorTypeInvalidVendor
+        ErrorTypeInvalidProduct
+        ErrorTypeInvalidVersion
+        ErrorTypeParsingError
+        ErrorTypeValidationError
+        ErrorTypeStorageError
+        ErrorTypeNetworkError
+        ErrorTypePermissionError
+    }
+    class 构造函数 {
+        +NewCPEError()
+        +NewFieldError()
+        +NewParsingError()
+        +NewValidationError()
+    }
+    class 检查函数 {
+        +IsFormatError() bool
+        +IsParsingError() bool
+        +IsValidationError() bool
+        +IsStorageError() bool
+        +IsNetworkError() bool
+    }
+    CPEError o-- ErrorType : Type 字段
+    构造函数 ..> CPEError : 创建
+    检查函数 ..> CPEError : 判定类型
+```
+
 ## 错误类型
 
 ### CPEError

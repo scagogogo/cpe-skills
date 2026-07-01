@@ -2,6 +2,36 @@
 
 The CPE library provides a flexible storage interface with multiple implementations for persisting CPE data, CVE information, and dictionaries.
 
+The class diagram below shows the storage hierarchy: `FileStorage` and `MemoryStorage` implement the `Storage` interface, and `StorageManager` composes a primary backend with an optional cache backend.
+
+```mermaid
+classDiagram
+    class Storage {
+        <<interface>>
+        +Initialize() error
+        +Close() error
+        +StoreCPE(cpe) error
+        +RetrieveCPE(id) CPE
+        +SearchCPE(criteria, options) CPE
+    }
+    class FileStorage {
+        +string BaseDir
+        +bool EnableCache
+    }
+    class MemoryStorage {
+        +Initialize() error
+    }
+    class StorageManager {
+        +Storage Primary
+        +Storage Cache
+        +bool CacheEnabled
+        +SetCache(cache)
+    }
+    Storage <|.. FileStorage
+    Storage <|.. MemoryStorage
+    StorageManager o-- Storage : "primary + cache"
+```
+
 ## Storage Interface
 
 ### Storage

@@ -6,6 +6,23 @@
 
 CPE适用性语言允许您创建复杂的表达式，定义特定信息（如漏洞）何时适用于系统。它支持逻辑运算符（AND、OR、NOT）和复杂的嵌套条件。
 
+适用性表达式会被解析成一棵逻辑表达式树。下图展示了形如 `(CPE_A AND CPE_B) OR (NOT CPE_C)` 的规则如何表示：根节点为 `OR`，组合一个 `AND` 分支和一个 `NOT` 分支，叶子节点是具体的 CPE 名称。
+
+```mermaid
+flowchart TD
+    ROOT{"OR 或"}
+    AND_NODE{"AND 与"}
+    NOT_NODE{"NOT 非"}
+    A["CPE_A: windows 10"]
+    B["CPE_B: internet_explorer"]
+    C["CPE_C: windows_update kb5005565"]
+    ROOT --> AND_NODE
+    ROOT --> NOT_NODE
+    AND_NODE --> A
+    AND_NODE --> B
+    NOT_NODE --> C
+```
+
 ## 完整示例
 
 ```go

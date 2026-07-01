@@ -2,6 +2,34 @@
 
 The CPE library provides comprehensive validation functions to ensure CPE data integrity and compliance with CPE specifications.
 
+The diagram below shows the validation pipeline, from single-field component checks up through whole-CPE, format, normalization, and batch validation:
+
+```mermaid
+flowchart TD
+    Start(["Validation entry"]) --> Comp["Component validation"]
+    Comp --> C1["ValidateVendor"]
+    Comp --> C2["ValidateProduct"]
+    Comp --> C3["ValidateVersion"]
+    Comp --> C4["ValidateComponent"]
+    C1 --> CPE["CPE validation"]
+    C2 --> CPE
+    C3 --> CPE
+    C4 --> CPE
+    CPE --> V1["ValidateCPE (object)"]
+    CPE --> V2["ValidateCPEString"]
+    V1 --> Fmt["Format validation"]
+    V2 --> Fmt
+    Fmt --> F1["ValidateCPE23Format"]
+    Fmt --> F2["ValidateCPE22Format"]
+    F1 --> Norm["Normalization"]
+    F2 --> Norm
+    Norm --> N1["NormalizeComponent"]
+    Norm --> N2["NormalizeCPE"]
+    N1 --> Batch["Batch validation"]
+    N2 --> Batch
+    Batch --> B1["ValidateCPEList"]
+```
+
 ## Component Validation
 
 ### ValidateComponent

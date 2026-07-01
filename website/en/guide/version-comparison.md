@@ -6,6 +6,25 @@ This example demonstrates how to compare versions in CPE strings and perform ver
 
 Version comparison is crucial when working with CPE data for vulnerability management and software inventory. The CPE library provides several methods to compare versions and determine compatibility.
 
+The diagram below shows how two version strings are compared segment by segment and how the result feeds range checks:
+
+```mermaid
+flowchart TD
+    Start(["Version A + Version B"]) --> Split["Split on separators (. and -)"]
+    Split --> Loop["Compare segment by segment"]
+    Loop --> Kind{"Segment type"}
+    Kind -->|"numeric"| Num["Compare as numbers"]
+    Kind -->|"contains letters"| Alpha["Compare lexicographically"]
+    Num --> Result{"Result"}
+    Alpha --> Result
+    Result -->|"A < B"| Neg["Return -1"]
+    Result -->|"A = B"| Zero["Return 0"]
+    Result -->|"A > B"| Pos["Return 1"]
+    Neg --> Range["Range check: min <= v <= max"]
+    Zero --> Range
+    Pos --> Range
+```
+
 ## Complete Example
 
 ```go

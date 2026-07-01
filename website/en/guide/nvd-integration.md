@@ -6,6 +6,22 @@ This example demonstrates how to integrate with the National Vulnerability Datab
 
 The National Vulnerability Database (NVD) provides comprehensive CPE dictionaries and vulnerability data. This integration allows you to download official CPE data, keep it updated, and use it for vulnerability assessment.
 
+The following diagram shows how NVD data flows from download through query and analysis:
+
+```mermaid
+flowchart TD
+    A["NVD Feeds"] --> B["CPE Dictionary"]
+    A --> C["CVE Data"]
+    B --> D["Parse"]
+    C --> D
+    D --> E["Storage / Cache"]
+    E --> F{"Query"}
+    F --> G["FindCVEsForCPE"]
+    F --> H["FindCPEsForCVE"]
+    G --> I["Vulnerability Analysis"]
+    H --> I
+```
+
 ## Complete Example
 
 ```go

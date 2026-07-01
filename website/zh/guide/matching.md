@@ -6,6 +6,33 @@
 
 CPE匹配是识别和比较软件组件的核心功能。本示例展示了各种匹配技术，从简单的字符串比较到复杂的模式匹配。
 
+下图展示了两个 CPE 如何逐组件比较并得出它们之间的关系：
+
+```mermaid
+flowchart TD
+    Start(["源 CPE + 目标 CPE"]) --> Loop["逐组件比较"]
+    Loop --> Check{"组件取值"}
+    Check -->|"通配符 * 或 -"| Wild["视为匹配 / 任意"]
+    Check -->|"精确值"| Exact["要求取值完全相同"]
+    Wild --> Agg["汇总比较结果"]
+    Exact --> Agg
+    Agg --> Rel{"整体关系"}
+    Rel --> Equal["相等"]
+    Rel --> Subset["子集"]
+    Rel --> Superset["超集"]
+    Rel --> Disjoint["不相交"]
+```
+
+下图总结了如何选择匹配模式：
+
+```mermaid
+flowchart LR
+    Need(["你的需求是什么？"]) --> A["精确：所有字段完全相同"]
+    Need --> B["子集：目标比条件更窄"]
+    Need --> C["超集：目标比条件更宽"]
+    Need --> D["距离：相似度分数高于阈值"]
+```
+
 ## 完整示例
 
 ```go
