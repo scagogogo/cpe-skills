@@ -604,6 +604,6 @@ func truncateString(s string, maxLen int) string {
 
 ## 下一步
 
-- 了解[CVE映射](../examples/cve-mapping.md)来关联CPE和漏洞
+- 了解[CVE映射](../guide/cve-mapping.md)来关联CPE和漏洞
 - 学习[存储接口](./storage.md)来持久化NVD数据
 - 探索[字典管理](./dictionary.md)来管理下载的CPE字典

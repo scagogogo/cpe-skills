@@ -116,4 +116,4 @@ func main() {
 - 探索[核心类型](./types.md)以了解数据结构
 - 学习[解析](./parsing.md)CPE字符串
 - 发现[匹配](./matching.md)功能
-- 查看实用的[示例](/zh/examples/)
+- 查看实用的[指南](/zh/guide/)

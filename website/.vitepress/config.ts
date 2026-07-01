@@ -86,7 +86,6 @@ export default withMermaid(
     title: 'cpe-skills',
     description: 'A comprehensive CPE (Common Platform Enumeration) toolkit for cybersecurity',
     base: '/cpe-skills/',
-    ignoreDeadLinks: true,
     cleanUrls: true,
 
     head: [

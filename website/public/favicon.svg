@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="cpe-skills">
+  <title>cpe-skills</title>
+  <!-- Shield: security / vulnerability domain -->
+  <path d="M32 3 L57 13 V31 C57 46 46 57 32 61 C18 57 7 46 7 31 V13 Z" fill="#3aa675"/>
+  <path d="M32 8 L52 16 V31 C52 43 43 52 32 56 C21 52 12 43 12 31 V16 Z" fill="#2f8c62"/>
+  <!-- Check mark: validated / matched CPE -->
+  <path d="M21 32 l7 8 l16 -18" fill="none" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
