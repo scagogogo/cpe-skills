@@ -1,31 +1,29 @@
 # NVD Integration
 
-The CPE library provides comprehensive integration with the National Vulnerability Database (NVD), including downloading CPE feeds, parsing vulnerability data, and mapping CPEs to CVEs.
+The CPE library provides integration with the National Vulnerability Database (NVD): it downloads the official CPE dictionary and CPE match feeds, caches them locally, and lets you map CPEs to CVEs (and back) from the parsed data.
 
-The sequence below shows the NVD data flow: feeds are downloaded and parsed, results are cached, vulnerabilities are queried against the cache, and the updater checks for and applies new data.
+The sequence below shows the NVD data flow: feeds are downloaded (or read from the local cache) and parsed into an `NVDCPEData` value; CPE-to-CVE lookups are then served from the in-memory match maps.
 
 ```mermaid
 sequenceDiagram
     participant App as "Client App"
-    participant Client as "NVDClient"
-    participant API as "NVD API"
-    participant Cache as "CacheManager"
+    participant DL as "Download functions"
+    participant Cache as "Cache Dir"
+    participant NVD as "NVD Feeds"
 
-    App->>Client: DownloadCPEDictionary / DownloadCVEData
-    Client->>API: HTTP request (feeds)
-    API-->>Client: raw feed data
-    Client->>Client: parse response
-    Client->>Cache: store parsed data
+    App->>DL: DownloadAllNVDData(options)
+    DL->>Cache: check cached feeds
+    alt cache fresh
+        Cache-->>DL: cached feed data
+    else cache miss or expired
+        DL->>NVD: HTTP GET (CPE dict + CPE match)
+        NVD-->>DL: gzip feed data
+        DL->>Cache: store to cache dir
+    end
+    DL-->>App: *NVDCPEData
 
-    App->>Client: QueryVulnerabilities / GetCVEDetails
-    Client->>Cache: lookup
-    Cache-->>Client: cached results
-    Client-->>App: vulnerabilities / CVE details
-
-    App->>Client: CheckForUpdates
-    Client->>API: query latest timestamp
-    API-->>Client: last-modified info
-    Client->>Cache: NVDUpdater applies updates
+    App->>DL: FindCVEsForCPE / FindCPEsForCVE
+    DL-->>App: CVE IDs / affected CPEs
 ```
 
 ## NVD Data Types
@@ -34,40 +32,24 @@ sequenceDiagram
 
 ```go
 type NVDCPEData struct {
-    Dictionary *CPEDictionary // Official CPE dictionary
-    MatchData  *CPEMatchData  // CPE match data
-    LastUpdate time.Time      // Last update timestamp
+    CPEDictionary *CPEDictionary // Officially registered CPE entries
+    CPEMatchData  *CPEMatchData  // Bidirectional CPE-CVE mapping
+    DownloadTime  time.Time      // When the data was downloaded
 }
 ```
 
-Represents complete NVD CPE data including dictionary and match information.
+Aggregates the CPE dictionary and the CPE-CVE match data downloaded from NVD.
 
 ### CPEMatchData
 
 ```go
 type CPEMatchData struct {
-    Matches     []*CPEMatch // CPE match entries
-    GeneratedAt time.Time   // Data generation timestamp
+    CVEToCPEs map[string][]string // CVE ID -> affected CPE URIs
+    CPEToCVEs map[string][]string // CPE URI -> associated CVE IDs
 }
 ```
 
-Contains CPE match data from NVD feeds.
-
-### CPEMatch
-
-```go
-type CPEMatch struct {
-    CPE23Uri              string  // CPE 2.3 URI
-    VersionStartIncluding string  // Version range start (inclusive)
-    VersionStartExcluding string  // Version range start (exclusive)
-    VersionEndIncluding   string  // Version range end (inclusive)
-    VersionEndExcluding   string  // Version range end (exclusive)
-    Vulnerable            bool    // Whether this CPE is vulnerable
-    CVEs                  []string // Associated CVE IDs
-}
-```
-
-Represents a single CPE match entry with version ranges and vulnerability information.
+Holds the bidirectional mapping between CPE URIs and CVE IDs.
 
 ## NVD Feed Options
 
@@ -75,13 +57,11 @@ Represents a single CPE match entry with version ranges and vulnerability inform
 
 ```go
 type NVDFeedOptions struct {
-    BaseURL      string        // NVD base URL
-    CacheDir     string        // Local cache directory
-    Timeout      time.Duration // HTTP request timeout
-    ShowProgress bool          // Show download progress
-    UserAgent    string        // HTTP User-Agent header
-    MaxRetries   int           // Maximum retry attempts
-    RetryDelay   time.Duration // Delay between retries
+    CacheDir               string       // Local cache directory
+    CacheMaxAge            int          // Cache validity in hours
+    MaxConcurrentDownloads int          // Max concurrent downloads
+    ShowProgress           bool         // Print progress to stdout
+    HTTPClient             *http.Client // Custom HTTP client
 }
 ```
 
@@ -93,7 +73,7 @@ Configuration options for NVD feed operations.
 func DefaultNVDFeedOptions() *NVDFeedOptions
 ```
 
-Returns default NVD feed options.
+Returns feed options populated with sensible defaults (cache directory under the system temp dir, 24-hour cache, 3 concurrent downloads, progress enabled, and a 60-second HTTP client).
 
 **Returns:**
 - `*NVDFeedOptions` - Default configuration
@@ -102,8 +82,8 @@ Returns default NVD feed options.
 ```go
 options := cpeskills.DefaultNVDFeedOptions()
 options.CacheDir = "./nvd-cache"
+options.CacheMaxAge = 12 // re-download after 12 hours
 options.ShowProgress = true
-options.Timeout = 30 * time.Second
 ```
 
 ## Downloading NVD Data
@@ -114,7 +94,7 @@ options.Timeout = 30 * time.Second
 func DownloadAllNVDData(options *NVDFeedOptions) (*NVDCPEData, error)
 ```
 
-Downloads and parses all NVD CPE data (dictionary and match data).
+Downloads and parses both the CPE dictionary and the CPE match data, returning them in a single `NVDCPEData` value. The two feeds are fetched concurrently.
 
 **Parameters:**
 - `options` - Download options (can be `nil` for defaults)
@@ -136,9 +116,9 @@ if err != nil {
     log.Fatalf("Failed to download NVD data: %v", err)
 }
 
-fmt.Printf("Downloaded dictionary with %d items\n", len(nvdData.Dictionary.Items))
-fmt.Printf("Downloaded %d match entries\n", len(nvdData.MatchData.Matches))
-fmt.Printf("Last updated: %v\n", nvdData.LastUpdate)
+fmt.Printf("Downloaded dictionary with %d items\n", len(nvdData.CPEDictionary.Items))
+fmt.Printf("Downloaded %d CPE-to-CVE mappings\n", len(nvdData.CPEMatchData.CPEToCVEs))
+fmt.Printf("Downloaded at: %v\n", nvdData.DownloadTime)
 ```
 
 ### DownloadAndParseCPEDict
@@ -150,7 +130,7 @@ func DownloadAndParseCPEDict(options *NVDFeedOptions) (*CPEDictionary, error)
 Downloads and parses only the CPE dictionary.
 
 **Parameters:**
-- `options` - Download options
+- `options` - Download options (can be `nil` for defaults)
 
 **Returns:**
 - `*CPEDictionary` - CPE dictionary
@@ -175,7 +155,7 @@ func DownloadAndParseCPEMatch(options *NVDFeedOptions) (*CPEMatchData, error)
 Downloads and parses only the CPE match data.
 
 **Parameters:**
-- `options` - Download options
+- `options` - Download options (can be `nil` for defaults)
 
 **Returns:**
 - `*CPEMatchData` - CPE match data
@@ -188,7 +168,7 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("Match data contains %d entries\n", len(matchData.Matches))
+fmt.Printf("Match data covers %d CPE URIs\n", len(matchData.CPEToCVEs))
 ```
 
 ## CVE Integration
@@ -196,16 +176,16 @@ fmt.Printf("Match data contains %d entries\n", len(matchData.Matches))
 ### FindCVEsForCPE
 
 ```go
-func (n *NVDCPEData) FindCVEsForCPE(cpe *CPE) []*CVEReference
+func (data *NVDCPEData) FindCVEsForCPE(cpe *CPE) []string
 ```
 
-Finds all CVEs associated with a specific CPE.
+Finds the CVE IDs associated with a specific CPE. It first looks for an exact CPE URI match, then falls back to a fuzzy (distance-based) match.
 
 **Parameters:**
 - `cpe` - CPE to search for
 
 **Returns:**
-- `[]*CVEReference` - Array of associated CVEs
+- `[]string` - Associated CVE IDs
 
 **Example:**
 ```go
@@ -214,25 +194,24 @@ log4jCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
 cves := nvdData.FindCVEsForCPE(log4jCPE)
 
 fmt.Printf("Found %d CVEs for Apache Log4j 2.0:\n", len(cves))
-for _, cve := range cves {
-    fmt.Printf("- %s (CVSS: %.1f): %s\n", 
-        cve.ID, cve.CVSS, cve.Description)
+for _, cveID := range cves {
+    fmt.Printf("- %s\n", cveID)
 }
 ```
 
 ### FindCPEsForCVE
 
 ```go
-func (n *NVDCPEData) FindCPEsForCVE(cveID string) []*CPE
+func (data *NVDCPEData) FindCPEsForCVE(cveID string) []*CPE
 ```
 
-Finds all CPEs affected by a specific CVE.
+Finds all CPEs affected by a specific CVE. The CVE ID is normalized before lookup, and each returned CPE has its `Cve` field set to the queried ID.
 
 **Parameters:**
 - `cveID` - CVE identifier (e.g., "CVE-2021-44228")
 
 **Returns:**
-- `[]*CPE` - Array of affected CPEs
+- `[]*CPE` - Affected CPEs
 
 **Example:**
 ```go
@@ -240,155 +219,43 @@ Finds all CPEs affected by a specific CVE.
 affectedCPEs := nvdData.FindCPEsForCVE("CVE-2021-44228")
 
 fmt.Printf("CVE-2021-44228 affects %d CPEs:\n", len(affectedCPEs))
-for _, cpe := range affectedCPEs[:10] { // Show first 10
-    fmt.Printf("- %s\n", cpeskills.GetURI())
+for _, cpe := range affectedCPEs {
+    fmt.Printf("- %s\n", cpe.GetURI())
 }
 ```
 
-### SearchVulnerabilities
+### EnrichCPEWithVulnerabilityData
 
 ```go
-func (n *NVDCPEData) SearchVulnerabilities(query string) []*CVEReference
+func (data *NVDCPEData) EnrichCPEWithVulnerabilityData(cpe *CPE)
 ```
 
-Searches for vulnerabilities by keyword.
+Looks up the CVEs associated with the given CPE and, if any are found, stores the first CVE ID in the CPE's `Cve` field.
 
 **Parameters:**
-- `query` - Search query
-
-**Returns:**
-- `[]*CVEReference` - Array of matching CVEs
+- `cpe` - CPE to enrich in place
 
 **Example:**
 ```go
-// Search for remote code execution vulnerabilities
-rceVulns := nvdData.SearchVulnerabilities("remote code execution")
-
-fmt.Printf("Found %d RCE vulnerabilities:\n", len(rceVulns))
-for _, vuln := range rceVulns[:5] { // Show first 5
-    fmt.Printf("- %s: %s\n", vuln.ID, vuln.Description)
-}
-```
-
-## Vulnerability Analysis
-
-### GetVulnerabilityStats
-
-```go
-func (n *NVDCPEData) GetVulnerabilityStats() *VulnerabilityStats
-```
-
-Returns statistical information about vulnerabilities.
-
-**Returns:**
-- `*VulnerabilityStats` - Vulnerability statistics
-
-```go
-type VulnerabilityStats struct {
-    TotalCVEs        int               // Total number of CVEs
-    HighSeverity     int               // High severity CVEs (CVSS >= 7.0)
-    MediumSeverity   int               // Medium severity CVEs (4.0 <= CVSS < 7.0)
-    LowSeverity      int               // Low severity CVEs (CVSS < 4.0)
-    TopVendors       map[string]int    // Most vulnerable vendors
-    TopProducts      map[string]int    // Most vulnerable products
-    RecentCVEs       []*CVEReference   // Recently published CVEs
-}
-```
-
-**Example:**
-```go
-stats := nvdData.GetVulnerabilityStats()
-fmt.Printf("Total CVEs: %d\n", stats.TotalCVEs)
-fmt.Printf("High severity: %d\n", stats.HighSeverity)
-fmt.Printf("Medium severity: %d\n", stats.MediumSeverity)
-fmt.Printf("Low severity: %d\n", stats.LowSeverity)
-
-fmt.Println("Most vulnerable vendors:")
-for vendor, count := range stats.TopVendors {
-    fmt.Printf("  %s: %d CVEs\n", vendor, count)
-}
-```
-
-## Data Updates
-
-### CheckForUpdates
-
-```go
-func CheckForUpdates(options *NVDFeedOptions) (*UpdateInfo, error)
-```
-
-Checks if newer NVD data is available.
-
-**Parameters:**
-- `options` - NVD feed options
-
-**Returns:**
-- `*UpdateInfo` - Update information
-- `error` - Error if check fails
-
-```go
-type UpdateInfo struct {
-    DictionaryUpdated bool      // Whether dictionary has updates
-    MatchDataUpdated  bool      // Whether match data has updates
-    LastModified      time.Time // Last modification time
-    Size              int64     // Data size in bytes
-}
-```
-
-**Example:**
-```go
-updateInfo, err := cpeskills.CheckForUpdates(options)
-if err != nil {
-    log.Printf("Failed to check for updates: %v", err)
-} else {
-    if updateInfo.DictionaryUpdated {
-        fmt.Println("Dictionary updates available")
-    }
-    if updateInfo.MatchDataUpdated {
-        fmt.Println("Match data updates available")
-    }
-}
-```
-
-### UpdateNVDData
-
-```go
-func UpdateNVDData(storage Storage, options *NVDFeedOptions) error
-```
-
-Updates stored NVD data if newer versions are available.
-
-**Parameters:**
-- `storage` - Storage interface for persisting data
-- `options` - NVD feed options
-
-**Returns:**
-- `error` - Error if update fails
-
-**Example:**
-```go
-// Check and update NVD data
-err := cpeskills.UpdateNVDData(storage, options)
-if err != nil {
-    log.Printf("Failed to update NVD data: %v", err)
-} else {
-    fmt.Println("NVD data updated successfully")
-}
+cpe, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+nvdData.EnrichCPEWithVulnerabilityData(cpe)
+fmt.Printf("Associated CVE: %s\n", cpe.Cve)
 ```
 
 ## Caching
 
-The library automatically caches downloaded NVD data to improve performance:
+The download functions automatically cache the fetched feeds in `options.CacheDir` to improve performance. A cached feed is reused until it is older than `options.CacheMaxAge` hours:
 
 ```go
 // Configure caching
 options := cpeskills.DefaultNVDFeedOptions()
 options.CacheDir = "./nvd-cache"
+options.CacheMaxAge = 24
 
-// First download will fetch from NVD
+// First download fetches from NVD
 nvdData1, _ := cpeskills.DownloadAllNVDData(options)
 
-// Subsequent downloads will use cache if data is fresh
+// Subsequent downloads reuse the cache while it is still fresh
 nvdData2, _ := cpeskills.DownloadAllNVDData(options)
 ```
 
@@ -400,7 +267,8 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/scagogogo/cpe-skills"
+
+    cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
@@ -408,24 +276,24 @@ func main() {
     options := cpeskills.DefaultNVDFeedOptions()
     options.CacheDir = "./nvd-cache"
     options.ShowProgress = true
-    
+
     // Download NVD data
     fmt.Println("Downloading NVD data...")
     nvdData, err := cpeskills.DownloadAllNVDData(options)
     if err != nil {
         log.Fatalf("Failed to download NVD data: %v", err)
     }
-    
-    fmt.Printf("Downloaded %d dictionary items\n", len(nvdData.Dictionary.Items))
-    fmt.Printf("Downloaded %d match entries\n", len(nvdData.MatchData.Matches))
-    
+
+    fmt.Printf("Downloaded %d dictionary items\n", len(nvdData.CPEDictionary.Items))
+    fmt.Printf("Downloaded %d CPE-to-CVE mappings\n", len(nvdData.CPEMatchData.CPEToCVEs))
+
     // Analyze system CPEs for vulnerabilities
     systemCPEs := []string{
         "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
         "cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*",
     }
-    
+
     fmt.Println("\nVulnerability Analysis:")
     for _, cpeStr := range systemCPEs {
         cpeObj, err := cpeskills.ParseCpe23(cpeStr)
@@ -433,42 +301,20 @@ func main() {
             log.Printf("Failed to parse %s: %v", cpeStr, err)
             continue
         }
-        
+
         cves := nvdData.FindCVEsForCPE(cpeObj)
         fmt.Printf("\n%s:\n", cpeStr)
-        fmt.Printf("  Found %d vulnerabilities\n", len(cves))
-        
-        // Show high-severity vulnerabilities
-        highSeverity := 0
-        for _, cve := range cves {
-            if cve.CVSS >= 7.0 {
-                highSeverity++
-                fmt.Printf("  HIGH: %s (CVSS: %.1f) - %s\n", 
-                    cve.ID, cve.CVSS, cve.Description[:100]+"...")
-            }
-        }
-        
-        if highSeverity == 0 {
-            fmt.Printf("  No high-severity vulnerabilities found\n")
+        fmt.Printf("  Found %d CVEs\n", len(cves))
+        for _, cveID := range cves {
+            fmt.Printf("  - %s\n", cveID)
         }
     }
-    
-    // Get overall vulnerability statistics
-    fmt.Println("\nOverall Vulnerability Statistics:")
-    stats := nvdData.GetVulnerabilityStats()
-    fmt.Printf("Total CVEs: %d\n", stats.TotalCVEs)
-    fmt.Printf("High severity: %d (%.1f%%)\n", 
-        stats.HighSeverity, 
-        float64(stats.HighSeverity)/float64(stats.TotalCVEs)*100)
-    
-    // Search for specific vulnerabilities
-    fmt.Println("\nSearching for 'remote code execution' vulnerabilities:")
-    rceVulns := nvdData.SearchVulnerabilities("remote code execution")
-    fmt.Printf("Found %d RCE vulnerabilities\n", len(rceVulns))
-    
-    for i, vuln := range rceVulns[:3] { // Show first 3
-        fmt.Printf("%d. %s (CVSS: %.1f)\n", i+1, vuln.ID, vuln.CVSS)
-        fmt.Printf("   %s\n", vuln.Description[:150]+"...")
+
+    // Reverse lookup: which CPEs are affected by a given CVE
+    fmt.Println("\nCPEs affected by CVE-2021-44228:")
+    affected := nvdData.FindCPEsForCVE("CVE-2021-44228")
+    for _, cpe := range affected {
+        fmt.Printf("  - %s\n", cpe.GetURI())
     }
 }
 ```

@@ -1,6 +1,6 @@
 # Sets
 
-The CPE library provides powerful set operations for managing collections of CPE objects, including union, intersection, difference, and advanced filtering capabilities.
+The CPE library provides powerful set operations for managing collections of CPE objects, including union, intersection, difference, and criteria-based filtering.
 
 The class diagram below groups the `CPESet` methods by purpose — creating sets, basic operations, set algebra, and filtering:
 
@@ -9,8 +9,7 @@ classDiagram
     class CPESet {
         +NewCPESet() CPESet
         +FromArray() CPESet
-        +FromStrings() CPESet
-        +Add() CPESet
+        +Add()
         +Remove() bool
         +Contains() bool
         +Size() int
@@ -18,13 +17,12 @@ classDiagram
         +Union() CPESet
         +Intersection() CPESet
         +Difference() CPESet
-        +SymmetricDifference() CPESet
         +Filter() CPESet
-        +FilterByVendor() CPESet
-        +FilterByProduct() CPESet
-        +FilterByPart() CPESet
+        +AdvancedFilter() CPESet
+        +FindRelated() CPESet
+        +ToSlice() CPE
     }
-    note for CPESet "Creating: NewCPESet / FromArray / FromStrings\nBasic: Add / Remove / Contains\nSet ops: Union / Intersection / Difference\nFiltering: Filter / FilterByVendor / FilterByProduct"
+    note for CPESet "Creating: NewCPESet / FromArray\nBasic: Add / Remove / Contains\nSet ops: Union / Intersection / Difference\nFiltering: Filter / AdvancedFilter / FindRelated"
 ```
 
 And the flow below illustrates the three core set operations over two input sets A and B:
@@ -45,21 +43,29 @@ flowchart LR
 
 ```go
 type CPESet struct {
-    // Internal implementation details are hidden
+    // Name is the name of the set, used to identify and distinguish sets
+    Name string
+    // Description is a detailed description of the set
+    Description string
+    // Internal storage of CPE items is hidden
 }
 ```
 
-The `CPESet` type represents a collection of unique CPE objects with efficient set operations.
+The `CPESet` type represents a collection of unique CPE objects with efficient set operations. Uniqueness is determined by each CPE's URI.
 
 ## Creating Sets
 
 ### NewCPESet
 
 ```go
-func NewCPESet() *CPESet
+func NewCPESet(name string, description string) *CPESet
 ```
 
-Creates a new empty CPE set.
+Creates a new empty CPE set with the given name and description.
+
+**Parameters:**
+- `name` - Name of the set
+- `description` - Description of the set
 
 **Returns:**
 - `*CPESet` - New empty set
@@ -67,20 +73,22 @@ Creates a new empty CPE set.
 **Example:**
 ```go
 // Create a new empty set
-set := cpeskills.NewCPESet()
+set := cpeskills.NewCPESet("Microsoft Products", "Collection of Microsoft product CPEs")
 fmt.Printf("Created empty set with %d items\n", set.Size())
 ```
 
 ### FromArray
 
 ```go
-func FromArray(cpes []*CPE) *CPESet
+func FromArray(cpes []*CPE, name string, description string) *CPESet
 ```
 
 Creates a CPE set from an array of CPE objects.
 
 **Parameters:**
 - `cpes` - Array of CPE objects
+- `name` - Name of the new set
+- `description` - Description of the new set
 
 **Returns:**
 - `*CPESet` - Set containing the CPE objects
@@ -94,39 +102,8 @@ cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 
 // Create set from array
 cpeArray := []*cpeskills.CPE{cpe1, cpe2, cpe3}
-set := cpeskills.FromArray(cpeArray)
+set := cpeskills.FromArray(cpeArray, "My Products", "A collection of products")
 fmt.Printf("Created set with %d items\n", set.Size())
-```
-
-### FromStrings
-
-```go
-func FromStrings(cpeStrings []string) (*CPESet, error)
-```
-
-Creates a CPE set from an array of CPE strings.
-
-**Parameters:**
-- `cpeStrings` - Array of CPE string representations
-
-**Returns:**
-- `*CPESet` - Set containing parsed CPE objects
-- `error` - Error if any string fails to parse
-
-**Example:**
-```go
-cpeStrings := []string{
-    "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
-    "cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*",
-    "cpe:2.3:o:linux:kernel:5.4:*:*:*:*:*:*:*",
-}
-
-set, err := cpeskills.FromStrings(cpeStrings)
-if err != nil {
-    log.Fatal(err)
-}
-
-fmt.Printf("Created set from strings with %d items\n", set.Size())
 ```
 
 ## Basic Operations
@@ -134,28 +111,24 @@ fmt.Printf("Created set from strings with %d items\n", set.Size())
 ### Add
 
 ```go
-func (s *CPESet) Add(cpes ...*CPE) *CPESet
+func (s *CPESet) Add(cpe *CPE)
 ```
 
-Adds one or more CPE objects to the set.
+Adds a CPE object to the set. If an equal CPE (compared by URI) already exists, it is not added again.
 
 **Parameters:**
-- `cpes` - Variable number of CPE objects to add
-
-**Returns:**
-- `*CPESet` - The set itself (for method chaining)
+- `cpe` - CPE object to add
 
 **Example:**
 ```go
-set := cpeskills.NewCPESet()
+set := cpeskills.NewCPESet("demo", "demo set")
 cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 
-// Add single CPE
+// Add CPEs one at a time
 set.Add(cpe1)
-
-// Add multiple CPEs
-set.Add(cpe2, cpe1) // cpe1 won't be added again (sets contain unique items)
+set.Add(cpe2)
+set.Add(cpe1) // cpe1 won't be added again (sets contain unique items)
 
 fmt.Printf("Set size after adding: %d\n", set.Size())
 ```
@@ -177,7 +150,7 @@ Removes a CPE object from the set.
 **Example:**
 ```go
 cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-set := cpeskills.NewCPESet()
+set := cpeskills.NewCPESet("demo", "demo set")
 set.Add(cpe1)
 
 removed := set.Remove(cpe1)
@@ -204,7 +177,7 @@ Checks if the set contains a specific CPE object.
 cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 
-set := cpeskills.NewCPESet()
+set := cpeskills.NewCPESet("demo", "demo set")
 set.Add(cpe1)
 
 fmt.Printf("Contains Windows: %t\n", set.Contains(cpe1))
@@ -222,17 +195,6 @@ Returns the number of CPE objects in the set.
 **Returns:**
 - `int` - Number of items in the set
 
-### IsEmpty
-
-```go
-func (s *CPESet) IsEmpty() bool
-```
-
-Checks if the set is empty.
-
-**Returns:**
-- `bool` - `true` if the set is empty, `false` otherwise
-
 ### Clear
 
 ```go
@@ -243,13 +205,12 @@ Removes all CPE objects from the set.
 
 **Example:**
 ```go
-set := cpeskills.NewCPESet()
+set := cpeskills.NewCPESet("demo", "demo set")
 // ... add some CPEs ...
 
 fmt.Printf("Size before clear: %d\n", set.Size())
 set.Clear()
 fmt.Printf("Size after clear: %d\n", set.Size())
-fmt.Printf("Is empty: %t\n", set.IsEmpty())
 ```
 
 ## Set Operations
@@ -271,15 +232,17 @@ Returns a new set containing all CPEs from both sets.
 **Example:**
 ```go
 // Create two sets
-set1 := cpeskills.NewCPESet()
-set2 := cpeskills.NewCPESet()
+set1 := cpeskills.NewCPESet("set1", "first set")
+set2 := cpeskills.NewCPESet("set2", "second set")
 
 cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
 
-set1.Add(cpe1, cpe2)
-set2.Add(cpe2, cpe3) // cpe2 is in both sets
+set1.Add(cpe1)
+set1.Add(cpe2)
+set2.Add(cpe2) // cpe2 is in both sets
+set2.Add(cpe3)
 
 // Union operation
 unionSet := set1.Union(set2)
@@ -304,15 +267,17 @@ Returns a new set containing only CPEs that exist in both sets.
 
 **Example:**
 ```go
-set1 := cpeskills.NewCPESet()
-set2 := cpeskills.NewCPESet()
+set1 := cpeskills.NewCPESet("set1", "first set")
+set2 := cpeskills.NewCPESet("set2", "second set")
 
 cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
 
-set1.Add(cpe1, cpe2)
-set2.Add(cpe2, cpe3)
+set1.Add(cpe1)
+set1.Add(cpe2)
+set2.Add(cpe2)
+set2.Add(cpe3)
 
 // Intersection operation
 intersectionSet := set1.Intersection(set2)
@@ -335,50 +300,75 @@ Returns a new set containing CPEs that are in this set but not in the other set.
 
 **Example:**
 ```go
-set1 := cpeskills.NewCPESet()
-set2 := cpeskills.NewCPESet()
+set1 := cpeskills.NewCPESet("set1", "first set")
+set2 := cpeskills.NewCPESet("set2", "second set")
 
 cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
 
-set1.Add(cpe1, cpe2)
-set2.Add(cpe2, cpe3)
+set1.Add(cpe1)
+set1.Add(cpe2)
+set2.Add(cpe2)
+set2.Add(cpe3)
 
 // Difference operation
 diffSet := set1.Difference(set2)
 fmt.Printf("Difference size: %d\n", diffSet.Size()) // Should be 1 (cpe1)
 ```
 
-### SymmetricDifference
+## Set Relations
+
+### Equals
 
 ```go
-func (s *CPESet) SymmetricDifference(other *CPESet) *CPESet
+func (s *CPESet) Equals(other *CPESet) bool
 ```
 
-Returns a new set containing CPEs that are in either set but not in both.
+Checks whether two sets contain exactly the same CPEs.
 
 **Parameters:**
 - `other` - Another CPE set
 
 **Returns:**
-- `*CPESet` - New set containing symmetric difference
+- `bool` - `true` if both sets contain the same CPEs
+
+### IsSubsetOf
+
+```go
+func (s *CPESet) IsSubsetOf(other *CPESet) bool
+```
+
+Checks whether this set is a subset of `other` (every CPE in this set is also in `other`).
+
+**Parameters:**
+- `other` - The candidate superset
+
+**Returns:**
+- `bool` - `true` if this set is a subset of `other`
+
+### IsSupersetOf
+
+```go
+func (s *CPESet) IsSupersetOf(other *CPESet) bool
+```
+
+Checks whether this set is a superset of `other` (every CPE in `other` is also in this set).
+
+**Parameters:**
+- `other` - The candidate subset
+
+**Returns:**
+- `bool` - `true` if this set is a superset of `other`
 
 **Example:**
 ```go
-set1 := cpeskills.NewCPESet()
-set2 := cpeskills.NewCPESet()
+windowsSet := cpeskills.NewCPESet("windows", "all windows")
+windows10Set := cpeskills.NewCPESet("windows10", "windows 10 only")
+// ... populate sets ...
 
-cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
-cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
-
-set1.Add(cpe1, cpe2)
-set2.Add(cpe2, cpe3)
-
-// Symmetric difference operation
-symDiffSet := set1.SymmetricDifference(set2)
-fmt.Printf("Symmetric difference size: %d\n", symDiffSet.Size()) // Should be 2 (cpe1, cpe3)
+fmt.Printf("windows10 ⊆ windows: %t\n", windows10Set.IsSubsetOf(windowsSet))
+fmt.Printf("windows ⊇ windows10: %t\n", windowsSet.IsSupersetOf(windows10Set))
 ```
 
 ## Filtering Operations
@@ -386,92 +376,37 @@ fmt.Printf("Symmetric difference size: %d\n", symDiffSet.Size()) // Should be 2 
 ### Filter
 
 ```go
-func (s *CPESet) Filter(predicate func(*CPE) bool) *CPESet
+func (s *CPESet) Filter(criteria *CPE, options *MatchOptions) *CPESet
 ```
 
-Returns a new set containing only CPEs that match the predicate function.
+Returns a new set containing only the CPEs that match the given criteria CPE. If `options` is `nil`, default match options are used.
 
 **Parameters:**
-- `predicate` - Function that returns `true` for CPEs to include
+- `criteria` - CPE object used as the filter criteria
+- `options` - Match options; if `nil`, `DefaultMatchOptions()` is used
 
 **Returns:**
 - `*CPESet` - New filtered set
 
 **Example:**
 ```go
-set := cpeskills.NewCPESet()
+set := cpeskills.NewCPESet("all", "all products")
 cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
 cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
 
-set.Add(cpe1, cpe2, cpe3)
+set.Add(cpe1)
+set.Add(cpe2)
+set.Add(cpe3)
 
 // Filter for Microsoft products
-microsoftSet := set.Filter(func(c *cpeskills.CPE) bool {
-    return string(c.Vendor) == "microsoft"
-})
+criteria := &cpeskills.CPE{
+    Vendor: cpeskills.Vendor("microsoft"),
+}
+microsoftSet := set.Filter(criteria, nil)
 
 fmt.Printf("Microsoft products: %d\n", microsoftSet.Size()) // Should be 2
 ```
-
-### FilterByVendor
-
-```go
-func (s *CPESet) FilterByVendor(vendor string) *CPESet
-```
-
-Returns a new set containing only CPEs from the specified vendor.
-
-**Parameters:**
-- `vendor` - Vendor name to filter by
-
-**Returns:**
-- `*CPESet` - New filtered set
-
-### FilterByProduct
-
-```go
-func (s *CPESet) FilterByProduct(product string) *CPESet
-```
-
-Returns a new set containing only CPEs for the specified product.
-
-**Parameters:**
-- `product` - Product name to filter by
-
-**Returns:**
-- `*CPESet` - New filtered set
-
-### FilterByPart
-
-```go
-func (s *CPESet) FilterByPart(part *Part) *CPESet
-```
-
-Returns a new set containing only CPEs of the specified part type.
-
-**Parameters:**
-- `part` - Part type to filter by
-
-**Returns:**
-- `*CPESet` - New filtered set
-
-**Example:**
-```go
-set := cpeskills.NewCPESet()
-// ... add various CPEs ...
-
-// Filter by different criteria
-microsoftCPEs := set.FilterByVendor("microsoft")
-windowsCPEs := set.FilterByProduct("windows")
-applicationCPEs := set.FilterByPart(cpeskills.PartApplication)
-
-fmt.Printf("Microsoft CPEs: %d\n", microsoftCPEs.Size())
-fmt.Printf("Windows CPEs: %d\n", windowsCPEs.Size())
-fmt.Printf("Application CPEs: %d\n", applicationCPEs.Size())
-```
-
-## Advanced Operations
 
 ### AdvancedFilter
 
@@ -479,7 +414,7 @@ fmt.Printf("Application CPEs: %d\n", applicationCPEs.Size())
 func (s *CPESet) AdvancedFilter(criteria *CPE, options *AdvancedMatchOptions) *CPESet
 ```
 
-Filters the set using advanced matching criteria.
+Filters the set using advanced matching criteria such as regex or distance-based matching. If `options` is `nil`, `NewAdvancedMatchOptions()` is used.
 
 **Parameters:**
 - `criteria` - CPE pattern to match against
@@ -490,7 +425,7 @@ Filters the set using advanced matching criteria.
 
 **Example:**
 ```go
-set := cpeskills.NewCPESet()
+set := cpeskills.NewCPESet("all", "all products")
 // ... populate set ...
 
 // Create advanced matching criteria
@@ -510,65 +445,86 @@ fmt.Printf("Advanced filtered set size: %d\n", filteredSet.Size())
 ### FindRelated
 
 ```go
-func FindRelated(cpe *CPE, set *CPESet, options *MatchOptions) *CPESet
+func (s *CPESet) FindRelated(cpe *CPE, options *AdvancedMatchOptions) *CPESet
 ```
 
-Finds CPEs in the set that are related to the given CPE.
+Finds CPEs in the set that are related to the given CPE using loose distance-based matching. If `options` is `nil`, default advanced options are used.
 
 **Parameters:**
 - `cpe` - CPE to find related items for
-- `set` - Set to search in
-- `options` - Matching options
+- `options` - Advanced matching options; if `nil`, defaults are used
 
 **Returns:**
 - `*CPESet` - Set of related CPEs
 
 **Example:**
 ```go
-targetCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
-relatedSet := cpeskills.FindRelated(targetCPE, set, cpeskills.DefaultMatchOptions())
+targetCPE := &cpeskills.CPE{
+    Vendor:      cpeskills.Vendor("microsoft"),
+    ProductName: cpeskills.Product("windows"),
+    Version:     cpeskills.Version("10"),
+}
+relatedSet := set.FindRelated(targetCPE, nil)
 
 fmt.Printf("Found %d related CPEs\n", relatedSet.Size())
 ```
 
-## Conversion Operations
+## Conversion and Ordering
 
-### ToArray
-
-```go
-func (s *CPESet) ToArray() []*CPE
-```
-
-Converts the set to an array of CPE objects.
-
-**Returns:**
-- `[]*CPE` - Array containing all CPEs in the set
-
-### ToStrings
+### ToSlice
 
 ```go
-func (s *CPESet) ToStrings() []string
+func (s *CPESet) ToSlice() []*CPE
 ```
 
-Converts the set to an array of CPE strings.
+Converts the set to a slice of CPE objects.
 
 **Returns:**
-- `[]string` - Array of CPE string representations
+- `[]*CPE` - Slice containing all CPEs in the set
+
+### Sort
+
+```go
+func (s *CPESet) Sort(sortBy string, ascending bool) []*CPE
+```
+
+Returns the CPEs of the set as a sorted slice. This does not modify the set itself.
+
+**Parameters:**
+- `sortBy` - Sort field: `"part"`, `"vendor"`, `"product"`, `"version"`, or any other value to sort by the CPE 2.3 string
+- `ascending` - `true` for ascending order, `false` for descending
+
+**Returns:**
+- `[]*CPE` - Sorted slice of CPEs
+
+### ToString
+
+```go
+func (s *CPESet) ToString() string
+```
+
+Returns a string representation of the set, including its name, description, size, and the list of CPEs.
+
+**Returns:**
+- `string` - String representation of the set
 
 **Example:**
 ```go
-set := cpeskills.NewCPESet()
+set := cpeskills.NewCPESet("Microsoft", "Microsoft products")
 // ... populate set ...
 
-// Convert to array
-cpeArray := set.ToArray()
-fmt.Printf("Array length: %d\n", len(cpeArray))
+// Convert to slice
+cpeSlice := set.ToSlice()
+fmt.Printf("Slice length: %d\n", len(cpeSlice))
 
-// Convert to strings
-cpeStrings := set.ToStrings()
-for i, cpeStr := range cpeStrings {
-    fmt.Printf("%d: %s\n", i+1, cpeStr)
+// Sort by product name, ascending
+sorted := set.Sort("product", true)
+for i, cpe := range sorted {
+    fmt.Printf("%d: %s\n", i+1, cpe.Cpe23)
 }
+
+// Human-readable representation
+fmt.Println(set.ToString())
 ```
 
 ## Complete Example
@@ -578,7 +534,6 @@ package main
 
 import (
     "fmt"
-    "log"
     "github.com/scagogogo/cpe-skills"
 )
 
@@ -588,78 +543,64 @@ func main() {
     cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
     cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
     cpe4, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:11:*:*:*:*:*:*:*")
-    
+
     // Create sets
     fmt.Println("=== Creating Sets ===")
-    set1 := cpeskills.NewCPESet()
-    set1.Add(cpe1, cpe2, cpe3)
-    
-    set2 := cpeskills.NewCPESet()
-    set2.Add(cpe3, cpe4)
-    
+    set1 := cpeskills.NewCPESet("Set1", "First set")
+    set1.Add(cpe1)
+    set1.Add(cpe2)
+    set1.Add(cpe3)
+
+    set2 := cpeskills.NewCPESet("Set2", "Second set")
+    set2.Add(cpe3)
+    set2.Add(cpe4)
+
     fmt.Printf("Set1 size: %d\n", set1.Size())
     fmt.Printf("Set2 size: %d\n", set2.Size())
-    
+
     // Set operations
     fmt.Println("\n=== Set Operations ===")
     unionSet := set1.Union(set2)
     intersectionSet := set1.Intersection(set2)
     differenceSet := set1.Difference(set2)
-    
+
     fmt.Printf("Union size: %d\n", unionSet.Size())
     fmt.Printf("Intersection size: %d\n", intersectionSet.Size())
     fmt.Printf("Difference size: %d\n", differenceSet.Size())
-    
+
     // Filtering
     fmt.Println("\n=== Filtering ===")
-    microsoftSet := set1.FilterByVendor("microsoft")
-    fmt.Printf("Microsoft products: %d\n", microsoftSet.Size())
-    
-    // Custom filter
-    applicationSet := set1.Filter(func(c *cpeskills.CPE) bool {
-        return c.Part.ShortName == "a"
-    })
-    fmt.Printf("Applications: %d\n", applicationSet.Size())
-    
-    // Advanced filtering
-    fmt.Println("\n=== Advanced Filtering ===")
     criteria := &cpeskills.CPE{
         Vendor: cpeskills.Vendor("microsoft"),
     }
-    
+    microsoftSet := set1.Filter(criteria, nil)
+    fmt.Printf("Microsoft products: %d\n", microsoftSet.Size())
+
+    // Advanced filtering
+    fmt.Println("\n=== Advanced Filtering ===")
     options := cpeskills.NewAdvancedMatchOptions()
     options.MatchMode = "exact"
-    
+
     advancedFiltered := set1.AdvancedFilter(criteria, options)
     fmt.Printf("Advanced filtered: %d\n", advancedFiltered.Size())
-    
-    // Convert to arrays
+
+    // Convert to slice and sort
     fmt.Println("\n=== Conversion ===")
-    cpeArray := microsoftSet.ToArray()
-    cpeStrings := microsoftSet.ToStrings()
-    
-    fmt.Printf("Microsoft products:\n")
-    for i, cpeStr := range cpeStrings {
-        fmt.Printf("%d. %s\n", i+1, cpeStr)
+    cpeSlice := microsoftSet.ToSlice()
+    fmt.Printf("Microsoft products (%d):\n", len(cpeSlice))
+    for i, cpe := range microsoftSet.Sort("product", true) {
+        fmt.Printf("%d. %s\n", i+1, cpe.Cpe23)
     }
-    
+
     // Set membership tests
     fmt.Println("\n=== Membership Tests ===")
     fmt.Printf("Set1 contains Windows: %t\n", set1.Contains(cpe1))
     fmt.Printf("Set1 contains Java: %t\n", set1.Contains(cpe4))
-    
-    // Create set from strings
-    fmt.Println("\n=== Creating from Strings ===")
-    cpeStrings2 := []string{
-        "cpe:2.3:a:google:chrome:95.0:*:*:*:*:*:*:*",
-        "cpe:2.3:a:mozilla:firefox:94.0:*:*:*:*:*:*:*",
-    }
-    
-    browserSet, err := cpeskills.FromStrings(cpeStrings2)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
+
+    // Create set from array
+    fmt.Println("\n=== Creating from Array ===")
+    browsers := []*cpeskills.CPE{cpe1, cpe2}
+    browserSet := cpeskills.FromArray(browsers, "Browsers", "Browser set")
     fmt.Printf("Browser set size: %d\n", browserSet.Size())
 }
 ```

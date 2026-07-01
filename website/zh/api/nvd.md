@@ -1,495 +1,262 @@
-# NVD集成
+# NVD 集成
 
-本页面描述了CPE库与美国国家漏洞数据库(NVD)的集成功能，包括数据下载、更新和漏洞查询。
+CPE 库提供了与美国国家漏洞数据库（NVD）的集成：下载官方 CPE 字典和 CPE 匹配数据源，在本地缓存，并让你在解析后的数据中将 CPE 映射到 CVE（以及反向映射）。
 
-下图展示了 NVD 数据流：下载并解析数据源，将结果写入缓存，基于缓存查询漏洞，更新器负责检查并应用新数据。
+下图展示了 NVD 数据流：数据源被下载（或从本地缓存读取）并解析为一个 `NVDCPEData` 值；随后 CPE 到 CVE 的查找便由内存中的匹配映射提供。
 
 ```mermaid
 sequenceDiagram
     participant App as "客户端 App"
-    participant Client as "NVDClient"
-    participant API as "NVD API"
-    participant Cache as "CacheManager 缓存"
+    participant DL as "下载函数"
+    participant Cache as "缓存目录"
+    participant NVD as "NVD 数据源"
 
-    App->>Client: DownloadCPEDictionary / DownloadCVEData
-    Client->>API: HTTP 请求 (数据源)
-    API-->>Client: 原始数据源
-    Client->>Client: 解析响应
-    Client->>Cache: 存储解析后的数据
+    App->>DL: DownloadAllNVDData(options)
+    DL->>Cache: 检查已缓存的数据源
+    alt 缓存有效
+        Cache-->>DL: 缓存的数据源
+    else 缓存缺失或过期
+        DL->>NVD: HTTP GET（CPE 字典 + CPE 匹配）
+        NVD-->>DL: gzip 数据源
+        DL->>Cache: 存储到缓存目录
+    end
+    DL-->>App: *NVDCPEData
 
-    App->>Client: QueryVulnerabilities / GetCVEDetails
-    Client->>Cache: 查找
-    Cache-->>Client: 缓存结果
-    Client-->>App: 漏洞 / CVE 详情
-
-    App->>Client: CheckForUpdates
-    Client->>API: 查询最新时间戳
-    API-->>Client: 最后修改信息
-    Client->>Cache: NVDUpdater 应用更新
+    App->>DL: FindCVEsForCPE / FindCPEsForCVE
+    DL-->>App: CVE ID / 受影响的 CPE
 ```
 
-## NVD客户端
+## NVD 数据类型
 
-### NVDClient
-
-NVD API客户端。
+### NVDCPEData
 
 ```go
-type NVDClient struct {
-    APIKey      string        // NVD API密钥
-    BaseURL     string        // API基础URL
-    Timeout     time.Duration // 请求超时时间
-    RateLimit   int           // 速率限制（请求/分钟）
-    UserAgent   string        // 用户代理字符串
-    RetryCount  int           // 重试次数
+type NVDCPEData struct {
+    CPEDictionary *CPEDictionary // 正式注册的 CPE 条目
+    CPEMatchData  *CPEMatchData  // CPE-CVE 双向映射
+    DownloadTime  time.Time      // 数据下载时间
 }
 ```
 
-### NewNVDClient
+聚合了从 NVD 下载的 CPE 字典与 CPE-CVE 匹配数据。
 
-创建新的NVD客户端。
-
-```go
-func NewNVDClient(config *NVDConfig) *NVDClient
-```
-
-### NVDConfig
-
-NVD客户端配置。
+### CPEMatchData
 
 ```go
-type NVDConfig struct {
-    APIKey         string        // API密钥（可选，用于提高速率限制）
-    CacheDir       string        // 缓存目录
-    UpdateInterval time.Duration // 更新间隔
-    EnableCache    bool          // 是否启用缓存
-    Timeout        time.Duration // 请求超时
+type CPEMatchData struct {
+    CVEToCPEs map[string][]string // CVE ID -> 受影响的 CPE URI
+    CPEToCVEs map[string][]string // CPE URI -> 关联的 CVE ID
 }
 ```
+
+保存 CPE URI 与 CVE ID 之间的双向映射。
+
+## NVD 数据源选项
+
+### NVDFeedOptions
+
+```go
+type NVDFeedOptions struct {
+    CacheDir               string       // 本地缓存目录
+    CacheMaxAge            int          // 缓存有效期（小时）
+    MaxConcurrentDownloads int          // 最大并发下载数
+    ShowProgress           bool         // 向标准输出打印进度
+    HTTPClient             *http.Client // 自定义 HTTP 客户端
+}
+```
+
+NVD 数据源操作的配置选项。
+
+### DefaultNVDFeedOptions
+
+```go
+func DefaultNVDFeedOptions() *NVDFeedOptions
+```
+
+返回填充了合理默认值的数据源选项（缓存目录位于系统临时目录下、24 小时缓存、3 个并发下载、启用进度显示、以及一个 60 秒超时的 HTTP 客户端）。
+
+**返回：**
+- `*NVDFeedOptions` - 默认配置
 
 **示例：**
 ```go
-config := &cpeskills.NVDConfig{
-    APIKey:         "your-api-key", // 可选
-    CacheDir:       "./nvd_cache",
-    UpdateInterval: 24 * time.Hour,
-    EnableCache:    true,
-    Timeout:        30 * time.Second,
-}
-
-client := cpeskills.NewNVDClient(config)
+options := cpeskills.DefaultNVDFeedOptions()
+options.CacheDir = "./nvd-cache"
+options.CacheMaxAge = 12 // 12 小时后重新下载
+options.ShowProgress = true
 ```
 
-## CPE字典下载
+## 下载 NVD 数据
 
-### DownloadCPEDictionary
-
-下载官方CPE字典。
+### DownloadAllNVDData
 
 ```go
-func (c *NVDClient) DownloadCPEDictionary() (*CPEDictionary, error)
+func DownloadAllNVDData(options *NVDFeedOptions) (*NVDCPEData, error)
 ```
 
-### DownloadCPEDictionaryToFile
+下载并解析 CPE 字典和 CPE 匹配数据，将二者一并放入单个 `NVDCPEData` 值返回。这两个数据源是并发获取的。
 
-下载CPE字典到文件。
+**参数：**
+- `options` - 下载选项（可为 `nil` 以使用默认值）
 
-```go
-func (c *NVDClient) DownloadCPEDictionaryToFile(filename string) error
-```
+**返回：**
+- `*NVDCPEData` - 完整的 NVD 数据
+- `error` - 下载或解析失败时的错误
 
 **示例：**
 ```go
-// 下载到内存
-fmt.Println("下载CPE字典...")
-dictionary, err := client.DownloadCPEDictionary()
+// 下载所有 NVD 数据
+fmt.Println("Downloading NVD data...")
+options := cpeskills.DefaultNVDFeedOptions()
+options.CacheDir = "./nvd-cache"
+options.ShowProgress = true
+
+nvdData, err := cpeskills.DownloadAllNVDData(options)
+if err != nil {
+    log.Fatalf("Failed to download NVD data: %v", err)
+}
+
+fmt.Printf("Downloaded dictionary with %d items\n", len(nvdData.CPEDictionary.Items))
+fmt.Printf("Downloaded %d CPE-to-CVE mappings\n", len(nvdData.CPEMatchData.CPEToCVEs))
+fmt.Printf("Downloaded at: %v\n", nvdData.DownloadTime)
+```
+
+### DownloadAndParseCPEDict
+
+```go
+func DownloadAndParseCPEDict(options *NVDFeedOptions) (*CPEDictionary, error)
+```
+
+仅下载并解析 CPE 字典。
+
+**参数：**
+- `options` - 下载选项（可为 `nil` 以使用默认值）
+
+**返回：**
+- `*CPEDictionary` - CPE 字典
+- `error` - 下载或解析失败时的错误
+
+**示例：**
+```go
+dictionary, err := cpeskills.DownloadAndParseCPEDict(options)
 if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("下载完成，包含 %d 个CPE条目\n", len(dictionary.Entries))
-
-// 下载到文件
-err = client.DownloadCPEDictionaryToFile("official_cpe_dictionary.xml")
-if err != nil {
-    log.Printf("下载到文件失败: %v", err)
-}
+fmt.Printf("Dictionary contains %d CPE entries\n", len(dictionary.Items))
 ```
 
-## CVE数据下载
-
-### DownloadCVEData
-
-下载CVE漏洞数据。
+### DownloadAndParseCPEMatch
 
 ```go
-func (c *NVDClient) DownloadCVEData(startDate time.Time) (*CVEData, error)
+func DownloadAndParseCPEMatch(options *NVDFeedOptions) (*CPEMatchData, error)
 ```
 
-### DownloadCVEDataRange
+仅下载并解析 CPE 匹配数据。
 
-下载指定时间范围的CVE数据。
+**参数：**
+- `options` - 下载选项（可为 `nil` 以使用默认值）
 
-```go
-func (c *NVDClient) DownloadCVEDataRange(startDate, endDate time.Time) (*CVEData, error)
-```
-
-### CVEData
-
-CVE数据结构。
-
-```go
-type CVEData struct {
-    CVEs         []*CVEEntry // CVE条目列表
-    LastModified time.Time   // 最后修改时间
-    TotalResults int         // 总结果数
-    StartIndex   int         // 起始索引
-}
-```
+**返回：**
+- `*CPEMatchData` - CPE 匹配数据
+- `error` - 下载或解析失败时的错误
 
 **示例：**
 ```go
-// 下载最近30天的CVE数据
-startDate := time.Now().AddDate(0, 0, -30)
-cveData, err := client.DownloadCVEData(startDate)
+matchData, err := cpeskills.DownloadAndParseCPEMatch(options)
 if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("下载了 %d 个CVE条目\n", len(cveData.CVEs))
-
-// 下载指定时间范围的数据
-endDate := time.Now()
-rangeData, err := client.DownloadCVEDataRange(startDate, endDate)
-if err != nil {
-    log.Printf("下载范围数据失败: %v", err)
-}
+fmt.Printf("Match data covers %d CPE URIs\n", len(matchData.CPEToCVEs))
 ```
 
-## 漏洞查询
+## CVE 集成
 
-### QueryVulnerabilities
-
-查询漏洞信息。
+### FindCVEsForCPE
 
 ```go
-func (c *NVDClient) QueryVulnerabilities(query NVDQuery) ([]*CVEEntry, error)
+func (data *NVDCPEData) FindCVEsForCPE(cpe *CPE) []string
 ```
 
-### NVDQuery
+查找与特定 CPE 关联的 CVE ID。它首先寻找精确的 CPE URI 匹配，然后回退到模糊（基于距离的）匹配。
 
-NVD查询参数。
+**参数：**
+- `cpe` - 要查找的 CPE
 
-```go
-type NVDQuery struct {
-    CPEName        string    // CPE名称
-    CPEVendor      string    // CPE供应商
-    CPEProduct     string    // CPE产品
-    CPEVersion     string    // CPE版本
-    CPEPart        string    // CPE部件类型
-    CVSSScoreMin   float64   // 最小CVSS分数
-    CVSSScoreMax   float64   // 最大CVSS分数
-    PublishedAfter time.Time // 发布时间之后
-    PublishedBefore time.Time // 发布时间之前
-    ModifiedAfter  time.Time // 修改时间之后
-    ModifiedBefore time.Time // 修改时间之前
-    Keyword        string    // 关键词
-    Limit          int       // 结果限制
-    Offset         int       // 偏移量
-}
-```
+**返回：**
+- `[]string` - 关联的 CVE ID
 
 **示例：**
 ```go
-// 查询Apache Tomcat的漏洞
-query := cpeskills.NVDQuery{
-    CPEVendor:    "apache",
-    CPEProduct:   "tomcat",
-    CVSSScoreMin: 7.0, // 只查询高危漏洞
-    Limit:        50,
-}
+// 查找 Apache Log4j 的 CVE
+log4jCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+cves := nvdData.FindCVEsForCPE(log4jCPE)
 
-vulnerabilities, err := client.QueryVulnerabilities(query)
-if err != nil {
-    log.Printf("查询失败: %v", err)
-} else {
-    fmt.Printf("找到 %d 个Tomcat高危漏洞\n", len(vulnerabilities))
-    
-    for i, cve := range vulnerabilities {
-        fmt.Printf("  %d. %s (CVSS: %.1f)\n", i+1, cve.ID, cve.BaseScore)
-    }
+fmt.Printf("Found %d CVEs for Apache Log4j 2.0:\n", len(cves))
+for _, cveID := range cves {
+    fmt.Printf("- %s\n", cveID)
 }
 ```
 
-### GetCVEDetails
-
-获取特定CVE的详细信息。
+### FindCPEsForCVE
 
 ```go
-func (c *NVDClient) GetCVEDetails(cveID string) (*CVEEntry, error)
+func (data *NVDCPEData) FindCPEsForCVE(cveID string) []*CPE
 ```
+
+查找受特定 CVE 影响的所有 CPE。CVE ID 在查找前会被标准化，返回的每个 CPE 的 `Cve` 字段都被设置为所查询的 ID。
+
+**参数：**
+- `cveID` - CVE 标识符（例如 "CVE-2021-44228"）
+
+**返回：**
+- `[]*CPE` - 受影响的 CPE
 
 **示例：**
 ```go
-// 获取特定CVE的详细信息
-cveDetails, err := client.GetCVEDetails("CVE-2021-44228")
-if err != nil {
-    log.Printf("获取CVE详情失败: %v", err)
-} else {
-    fmt.Printf("CVE ID: %s\n", cveDetails.ID)
-    fmt.Printf("CVSS分数: %.1f\n", cveDetails.BaseScore)
-    fmt.Printf("描述: %s\n", cveDetails.Description)
-    fmt.Printf("发布日期: %s\n", cveDetails.PublishedDate.Format("2006-01-02"))
-    
-    fmt.Printf("受影响的CPE:\n")
-    for i, cpe := range cveDetails.AffectedCPEs {
-        fmt.Printf("  %d. %s\n", i+1, cpe)
-    }
+// 查找受 Log4Shell 影响的 CPE
+affectedCPEs := nvdData.FindCPEsForCVE("CVE-2021-44228")
+
+fmt.Printf("CVE-2021-44228 affects %d CPEs:\n", len(affectedCPEs))
+for _, cpe := range affectedCPEs {
+    fmt.Printf("- %s\n", cpe.GetURI())
 }
 ```
 
-## 数据更新
-
-### CheckForUpdates
-
-检查是否有数据更新。
+### EnrichCPEWithVulnerabilityData
 
 ```go
-func (c *NVDClient) CheckForUpdates() (*UpdateInfo, error)
+func (data *NVDCPEData) EnrichCPEWithVulnerabilityData(cpe *CPE)
 ```
 
-### UpdateInfo
+查找与给定 CPE 关联的 CVE，若找到，则将第一个 CVE ID 存入该 CPE 的 `Cve` 字段。
 
-更新信息结构。
-
-```go
-type UpdateInfo struct {
-    HasUpdates       bool      // 是否有更新
-    LastModified     time.Time // 最后修改时间
-    NewEntriesCount  int       // 新条目数量
-    UpdatedEntriesCount int    // 更新条目数量
-    TotalSize        int64     // 总大小
-}
-```
-
-### DownloadUpdates
-
-下载更新数据。
-
-```go
-func (c *NVDClient) DownloadUpdates() error
-```
+**参数：**
+- `cpe` - 就地丰富的 CPE
 
 **示例：**
 ```go
-// 检查更新
-updateInfo, err := client.CheckForUpdates()
-if err != nil {
-    log.Printf("检查更新失败: %v", err)
-} else if updateInfo.HasUpdates {
-    fmt.Printf("发现更新:\n")
-    fmt.Printf("  新条目: %d\n", updateInfo.NewEntriesCount)
-    fmt.Printf("  更新条目: %d\n", updateInfo.UpdatedEntriesCount)
-    fmt.Printf("  数据大小: %d MB\n", updateInfo.TotalSize/1024/1024)
-    
-    // 下载更新
-    fmt.Println("正在下载更新...")
-    err = client.DownloadUpdates()
-    if err != nil {
-        log.Printf("下载更新失败: %v", err)
-    } else {
-        fmt.Println("更新下载完成")
-    }
-} else {
-    fmt.Println("没有可用更新")
-}
+cpe, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*")
+nvdData.EnrichCPEWithVulnerabilityData(cpe)
+fmt.Printf("Associated CVE: %s\n", cpe.Cve)
 ```
 
-## 自动更新
+## 缓存
 
-### NVDUpdater
-
-自动更新器。
+下载函数会自动将获取到的数据源缓存在 `options.CacheDir` 中以提升性能。缓存的数据源在超过 `options.CacheMaxAge` 小时之前会被复用：
 
 ```go
-type NVDUpdater struct {
-    Client   *NVDClient    // NVD客户端
-    Config   *UpdateConfig // 更新配置
-    Storage  Storage       // 存储接口
-    Logger   Logger        // 日志记录器
-}
-```
+// 配置缓存
+options := cpeskills.DefaultNVDFeedOptions()
+options.CacheDir = "./nvd-cache"
+options.CacheMaxAge = 24
 
-### UpdateConfig
+// 首次下载从 NVD 获取
+nvdData1, _ := cpeskills.DownloadAllNVDData(options)
 
-更新配置。
-
-```go
-type UpdateConfig struct {
-    CheckInterval  time.Duration // 检查间隔
-    AutoDownload   bool          // 自动下载
-    NotifyOnUpdate bool          // 更新时通知
-    MaxRetries     int           // 最大重试次数
-    BackupOldData  bool          // 备份旧数据
-}
-```
-
-### NewNVDUpdater
-
-创建自动更新器。
-
-```go
-func NewNVDUpdater(client *NVDClient, config *UpdateConfig) *NVDUpdater
-```
-
-### StartAutoUpdate
-
-启动自动更新。
-
-```go
-func (u *NVDUpdater) StartAutoUpdate() error
-```
-
-### StopAutoUpdate
-
-停止自动更新。
-
-```go
-func (u *NVDUpdater) StopAutoUpdate() error
-```
-
-**示例：**
-```go
-// 配置自动更新
-updateConfig := &cpeskills.UpdateConfig{
-    CheckInterval:  6 * time.Hour, // 每6小时检查一次
-    AutoDownload:   true,
-    NotifyOnUpdate: true,
-    MaxRetries:     3,
-    BackupOldData:  true,
-}
-
-// 创建更新器
-updater := cpeskills.NewNVDUpdater(client, updateConfig)
-
-// 启动自动更新
-err := updater.StartAutoUpdate()
-if err != nil {
-    log.Printf("启动自动更新失败: %v", err)
-} else {
-    fmt.Println("自动更新已启动")
-}
-
-// 程序结束时停止更新器
-defer updater.StopAutoUpdate()
-```
-
-## 缓存管理
-
-### CacheManager
-
-缓存管理器。
-
-```go
-type CacheManager struct {
-    CacheDir    string        // 缓存目录
-    MaxSize     int64         // 最大缓存大小
-    TTL         time.Duration // 缓存生存时间
-    Compression bool          // 是否压缩
-}
-```
-
-### ClearCache
-
-清除缓存。
-
-```go
-func (c *NVDClient) ClearCache() error
-```
-
-### GetCacheStats
-
-获取缓存统计信息。
-
-```go
-func (c *NVDClient) GetCacheStats() *CacheStats
-```
-
-**示例：**
-```go
-// 获取缓存统计
-stats := client.GetCacheStats()
-fmt.Printf("缓存统计:\n")
-fmt.Printf("  文件数量: %d\n", stats.FileCount)
-fmt.Printf("  总大小: %d MB\n", stats.TotalSize/1024/1024)
-fmt.Printf("  命中率: %.2f%%\n", stats.HitRate*100)
-
-// 清除缓存
-err := client.ClearCache()
-if err != nil {
-    log.Printf("清除缓存失败: %v", err)
-} else {
-    fmt.Println("缓存已清除")
-}
-```
-
-## 错误处理
-
-### NVDError
-
-NVD相关错误类型。
-
-```go
-type NVDError struct {
-    Type    NVDErrorType // 错误类型
-    Message string       // 错误消息
-    Code    int          // HTTP状态码
-    Details string       // 详细信息
-}
-```
-
-### NVDErrorType
-
-错误类型枚举。
-
-```go
-const (
-    ErrorTypeNetworkError NVDErrorType = iota // 网络错误
-    ErrorTypeAPIError                         // API错误
-    ErrorTypeRateLimit                        // 速率限制
-    ErrorTypeParseError                       // 解析错误
-    ErrorTypeAuthError                        // 认证错误
-)
-```
-
-### 错误检查函数
-
-```go
-// 检查是否为网络错误
-func IsNetworkError(err error) bool
-
-// 检查是否为速率限制错误
-func IsRateLimitError(err error) bool
-
-// 检查是否为API错误
-func IsAPIError(err error) bool
-```
-
-**示例：**
-```go
-_, err := client.DownloadCPEDictionary()
-if err != nil {
-    if cpeskills.IsRateLimitError(err) {
-        fmt.Println("遇到速率限制，请稍后重试")
-        time.Sleep(time.Minute)
-    } else if cpeskills.IsNetworkError(err) {
-        fmt.Println("网络错误，检查网络连接")
-    } else if cpeskills.IsAPIError(err) {
-        fmt.Printf("API错误: %v\n", err)
-    } else {
-        fmt.Printf("未知错误: %v\n", err)
-    }
-}
+// 后续下载在缓存仍然新鲜时复用缓存
+nvdData2, _ := cpeskills.DownloadAllNVDData(options)
 ```
 
 ## 完整示例
@@ -500,136 +267,54 @@ package main
 import (
     "fmt"
     "log"
-    "time"
-    "github.com/scagogogo/cpe-skills"
+
+    cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
-    fmt.Println("=== NVD集成示例 ===")
-    
-    // 创建NVD客户端
-    config := &cpeskills.NVDConfig{
-        CacheDir:       "./nvd_cache",
-        UpdateInterval: 24 * time.Hour,
-        EnableCache:    true,
-        Timeout:        30 * time.Second,
-    }
-    
-    client := cpeskills.NewNVDClient(config)
-    
-    // 下载CPE字典
-    fmt.Println("下载CPE字典...")
-    dictionary, err := client.DownloadCPEDictionary()
-    if err != nil {
-        log.Printf("下载字典失败: %v", err)
-        // 使用缓存的字典或创建示例字典
-        dictionary = createSampleDictionary()
-    } else {
-        fmt.Printf("✅ 下载完成，包含 %d 个CPE条目\n", len(dictionary.Entries))
-    }
-    
-    // 搜索字典
-    fmt.Println("\n=== 字典搜索示例 ===")
-    results := dictionary.Search("apache", 5)
-    fmt.Printf("搜索'apache'找到 %d 个结果:\n", len(results))
-    for i, entry := range results {
-        fmt.Printf("  %d. %s\n", i+1, entry.Title)
-    }
-    
-    // 查询漏洞
-    fmt.Println("\n=== 漏洞查询示例 ===")
-    query := cpeskills.NVDQuery{
-        CPEVendor:    "apache",
-        CPEProduct:   "tomcat",
-        CVSSScoreMin: 7.0,
-        Limit:        5,
-    }
-    
-    vulnerabilities, err := client.QueryVulnerabilities(query)
-    if err != nil {
-        log.Printf("查询漏洞失败: %v", err)
-    } else {
-        fmt.Printf("找到 %d 个Apache Tomcat高危漏洞:\n", len(vulnerabilities))
-        for i, cve := range vulnerabilities {
-            fmt.Printf("  %d. %s (CVSS: %.1f)\n", i+1, cve.ID, cve.BaseScore)
-            fmt.Printf("     %s\n", truncateString(cve.Description, 60))
-        }
-    }
-    
-    // 获取特定CVE详情
-    fmt.Println("\n=== CVE详情示例 ===")
-    cveID := "CVE-2021-44228" // Log4Shell
-    cveDetails, err := client.GetCVEDetails(cveID)
-    if err != nil {
-        log.Printf("获取CVE详情失败: %v", err)
-    } else {
-        fmt.Printf("CVE详情 - %s:\n", cveID)
-        fmt.Printf("  CVSS分数: %.1f\n", cveDetails.BaseScore)
-        fmt.Printf("  发布日期: %s\n", cveDetails.PublishedDate.Format("2006-01-02"))
-        fmt.Printf("  描述: %s\n", truncateString(cveDetails.Description, 100))
-        
-        if len(cveDetails.AffectedCPEs) > 0 {
-            fmt.Printf("  受影响的CPE数量: %d\n", len(cveDetails.AffectedCPEs))
-            fmt.Printf("  示例CPE: %s\n", cveDetails.AffectedCPEs[0])
-        }
-    }
-    
-    // 检查更新
-    fmt.Println("\n=== 更新检查示例 ===")
-    updateInfo, err := client.CheckForUpdates()
-    if err != nil {
-        log.Printf("检查更新失败: %v", err)
-    } else {
-        if updateInfo.HasUpdates {
-            fmt.Printf("发现更新:\n")
-            fmt.Printf("  新条目: %d\n", updateInfo.NewEntriesCount)
-            fmt.Printf("  更新条目: %d\n", updateInfo.UpdatedEntriesCount)
-            fmt.Printf("  数据大小: %.1f MB\n", float64(updateInfo.TotalSize)/1024/1024)
-        } else {
-            fmt.Println("数据已是最新版本")
-        }
-    }
-    
-    // 缓存统计
-    fmt.Println("\n=== 缓存统计 ===")
-    cacheStats := client.GetCacheStats()
-    fmt.Printf("缓存文件数: %d\n", cacheStats.FileCount)
-    fmt.Printf("缓存大小: %.1f MB\n", float64(cacheStats.TotalSize)/1024/1024)
-    fmt.Printf("缓存命中率: %.2f%%\n", cacheStats.HitRate*100)
-}
+    // 配置 NVD 选项
+    options := cpeskills.DefaultNVDFeedOptions()
+    options.CacheDir = "./nvd-cache"
+    options.ShowProgress = true
 
-func createSampleDictionary() *cpeskills.CPEDictionary {
-    // 创建示例字典用于演示
-    dict := cpeskills.NewCPEDictionary()
-    
-    entries := []*cpeskills.CPEDictionaryEntry{
-        {
-            CPE23: "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
-            Title: "Apache Tomcat 9.0.0",
-        },
-        {
-            CPE23: "cpe:2.3:a:apache:http_server:2.4.41:*:*:*:*:*:*:*",
-            Title: "Apache HTTP Server 2.4.41",
-        },
+    // 下载 NVD 数据
+    fmt.Println("Downloading NVD data...")
+    nvdData, err := cpeskills.DownloadAllNVDData(options)
+    if err != nil {
+        log.Fatalf("Failed to download NVD data: %v", err)
     }
-    
-    for _, entry := range entries {
-        dict.AddEntry(entry)
-    }
-    
-    return dict
-}
 
-func truncateString(s string, maxLen int) string {
-    if len(s) <= maxLen {
-        return s
+    fmt.Printf("Downloaded %d dictionary items\n", len(nvdData.CPEDictionary.Items))
+    fmt.Printf("Downloaded %d CPE-to-CVE mappings\n", len(nvdData.CPEMatchData.CPEToCVEs))
+
+    // 分析系统 CPE 的漏洞
+    systemCPEs := []string{
+        "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*",
+        "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
+        "cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*",
     }
-    return s[:maxLen-3] + "..."
+
+    fmt.Println("\nVulnerability Analysis:")
+    for _, cpeStr := range systemCPEs {
+        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
+        if err != nil {
+            log.Printf("Failed to parse %s: %v", cpeStr, err)
+            continue
+        }
+
+        cves := nvdData.FindCVEsForCPE(cpeObj)
+        fmt.Printf("\n%s:\n", cpeStr)
+        fmt.Printf("  Found %d CVEs\n", len(cves))
+        for _, cveID := range cves {
+            fmt.Printf("  - %s\n", cveID)
+        }
+    }
+
+    // 反向查找：某个 CVE 影响了哪些 CPE
+    fmt.Println("\nCPEs affected by CVE-2021-44228:")
+    affected := nvdData.FindCPEsForCVE("CVE-2021-44228")
+    for _, cpe := range affected {
+        fmt.Printf("  - %s\n", cpe.GetURI())
+    }
 }
 ```
-
-## 下一步
-
-- 了解[CVE映射](../guide/cve-mapping.md)来关联CPE和漏洞
-- 学习[存储接口](./storage.md)来持久化NVD数据
-- 探索[字典管理](./dictionary.md)来管理下载的CPE字典

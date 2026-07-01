@@ -1,8 +1,8 @@
 # 核心类型
 
-本页面描述了CPE库中的核心数据类型和结构体，这些是使用库时需要了解的基本构建块。
+本节介绍 CPE 库中使用的核心数据结构和类型定义。
 
-下面的类图展示了核心类型之间的关系：`CPE` 可以转换为 `WFN`，而 `CPEDictionary` 包含多个 `CPEItem` 条目。
+下面的类图展示了核心类型之间的关系。`CPE` 可以通过 `FromCPE` 函数转换为 `WFN`，而 `CPEDictionary` 包含多个 `CPEItem` 条目。
 
 ```mermaid
 classDiagram
@@ -20,14 +20,14 @@ classDiagram
         +string TargetHardware
         +string Other
         +Match(other) bool
-        +ToWFN() WFN
+        +GetURI() string
     }
     class WFN {
         +string Part
         +string Vendor
         +string Product
         +string Version
-        +String() string
+        +WFNString() string
     }
     class CPEDictionary {
         +string SchemaVersion
@@ -38,460 +38,300 @@ classDiagram
         +string Title
         +bool Deprecated
     }
-    CPE ..> WFN : "转换为"
+    CPE ..> WFN : "FromCPE 转换为"
     CPEDictionary "1" --> "*" CPEItem : "包含"
 ```
 
 ## CPE 结构体
 
-### CPE
-
-主要的CPE结构体，表示一个完整的通用平台枚举对象。
+`CPE` 结构体是表示 Common Platform Enumeration 条目的核心数据结构。
 
 ```go
 type CPE struct {
-    Cpe23           string    // CPE 2.3格式字符串
-    Part            Part      // 组件类型（应用程序、硬件、操作系统）
-    Vendor          Vendor    // 供应商信息
-    ProductName     Product   // 产品名称
-    Version         Version   // 版本信息
-    Update          Update    // 更新信息
-    Edition         Edition   // 版本信息
-    Language        Language  // 语言代码
-    SoftwareEdition string    // 软件版本
-    TargetSoftware  string    // 目标软件
-    TargetHardware  string    // 目标硬件
-    Other           string    // 其他信息
-    Cve             string    // 关联的CVE
-    Url             string    // 参考URL
+    // CPE 2.3 格式字符串表示
+    Cpe23 string `json:"cpe_23" bson:"cpe_23"`
+    
+    // 组件类型（应用程序、硬件或操作系统）
+    Part Part `json:"part" bson:"part"`
+    
+    // 供应商/制造商名称
+    Vendor Vendor `json:"vendor" bson:"vendor"`
+    
+    // 产品名称
+    ProductName Product `json:"product_name" bson:"product_name"`
+    
+    // 产品版本
+    Version Version `json:"version" bson:"version"`
+    
+    // 更新标识符
+    Update Update `json:"update" bson:"update"`
+    
+    // 版本标识符
+    Edition Edition `json:"edition" bson:"edition"`
+    
+    // 语言标识符
+    Language Language `json:"language" bson:"language"`
+    
+    // 软件版本（如 "professional"、"enterprise"）
+    SoftwareEdition string `json:"software_edition" bson:"software_edition"`
+    
+    // 目标软件环境
+    TargetSoftware string `json:"target_software" bson:"target_software"`
+    
+    // 目标硬件环境
+    TargetHardware string `json:"target_hardware" bson:"target_hardware"`
+    
+    // 其他属性
+    Other string `json:"other" bson:"other"`
+    
+    // 关联的 CVE 标识符
+    Cve string `json:"cve" bson:"cve"`
+    
+    // 来源 URL
+    Url string `json:"url" bson:"url"`
 }
 ```
 
-#### 方法
+### 方法
+
+#### Match
 
 ```go
-// 获取CPE的URI表示
-func (c *CPE) GetURI() string
-
-// 获取CPE 2.3格式字符串
-func (c *CPE) GetCPE23() string
-
-// 获取CPE 2.2格式字符串
-func (c *CPE) GetCPE22() string
-
-// 检查CPE是否匹配另一个CPE
 func (c *CPE) Match(other *CPE) bool
-
-// 验证CPE的有效性
-func (c *CPE) Validate() error
-
-// 克隆CPE对象
-func (c *CPE) Clone() *CPE
 ```
+
+根据 CPE 名称匹配规范判断当前 CPE 是否与另一个 CPE 匹配。
+
+**参数：**
+- `other` - 用于匹配的目标 CPE
+
+**返回值：**
+- `bool` - 匹配返回 `true`，否则返回 `false`
+
+**示例：**
+```go
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+
+if cpe2.Match(cpe1) {
+    fmt.Println("CPE1 匹配 CPE2 模式")
+}
+```
+
+#### GetURI
+
+```go
+func (c *CPE) GetURI() string
+```
+
+返回 CPE 2.3 URI 字符串表示。
+
+**返回值：**
+- `string` - CPE 2.3 格式字符串
+
+#### FromCPE
+
+```go
+func FromCPE(cpe *CPE) *WFN
+```
+
+将 `CPE` 转换为规范化名称（WFN）格式。
+
+**参数：**
+- `cpe` - 要转换的 CPE
+
+**返回值：**
+- `*WFN` - CPE 的 WFN 表示
 
 ## 组件类型
 
 ### Part
 
-表示CPE的组件类型。
+表示 CPE 的组件类型（应用程序、硬件或操作系统）。
 
 ```go
 type Part struct {
-    ShortName   string // 短名称（a, h, o）
-    LongName    string // 长名称（Application, Hardware, Operating System）
-    Description string // 描述
+    ShortName   string  // 单字符标识符（"a"、"h"、"o"）
+    LongName    string  // 完整名称（"Application"、"Hardware"、"Operation System"）
+    Description string  // 附加描述
 }
 ```
 
-#### 预定义常量
+#### 预定义 Part
 
 ```go
 var (
-    PartApplication     = Part{ShortName: "a", LongName: "Application", Description: "应用程序"}
-    PartHardware        = Part{ShortName: "h", LongName: "Hardware", Description: "硬件设备"}
-    PartOperatingSystem = Part{ShortName: "o", LongName: "Operating System", Description: "操作系统"}
+    // 应用软件
+    PartApplication = &Part{
+        ShortName: "a",
+        LongName:  "Application",
+    }
+    
+    // 硬件设备
+    PartHardware = &Part{
+        ShortName: "h",
+        LongName:  "Hardware",
+    }
+    
+    // 操作系统
+    PartOperationSystem = &Part{
+        ShortName: "o",
+        LongName:  "Operation System",
+    }
 )
 ```
 
-### Vendor
+### 类型别名
 
-供应商信息类型。
+该库定义了若干类型别名，以获得更好的类型安全性和清晰度：
 
 ```go
+// Vendor 表示产品供应商/制造商
 type Vendor string
 
-// 常用供应商常量
-const (
-    VendorMicrosoft = Vendor("microsoft")
-    VendorApache    = Vendor("apache")
-    VendorOracle    = Vendor("oracle")
-    VendorGoogle    = Vendor("google")
-    VendorCisco     = Vendor("cisco")
-)
-```
-
-### Product
-
-产品名称类型。
-
-```go
+// Product 表示产品名称
 type Product string
 
-// 常用产品常量
-const (
-    ProductWindows     = Product("windows")
-    ProductTomcat      = Product("tomcat")
-    ProductJava        = Product("java")
-    ProductChrome      = Product("chrome")
-    ProductFirefox     = Product("firefox")
-)
-```
-
-### Version
-
-版本信息类型。
-
-```go
+// Version 表示产品版本
 type Version string
 
-// 特殊版本值
-const (
-    VersionAny = Version("*")  // 任意版本
-    VersionNA  = Version("-")  // 不适用
-)
-```
+// Update 表示更新标识符
+type Update string
 
-## WFN 类型
+// Edition 表示版本标识符
+type Edition string
 
-### WFN
-
-Well-Formed Name结构体，CPE的内部表示格式。
-
-```go
-type WFN struct {
-    Part            string // 组件类型
-    Vendor          string // 供应商
-    Product         string // 产品
-    Version         string // 版本
-    Update          string // 更新
-    Edition         string // 版本
-    Language        string // 语言
-    SoftwareEdition string // 软件版本
-    TargetSoftware  string // 目标软件
-    TargetHardware  string // 目标硬件
-    Other           string // 其他
-}
-```
-
-#### WFN 特殊值
-
-```go
-const (
-    WFNAny           = "*"  // 任意值
-    WFNNotApplicable = "-"  // 不适用
-)
-```
-
-#### 方法
-
-```go
-// 获取WFN的字符串表示
-func (w *WFN) String() string
-
-// 验证WFN的有效性
-func (w *WFN) Validate() error
-
-// 比较两个WFN
-func (w *WFN) Compare(other *WFN) int
-
-// 检查WFN是否匹配另一个WFN
-func (w *WFN) Match(other *WFN) bool
-```
-
-## 匹配类型
-
-### MatchOptions
-
-匹配选项配置。
-
-```go
-type MatchOptions struct {
-    ExactMatch      bool    // 是否精确匹配
-    IgnoreCase      bool    // 是否忽略大小写
-    AllowWildcards  bool    // 是否允许通配符
-    FuzzyThreshold  float64 // 模糊匹配阈值
-}
-```
-
-### MatchResult
-
-匹配结果。
-
-```go
-type MatchResult struct {
-    Match      bool    // 是否匹配
-    Score      float64 // 匹配分数（0.0-1.0）
-    Confidence float64 // 置信度
-    Details    string  // 详细信息
-}
-```
-
-### MatchWeights
-
-匹配权重配置。
-
-```go
-type MatchWeights struct {
-    Part    float64 // 组件类型权重
-    Vendor  float64 // 供应商权重
-    Product float64 // 产品权重
-    Version float64 // 版本权重
-    Update  float64 // 更新权重
-    Edition float64 // 版本权重
-}
-```
-
-## 存储类型
-
-### Storage
-
-存储接口定义。
-
-```go
-type Storage interface {
-    // 初始化存储
-    Initialize() error
-    
-    // 存储CPE
-    Store(cpe *CPE) error
-    
-    // 检索CPE
-    Retrieve(id string) (*CPE, error)
-    
-    // 删除CPE
-    Delete(id string) error
-    
-    // 列出所有CPE
-    List() ([]*CPE, error)
-    
-    // 搜索CPE
-    Search(query string) ([]*CPE, error)
-    
-    // 关闭存储
-    Close() error
-}
-```
-
-### FileStorage
-
-基于文件的存储实现。
-
-```go
-type FileStorage struct {
-    BaseDir     string // 基础目录
-    EnableCache bool   // 是否启用缓存
-    CacheSize   int    // 缓存大小
-}
-```
-
-### MemoryStorage
-
-基于内存的存储实现。
-
-```go
-type MemoryStorage struct {
-    data map[string]*CPE // 内存数据
-    mu   sync.RWMutex    // 读写锁
-}
-```
-
-## 集合类型
-
-### CPESet
-
-CPE集合类型。
-
-```go
-type CPESet struct {
-    items map[string]*CPE // CPE项目
-    mu    sync.RWMutex    // 读写锁
-}
-```
-
-#### 方法
-
-```go
-// 添加CPE到集合
-func (s *CPESet) Add(cpe *CPE) bool
-
-// 从集合中移除CPE
-func (s *CPESet) Remove(cpe *CPE) bool
-
-// 检查CPE是否在集合中
-func (s *CPESet) Contains(cpe *CPE) bool
-
-// 获取集合大小
-func (s *CPESet) Size() int
-
-// 清空集合
-func (s *CPESet) Clear()
-
-// 转换为切片
-func (s *CPESet) ToSlice() []*CPE
-
-// 并集操作
-func (s *CPESet) Union(other *CPESet) *CPESet
-
-// 交集操作
-func (s *CPESet) Intersection(other *CPESet) *CPESet
-
-// 差集操作
-func (s *CPESet) Difference(other *CPESet) *CPESet
-```
-
-## 错误类型
-
-### CPEError
-
-CPE相关错误的基础类型。
-
-```go
-type CPEError struct {
-    Type    ErrorType // 错误类型
-    Message string    // 错误消息
-    Field   string    // 相关字段
-    Value   string    // 错误值
-}
-```
-
-### ErrorType
-
-错误类型枚举。
-
-```go
-type ErrorType int
-
-const (
-    ErrorTypeInvalidFormat ErrorType = iota // 无效格式
-    ErrorTypeInvalidPart                    // 无效组件类型
-    ErrorTypeInvalidVendor                  // 无效供应商
-    ErrorTypeInvalidProduct                 // 无效产品
-    ErrorTypeInvalidVersion                 // 无效版本
-    ErrorTypeParsingError                   // 解析错误
-    ErrorTypeValidationError                // 验证错误
-    ErrorTypeStorageError                   // 存储错误
-)
-```
-
-#### 方法
-
-```go
-// 实现error接口
-func (e *CPEError) Error() string
-
-// 获取错误类型
-func (e *CPEError) GetType() ErrorType
-
-// 检查是否为特定类型的错误
-func (e *CPEError) Is(errorType ErrorType) bool
+// Language 表示语言标识符
+type Language string
 ```
 
 ## 字典类型
 
 ### CPEDictionary
 
-CPE字典结构。
+表示 CPE 条目的集合，通常来自 NVD。
 
 ```go
 type CPEDictionary struct {
-    Entries      []*CPEDictionaryEntry // 字典条目
-    LastModified time.Time             // 最后修改时间
-    Version      string                // 字典版本
+    SchemaVersion string     // XML schema 版本
+    GeneratedAt   time.Time  // 字典生成时间戳
+    Items         []*CPEItem // CPE 条目
 }
 ```
 
-### CPEDictionaryEntry
+### CPEItem
 
-字典条目。
+表示 CPE 字典中的单个条目。
 
 ```go
-type CPEDictionaryEntry struct {
-    CPE23        string    // CPE 2.3格式
-    Title        string    // 标题
-    References   []string  // 参考链接
-    LastModified time.Time // 最后修改时间
+type CPEItem struct {
+    Name            string       // CPE 名称（URI 格式）
+    Title           string       // 人类可读标题
+    References      []Reference  // 参考链接
+    Deprecated      bool         // CPE 是否已弃用
+    DeprecationDate *time.Time   // 弃用日期（如果已弃用）
+    CPE             *CPE         // 解析后的 CPE 对象
 }
 ```
 
-## NVD 类型
+### Reference
 
-### NVDClient
-
-NVD客户端。
+表示与 CPE 条目关联的参考链接。
 
 ```go
-type NVDClient struct {
-    APIKey      string        // API密钥
-    BaseURL     string        // 基础URL
-    Timeout     time.Duration // 超时时间
-    RateLimit   int           // 速率限制
+type Reference struct {
+    URL  string // 参考 URL
+    Type string // 参考类型（如 "Vendor"、"Advisory"、"External"）
 }
 ```
 
-### CVEEntry
+## CVE 类型
 
-CVE条目。
+### CVEReference
+
+表示一个 CVE（Common Vulnerabilities and Exposures，通用漏洞与暴露）条目。
 
 ```go
-type CVEEntry struct {
-    ID            string    // CVE ID
-    Description   string    // 描述
-    BaseScore     float64   // CVSS基础分数
-    PublishedDate time.Time // 发布日期
-    LastModified  time.Time // 最后修改时间
-    AffectedCPEs  []string  // 受影响的CPE
+type CVEReference struct {
+    CVEID            string                 // CVE 标识符（如 "CVE-2021-44228"）
+    Description      string                 // 漏洞描述
+    PublishedDate    time.Time              // 发布日期
+    LastModifiedDate time.Time              // 最后修改日期
+    CVSSScore        float64                // CVSS 评分（0.0-10.0）
+    Severity         string                 // 严重性级别（Low、Medium、High、Critical）
+    References       []string               // 参考 URL
+    AffectedCPEs     []string               // 受影响的 CPE URI
+    Metadata         map[string]interface{} // 额外元数据
 }
+```
+
+## 常量
+
+### CPE 格式常量
+
+```go
+const (
+    CPE23Header  = "cpe"    // CPE 2.3 头部
+    CPE23Version = "2.3"    // CPE 2.3 版本
+    CPE22Header  = "cpe"    // CPE 2.2 头部
+)
+```
+
+### 特殊值
+
+```go
+const (
+    ValueANY = "*"  // 通配符逻辑值（匹配任意值）
+    ValueNA  = "-"  // 不适用逻辑值
+)
 ```
 
 ## 使用示例
 
+### 创建 CPE 对象
+
 ```go
-package main
+// 手动创建 CPE
+windowsCPE := &cpeskills.CPE{
+    Cpe23:       "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
+    Part:        *cpeskills.PartApplication,
+    Vendor:      cpeskills.Vendor("microsoft"),
+    ProductName: cpeskills.Product("windows"),
+    Version:     cpeskills.Version("10"),
+}
 
-import (
-    "fmt"
-    "github.com/scagogogo/cpe-skills"
-)
-
-func main() {
-    // 创建CPE对象
-    cpeObj := &cpeskills.CPE{
-        Part:        cpeskills.PartApplication,
-        Vendor:      cpeskills.VendorMicrosoft,
-        ProductName: cpeskills.ProductWindows,
-        Version:     cpeskills.Version("10"),
-    }
-    
-    // 验证CPE
-    if err := cpeObj.Validate(); err != nil {
-        fmt.Printf("CPE验证失败: %v\n", err)
-        return
-    }
-    
-    // 获取CPE字符串
-    fmt.Printf("CPE 2.3: %s\n", cpeObj.GetCPE23())
-    fmt.Printf("CPE 2.2: %s\n", cpeObj.GetCPE22())
-    
-    // 创建CPE集合
-    cpeSet := cpeskills.NewCPESet()
-    cpeSet.Add(cpeObj)
-    
-    fmt.Printf("集合大小: %d\n", cpeSet.Size())
+// 从字符串解析
+parsedCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+if err != nil {
+    log.Fatal(err)
 }
 ```
 
-## 下一步
+### 使用 Part
 
-- 了解[解析功能](./parsing.md)来处理CPE字符串
-- 学习[匹配算法](./matching.md)来比较CPE对象
-- 探索[存储接口](./storage.md)来持久化CPE数据
+```go
+// 检查 part 类型
+if cpeObj.Part.ShortName == "a" {
+    fmt.Println("这是一个应用程序")
+}
+
+// 使用预定义 part
+newCPE := &cpeskills.CPE{
+    Part: *cpeskills.PartOperationSystem,
+    // ... 其他字段
+}
+```
+
+### 类型转换
+
+```go
+// 转换为字符串类型
+vendorStr := string(cpeObj.Vendor)
+productStr := string(cpeObj.ProductName)
+versionStr := string(cpeObj.Version)
+
+// 从字符串创建
+cpeObj.Vendor = cpeskills.Vendor("apache")
+cpeObj.ProductName = cpeskills.Product("tomcat")
+cpeObj.Version = cpeskills.Version("9.0.0")
+```

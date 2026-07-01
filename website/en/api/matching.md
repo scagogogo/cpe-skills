@@ -83,9 +83,12 @@ Performs CPE matching with configurable options.
 
 ```go
 type MatchOptions struct {
-    IgnoreVersion bool  // Ignore version field in matching
-    IgnoreUpdate  bool  // Ignore update field in matching
-    CaseSensitive bool  // Case-sensitive string comparison
+    IgnoreVersion    bool   // Ignore version field in matching
+    AllowSubVersions bool   // Allow sub-version matching (e.g., "1.0" matches "1.0.1")
+    UseRegex         bool   // Use regular expressions for string fields
+    VersionRange     bool   // Match against a version range instead of exact value
+    MinVersion       string // Lower bound of the version range (inclusive)
+    MaxVersion       string // Upper bound of the version range (inclusive)
 }
 ```
 
@@ -94,7 +97,6 @@ type MatchOptions struct {
 // Create match options
 options := &cpeskills.MatchOptions{
     IgnoreVersion: true,
-    CaseSensitive: false,
 }
 
 cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
@@ -112,10 +114,10 @@ if cpeskills.MatchCPE(cpe1, cpe2, options) {
 func DefaultMatchOptions() *MatchOptions
 ```
 
-Returns default matching options.
+Returns default matching options (`IgnoreVersion: false`, `AllowSubVersions: true`, `UseRegex: false`, `VersionRange: false`).
 
 **Returns:**
-- `*MatchOptions` - Default options with all flags set to `false`
+- `*MatchOptions` - Default matching options
 
 ## Advanced Matching
 
@@ -247,10 +249,10 @@ options.ScoreThreshold = 0.7  // Require 70% similarity
 
 ## Version Comparison
 
-### CompareVersionsString
+### CompareVersions
 
 ```go
-func CompareVersionsString(v1, v2 string) int
+func CompareVersions(v1, v2 string) int
 ```
 
 Compares two version strings.
@@ -264,13 +266,13 @@ Compares two version strings.
 
 **Example:**
 ```go
-result := cpeskills.CompareVersionsString("1.0.0", "1.0.1")
+result := cpeskills.CompareVersions("1.0.0", "1.0.1")
 fmt.Printf("Comparison result: %d\n", result) // -1
 
-result = cpeskills.CompareVersionsString("2.0", "1.9.9")
+result = cpeskills.CompareVersions("2.0", "1.9.9")
 fmt.Printf("Comparison result: %d\n", result) // 1
 
-result = cpeskills.CompareVersionsString("1.0", "1.0.0")
+result = cpeskills.CompareVersions("1.0", "1.0.0")
 fmt.Printf("Comparison result: %d\n", result) // 0
 ```
 
@@ -363,9 +365,9 @@ func main() {
     
     // Version comparison
     fmt.Println("\n=== Version Comparison ===")
-    fmt.Printf("1.0 vs 1.1: %d\n", cpeskills.CompareVersionsString("1.0", "1.1"))
-    fmt.Printf("2.0 vs 1.9: %d\n", cpeskills.CompareVersionsString("2.0", "1.9"))
-    fmt.Printf("1.0 vs 1.0: %d\n", cpeskills.CompareVersionsString("1.0", "1.0"))
+    fmt.Printf("1.0 vs 1.1: %d\n", cpeskills.CompareVersions("1.0", "1.1"))
+    fmt.Printf("2.0 vs 1.9: %d\n", cpeskills.CompareVersions("2.0", "1.9"))
+    fmt.Printf("1.0 vs 1.0: %d\n", cpeskills.CompareVersions("1.0", "1.0"))
     
     // Regex matching
     fmt.Println("\n=== Regex Matching ===")

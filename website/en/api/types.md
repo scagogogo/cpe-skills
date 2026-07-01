@@ -2,7 +2,7 @@
 
 This section documents the core data structures and type definitions used throughout the CPE library.
 
-The class diagram below shows how the core types relate to each other. A `CPE` can be converted to a `WFN`, while a `CPEDictionary` holds many `CPEItem` entries.
+The class diagram below shows how the core types relate to each other. A `CPE` can be converted to a `WFN` via the `FromCPE` function, while a `CPEDictionary` holds many `CPEItem` entries.
 
 ```mermaid
 classDiagram
@@ -20,14 +20,14 @@ classDiagram
         +string TargetHardware
         +string Other
         +Match(other) bool
-        +ToWFN() WFN
+        +GetURI() string
     }
     class WFN {
         +string Part
         +string Vendor
         +string Product
         +string Version
-        +String() string
+        +WFNString() string
     }
     class CPEDictionary {
         +string SchemaVersion
@@ -38,7 +38,7 @@ classDiagram
         +string Title
         +bool Deprecated
     }
-    CPE ..> WFN : "converts to"
+    CPE ..> WFN : "FromCPE converts to"
     CPEDictionary "1" --> "*" CPEItem : "contains"
 ```
 
@@ -129,13 +129,16 @@ Returns the CPE 2.3 URI string representation.
 **Returns:**
 - `string` - CPE 2.3 format string
 
-#### ToWFN
+#### FromCPE
 
 ```go
-func (c *CPE) ToWFN() *WFN
+func FromCPE(cpe *CPE) *WFN
 ```
 
-Converts the CPE to Well-Formed Name (WFN) format.
+Converts a `CPE` to Well-Formed Name (WFN) format.
+
+**Parameters:**
+- `cpe` - The CPE to convert
 
 **Returns:**
 - `*WFN` - WFN representation of the CPE
@@ -222,22 +225,23 @@ Represents a single entry in a CPE dictionary.
 
 ```go
 type CPEItem struct {
-    Name         string              // CPE name (URI format)
-    Title        string              // Human-readable title
-    References   []*CPEReference     // Reference links
-    Deprecated   bool                // Whether the CPE is deprecated
-    DeprecatedBy []*CPEDeprecation   // Replacement CPEs if deprecated
+    Name            string       // CPE name (URI format)
+    Title           string       // Human-readable title
+    References      []Reference  // Reference links
+    Deprecated      bool         // Whether the CPE is deprecated
+    DeprecationDate *time.Time   // Deprecation date (if deprecated)
+    CPE             *CPE         // Parsed CPE object
 }
 ```
 
-### CPEReference
+### Reference
 
-Represents a reference link associated with a CPE.
+Represents a reference link associated with a CPE item.
 
 ```go
-type CPEReference struct {
-    Href string // Reference URL
-    Text string // Reference description
+type Reference struct {
+    URL  string // Reference URL
+    Type string // Reference type (e.g., "Vendor", "Advisory", "External")
 }
 ```
 
@@ -249,14 +253,15 @@ Represents a CVE (Common Vulnerabilities and Exposures) entry.
 
 ```go
 type CVEReference struct {
-    ID          string    // CVE identifier (e.g., "CVE-2021-1234")
-    Description string    // Vulnerability description
-    CVSS        float64   // CVSS score
-    Severity    string    // Severity level
-    PublishedAt time.Time // Publication date
-    ModifiedAt  time.Time // Last modification date
-    References  []string  // Reference URLs
-    CPEs        []*CPE    // Affected CPEs
+    CVEID            string                 // CVE identifier (e.g., "CVE-2021-44228")
+    Description      string                 // Vulnerability description
+    PublishedDate    time.Time              // Publication date
+    LastModifiedDate time.Time              // Last modification date
+    CVSSScore        float64                // CVSS score (0.0-10.0)
+    Severity         string                 // Severity level (Low, Medium, High, Critical)
+    References       []string               // Reference URLs
+    AffectedCPEs     []string               // Affected CPE URIs
+    Metadata         map[string]interface{} // Additional metadata
 }
 ```
 
@@ -276,8 +281,8 @@ const (
 
 ```go
 const (
-    ANY = "*"  // Wildcard value (matches any value)
-    NA  = "-"  // Not applicable value
+    ValueANY = "*"  // Wildcard logical value (matches any value)
+    ValueNA  = "-"  // Not applicable logical value
 )
 ```
 

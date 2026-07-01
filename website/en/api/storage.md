@@ -320,28 +320,34 @@ cacheStorage.Initialize()
 
 ```go
 type SearchOptions struct {
-    Limit      int    // Maximum number of results
-    Offset     int    // Number of results to skip
-    SortBy     string // Field to sort by
-    SortOrder  string // Sort order ("asc" or "desc")
-    IncludeAll bool   // Include all fields in results
+    Offset            int                    // Number of results to skip
+    Limit             int                    // Maximum number of results
+    SortBy            string                 // Field to sort by
+    SortAscending     bool                   // Sort order (true = ascending)
+    Filters           map[string]interface{} // Filter conditions
+    FullTextQuery     string                 // Full-text search query
+    IncludeDeprecated bool                   // Include deprecated items
+    DateStart         *time.Time             // Date range filter (start)
+    DateEnd           *time.Time             // Date range filter (end)
+    MinCVSS           float64                // Minimum CVSS score
+    MaxCVSS           float64                // Maximum CVSS score
 }
 ```
 
-### DefaultSearchOptions
+### NewSearchOptions
 
 ```go
-func DefaultSearchOptions() *SearchOptions
+func NewSearchOptions() *SearchOptions
 ```
 
-Returns default search options.
+Returns default search options (`Offset: 0`, `Limit: 100`, `SortBy: "id"`, `SortAscending: true`).
 
 **Example:**
 ```go
-options := cpeskills.DefaultSearchOptions()
+options := cpeskills.NewSearchOptions()
 options.Limit = 50
 options.SortBy = "vendor"
-options.SortOrder = "asc"
+options.SortAscending = true
 
 cves, err := storage.SearchCVE("apache", options)
 if err != nil {

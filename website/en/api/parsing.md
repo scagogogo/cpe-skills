@@ -2,7 +2,7 @@
 
 The CPE library provides comprehensive parsing capabilities for both CPE 2.2 and CPE 2.3 formats, converting string representations into structured `CPE` objects.
 
-The diagram below illustrates how parsing and formatting are inverse operations, and how `ConvertCpe22ToCpe23` bridges the two string formats:
+The diagram below illustrates how parsing and formatting are inverse operations, and how a CPE 2.2 string is converted to CPE 2.3 by parsing it and re-formatting the result:
 
 ```mermaid
 flowchart LR
@@ -13,7 +13,6 @@ flowchart LR
     Str22 -- "ParseCpe22" --> Obj
     Obj -- "FormatCpe23" --> Str23
     Obj -- "FormatCpe22" --> Str22
-    Str22 -- "ConvertCpe22ToCpe23" --> Str23
 ```
 
 ## CPE 2.3 Parsing
@@ -34,8 +33,8 @@ Parses a CPE 2.3 format string and converts it to a CPE structure.
 - `error` - Error if parsing fails
 
 **Errors:**
-- `InvalidFormatError` - When the string format doesn't conform to CPE 2.3 standard
-- `InvalidPartError` - When the part field value is not "a", "h", "o", or "*"
+- An invalid-format error when the string does not have exactly 13 colon-separated parts or does not begin with `cpe:2.3:` (detectable with `IsInvalidFormatError`)
+- An invalid-part error when the part field value is not `a`, `h`, `o`, or `*` (detectable with `IsInvalidPartError`)
 
 **Example:**
 ```go
@@ -104,8 +103,8 @@ Parses a CPE 2.2 format string and converts it to a CPE structure.
 - `error` - Error if parsing fails
 
 **Errors:**
-- `InvalidFormatError` - When the string doesn't start with "cpe:/"
-- `InvalidPartError` - When the part field value is not "a", "h", or "o"
+- An invalid-format error when the string does not start with `cpe:/` (detectable with `IsInvalidFormatError`)
+- An invalid-part error when the part field value is not `a`, `h`, or `o` (detectable with `IsInvalidPartError`)
 
 **Example:**
 ```go
@@ -120,17 +119,12 @@ fmt.Printf("Vendor: %s\n", tomcatCPE.Vendor)      // apache
 fmt.Printf("Product: %s\n", tomcatCPE.ProductName) // tomcat
 fmt.Printf("Version: %s\n", tomcatCPE.Version)     // 8.5.0
 
-// Parse complex CPE 2.2 with more fields
-complexCPE, err := cpeskills.ParseCpe22("cpe:/a:apache:tomcat:8.5.0:beta:enterprise:en")
+// Parse a CPE 2.2 string with an extended (~-separated) field section
+mysqlCPE, err := cpeskills.ParseCpe22("cpe:/a:mysql:mysql:5.7.12:::~~~enterprise~")
 if err != nil {
     log.Fatalf("Failed to parse CPE: %v", err)
 }
-
-// Parse CPE 2.2 with special characters
-specialCPE, err := cpeskills.ParseCpe22("cpe:/a:vendor:product~name:1.0")
-if err != nil {
-    log.Fatalf("Failed to parse CPE: %v", err)
-}
+fmt.Printf("Software edition: %s\n", mysqlCPE.SoftwareEdition) // enterprise
 ```
 
 ### CPE 2.2 Format Structure
@@ -153,7 +147,7 @@ cpe:/<part>:<vendor>:<product>:<version>:<update>:<edition>:<language>:~<sw_edit
 func FormatCpe23(cpe *CPE) string
 ```
 
-Converts a CPE object to CPE 2.3 format string.
+Converts a CPE object to a CPE 2.3 format string. If the object already carries a `Cpe23` value it is returned as-is; otherwise a new string is built from the fields, with empty fields replaced by the wildcard `*`.
 
 **Parameters:**
 - `cpe` - CPE object to format
@@ -180,7 +174,7 @@ fmt.Println(cpe23String) // cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
 func FormatCpe22(cpe *CPE) string
 ```
 
-Converts a CPE object to CPE 2.2 format string.
+Converts a CPE object to a CPE 2.2 format string.
 
 **Parameters:**
 - `cpe` - CPE object to format
@@ -201,44 +195,86 @@ cpe22String := cpeskills.FormatCpe22(cpeObj)
 fmt.Println(cpe22String) // cpe:/a:apache:tomcat:8.5.0
 ```
 
-## Conversion Between Formats
-
-### ConvertCpe22ToCpe23
+### FormatCPE
 
 ```go
-func ConvertCpe22ToCpe23(cpe22 string) string
+func FormatCPE(cpe *CPE, version string) (string, error)
 ```
 
-Converts a CPE 2.2 format string to CPE 2.3 format.
+Formats a CPE object as either a 2.2 or 2.3 string, selected by the `version` argument. Accepts `"2.3"`, `"23"` or `""` for CPE 2.3, and `"2.2"` or `"22"` for CPE 2.2. Any other value returns an error.
 
 **Parameters:**
-- `cpe22` - CPE 2.2 format string
+- `cpe` - CPE object to format
+- `version` - Target version selector
 
 **Returns:**
-- `string` - Equivalent CPE 2.3 format string
+- `string` - Formatted CPE string
+- `error` - Error if `cpe` is `nil` or `version` is unsupported
+
+**Example:**
+```go
+cpeObj := &cpeskills.CPE{
+    Part:        *cpeskills.PartApplication,
+    Vendor:      cpeskills.Vendor("apache"),
+    ProductName: cpeskills.Product("tomcat"),
+    Version:     cpeskills.Version("8.5.0"),
+}
+
+str, err := cpeskills.FormatCPE(cpeObj, "2.2")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(str) // cpe:/a:apache:tomcat:8.5.0
+```
+
+## Conversion Between Formats
+
+To convert a CPE 2.2 string to CPE 2.3, parse it with `ParseCpe22` and re-format the resulting object with `FormatCpe23`. (In fact, `ParseCpe22` already populates the object's `Cpe23` field, so `FormatCpe23` simply returns it.)
 
 **Example:**
 ```go
 cpe22 := "cpe:/a:apache:tomcat:8.5.0"
-cpe23 := cpeskills.ConvertCpe22ToCpe23(cpe22)
+
+cpeObj, err := cpeskills.ParseCpe22(cpe22)
+if err != nil {
+    log.Fatal(err)
+}
+
+cpe23 := cpeskills.FormatCpe23(cpeObj)
 fmt.Println(cpe23) // cpe:2.3:a:apache:tomcat:8.5.0:*:*:*:*:*:*:*
 ```
 
-## Escape Handling
+## Convenience Parsing
 
-The library automatically handles escape sequences in CPE strings:
+### Parse
 
-### CPE 2.3 Escaping
+```go
+func Parse(cpeStr string) (*CPE, error)
+```
 
-- Colons (`:`) are escaped as `\:`
-- Backslashes (`\`) are escaped as `\\`
+Parses a CPE string, automatically detecting whether it is in CPE 2.2 or CPE 2.3 form.
 
-### CPE 2.2 Escaping
+### MustParse
 
-- Periods (`.`) are escaped as `\.`
-- Colons (`:`) are escaped as `\:`
-- Slashes (`/`) are escaped as `\/`
-- Tildes (`~`) are escaped as `\~`
+```go
+func MustParse(cpeStr string) *CPE
+```
+
+Like `Parse`, but panics instead of returning an error. Handy for package-level variable initialization with known-good literals.
+
+**Example:**
+```go
+// Auto-detect the format
+cpeObj, err := cpeskills.Parse("cpe:/a:apache:tomcat:8.5.0")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(cpeObj.Vendor) // apache
+
+// Panics on invalid input; use only with trusted literals
+var windows = cpeskills.MustParse("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+fmt.Println(windows.ProductName) // windows
+```
 
 ## Error Handling
 
@@ -259,7 +295,7 @@ if err != nil {
 ## Best Practices
 
 1. **Always check for errors** when parsing CPE strings
-2. **Use the appropriate parser** for the format you're working with
+2. **Use the appropriate parser** for the format you're working with, or `Parse` to auto-detect
 3. **Validate input** before parsing if the source is untrusted
 4. **Handle special characters** properly when constructing CPE strings manually
 5. **Use format conversion functions** when you need to switch between formats
@@ -282,14 +318,14 @@ func main() {
         "cpe:2.3:a:adobe:reader:2021.001.20150:*:*:*:*:*:*:*",
         "cpe:2.3:o:linux:kernel:5.4.0:*:*:*:*:*:*:*",
     }
-    
+
     for _, example := range examples {
         cpeObj, err := cpeskills.ParseCpe23(example)
         if err != nil {
             log.Printf("Failed to parse %s: %v", example, err)
             continue
         }
-        
+
         fmt.Printf("Parsed: %s\n", example)
         fmt.Printf("  Type: %s\n", cpeObj.Part.LongName)
         fmt.Printf("  Vendor: %s\n", cpeObj.Vendor)
@@ -297,14 +333,14 @@ func main() {
         fmt.Printf("  Version: %s\n", cpeObj.Version)
         fmt.Println()
     }
-    
+
     // Parse CPE 2.2 format
     cpe22Example := "cpe:/a:apache:tomcat:8.5.0"
     cpe22Obj, err := cpeskills.ParseCpe22(cpe22Example)
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Convert to CPE 2.3
     cpe23String := cpeskills.FormatCpe23(cpe22Obj)
     fmt.Printf("CPE 2.2: %s\n", cpe22Example)

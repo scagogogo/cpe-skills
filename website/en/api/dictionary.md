@@ -1,44 +1,34 @@
 # Dictionary
 
-The CPE library provides comprehensive support for CPE dictionaries, including parsing NVD XML dictionaries, managing dictionary entries, and performing dictionary-based operations.
+The CPE library provides support for CPE dictionaries, including parsing NVD XML dictionaries, managing dictionary entries in memory, querying entries, and exporting dictionaries back to XML.
 
-The diagram below shows the lifecycle of a CPE dictionary, from parsing raw XML through in-memory operations to merging and exporting.
+The diagram below shows the lifecycle of a CPE dictionary, from parsing raw XML through in-memory operations to exporting and storing.
 
 ```mermaid
 flowchart TD
     subgraph "Parse"
         XML["NVD XML source"]
-        Parse["ParseDictionary / FromFile"]
+        Parse["ParseDictionary"]
         XML --> Parse
     end
 
     Parse --> Dict["CPEDictionary (in memory)"]
 
     subgraph "Operate"
-        Search["Search (query entries)"]
-        Filter["Filter (predicate)"]
-        Stats["Stats (aggregate counts)"]
+        Find["FindItemByName / FindItemsByCriteria"]
+        Add["AddItem / RemoveItem"]
     end
 
-    Dict --> Search
-    Dict --> Filter
-    Dict --> Stats
-
-    subgraph "Merge"
-        Merge["Merge (combine dictionaries)"]
-    end
-
-    Search --> Merge
-    Filter --> Merge
-    Dict --> Merge
+    Dict --> Find
+    Dict --> Add
 
     subgraph "Output"
-        Export["Export"]
-        Store["Storage / File"]
+        Export["ExportDictionary (XML)"]
+        Store["StoreDictionary (Storage)"]
     end
 
-    Merge --> Export
-    Export --> Store
+    Dict --> Export
+    Dict --> Store
 ```
 
 ## Dictionary Types
@@ -47,9 +37,9 @@ flowchart TD
 
 ```go
 type CPEDictionary struct {
-    SchemaVersion string     // XML schema version
-    GeneratedAt   time.Time  // Dictionary generation timestamp
     Items         []*CPEItem // CPE dictionary entries
+    GeneratedAt   time.Time  // Dictionary generation timestamp
+    SchemaVersion string     // CPE schema version the dictionary conforms to
 }
 ```
 
@@ -59,37 +49,27 @@ Represents a complete CPE dictionary, typically from the National Vulnerability 
 
 ```go
 type CPEItem struct {
-    Name         string              // CPE name in URI format
-    Title        string              // Human-readable title
-    References   []*CPEReference     // Associated reference links
-    Deprecated   bool                // Whether the CPE is deprecated
-    DeprecatedBy []*CPEDeprecation   // Replacement CPEs if deprecated
+    Name            string      // CPE name (usually CPE 2.3 format)
+    Title           string      // Human-readable title
+    References      []Reference // Associated reference links
+    Deprecated      bool        // Whether the CPE is deprecated
+    DeprecationDate *time.Time  // Deprecation date, if deprecated
+    CPE             *CPE        // Parsed CPE object
 }
 ```
 
 Represents a single entry in a CPE dictionary.
 
-### CPEReference
+### Reference
 
 ```go
-type CPEReference struct {
-    Href string // Reference URL
-    Text string // Reference description/text
+type Reference struct {
+    URL  string // Reference URL
+    Type string // Reference type, e.g. "Vendor", "Advisory", "External"
 }
 ```
 
 Represents a reference link associated with a CPE entry.
-
-### CPEDeprecation
-
-```go
-type CPEDeprecation struct {
-    Name string // Name of the replacement CPE
-    Type string // Type of deprecation
-}
-```
-
-Represents deprecation information for a CPE entry.
 
 ## Dictionary Parsing
 
@@ -99,7 +79,7 @@ Represents deprecation information for a CPE entry.
 func ParseDictionary(r io.Reader) (*CPEDictionary, error)
 ```
 
-Parses a CPE dictionary from XML data stream (typically NVD format).
+Parses a CPE dictionary from an XML data stream (typically NVD format).
 
 **Parameters:**
 - `r` - XML data stream (from file or HTTP response)
@@ -131,164 +111,169 @@ for i, item := range dictionary.Items[:5] {
 }
 ```
 
-### ParseDictionaryFromFile
+## Dictionary Operations
+
+### NewCPEItem
 
 ```go
-func ParseDictionaryFromFile(filename string) (*CPEDictionary, error)
+func NewCPEItem(cpe *CPE, title string) *CPEItem
 ```
 
-Convenience function to parse a dictionary directly from a file.
+Creates a new CPE item from a parsed CPE and a title.
 
 **Parameters:**
-- `filename` - Path to the XML dictionary file
+- `cpe` - Parsed CPE object
+- `title` - Human-readable title
 
 **Returns:**
-- `*CPEDictionary` - Parsed dictionary
-- `error` - Error if parsing fails
+- `*CPEItem` - New CPE item
 
 **Example:**
 ```go
-dictionary, err := cpeskills.ParseDictionaryFromFile("cpe-dictionary.xml")
+cpe, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
 if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("Loaded %d CPE entries\n", len(dictionary.Items))
+item := cpeskills.NewCPEItem(cpe, "Microsoft Windows 10")
+fmt.Printf("Created item: %s\n", item.Name)
 ```
 
-## Dictionary Operations
-
-### Search Dictionary
+### AddItem
 
 ```go
-func (d *CPEDictionary) Search(query string) []*CPEItem
+func (d *CPEDictionary) AddItem(item *CPEItem)
 ```
 
-Searches the dictionary for entries matching the query.
+Adds a CPE item to the dictionary. If an item with the same name already exists, it is replaced.
 
 **Parameters:**
-- `query` - Search query string
-
-**Returns:**
-- `[]*CPEItem` - Array of matching dictionary items
+- `item` - CPE item to add
 
 **Example:**
 ```go
-// Search for Microsoft products
-results := dictionary.Search("microsoft")
-fmt.Printf("Found %d Microsoft entries\n", len(results))
+cpe, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+item := cpeskills.NewCPEItem(cpe, "Apache Tomcat 9.0.0")
+
+dictionary.AddItem(item)
+fmt.Printf("Dictionary now has %d items\n", len(dictionary.Items))
+```
+
+### RemoveItem
+
+```go
+func (d *CPEDictionary) RemoveItem(name string) bool
+```
+
+Removes a CPE item from the dictionary by name. Returns `true` if an item was removed.
+
+**Parameters:**
+- `name` - CPE name of the item to remove
+
+**Returns:**
+- `bool` - Whether an item was removed
+
+**Example:**
+```go
+removed := dictionary.RemoveItem("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+if removed {
+    fmt.Println("Item removed")
+} else {
+    fmt.Println("Item not found")
+}
+```
+
+### FindItemByName
+
+```go
+func (d *CPEDictionary) FindItemByName(name string) *CPEItem
+```
+
+Finds a dictionary item by its CPE name. Returns `nil` if no item matches.
+
+**Parameters:**
+- `name` - CPE name to look up
+
+**Returns:**
+- `*CPEItem` - Matching item, or `nil`
+
+**Example:**
+```go
+item := dictionary.FindItemByName("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+if item != nil {
+    fmt.Printf("Found: %s\n", item.Title)
+} else {
+    fmt.Println("Not found")
+}
+```
+
+### FindItemsByCriteria
+
+```go
+func (d *CPEDictionary) FindItemsByCriteria(criteria *CPE, options *MatchOptions) []*CPEItem
+```
+
+Finds dictionary items whose parsed CPE matches the given criteria, using the provided match options.
+
+**Parameters:**
+- `criteria` - CPE to match against
+- `options` - Match options (use `DefaultMatchOptions()` for defaults)
+
+**Returns:**
+- `[]*CPEItem` - Matching items
+
+**Example:**
+```go
+// Match all Apache products, ignoring version
+criteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*")
+options := cpeskills.DefaultMatchOptions()
+options.IgnoreVersion = true
+
+results := dictionary.FindItemsByCriteria(criteria, options)
+fmt.Printf("Found %d Apache items\n", len(results))
 
 for _, item := range results {
     fmt.Printf("- %s: %s\n", item.Name, item.Title)
 }
 ```
 
-### Filter by Vendor
-
-```go
-func (d *CPEDictionary) FilterByVendor(vendor string) []*CPEItem
-```
-
-Filters dictionary entries by vendor name.
-
-**Parameters:**
-- `vendor` - Vendor name to filter by
-
-**Returns:**
-- `[]*CPEItem` - Array of entries from the specified vendor
-
-**Example:**
-```go
-apacheItems := dictionary.FilterByVendor("apache")
-fmt.Printf("Found %d Apache products\n", len(apacheItems))
-```
-
-### Filter by Product
-
-```go
-func (d *CPEDictionary) FilterByProduct(product string) []*CPEItem
-```
-
-Filters dictionary entries by product name.
-
-**Parameters:**
-- `product` - Product name to filter by
-
-**Returns:**
-- `[]*CPEItem` - Array of entries for the specified product
-
-### Get Statistics
-
-```go
-func (d *CPEDictionary) GetStatistics() *DictionaryStats
-```
-
-Returns statistical information about the dictionary.
-
-**Returns:**
-- `*DictionaryStats` - Dictionary statistics
-
-```go
-type DictionaryStats struct {
-    TotalItems      int               // Total number of items
-    VendorCount     int               // Number of unique vendors
-    ProductCount    int               // Number of unique products
-    DeprecatedCount int               // Number of deprecated items
-    TopVendors      map[string]int    // Top vendors by product count
-    TopProducts     map[string]int    // Top products by version count
-}
-```
-
-**Example:**
-```go
-stats := dictionary.GetStatistics()
-fmt.Printf("Total items: %d\n", stats.TotalItems)
-fmt.Printf("Unique vendors: %d\n", stats.VendorCount)
-fmt.Printf("Deprecated items: %d\n", stats.DeprecatedCount)
-
-fmt.Println("Top vendors:")
-for vendor, count := range stats.TopVendors {
-    fmt.Printf("  %s: %d products\n", vendor, count)
-}
-```
-
 ## Dictionary Storage
 
-### Store Dictionary
+### StoreDictionary
 
 ```go
-func (s *Storage) StoreDictionary(dict *CPEDictionary) error
+func (fs *FileStorage) StoreDictionary(dict *CPEDictionary) error
 ```
 
-Stores a dictionary using the storage interface.
+Stores a dictionary using the storage backend. `StoreDictionary` is part of the `Storage` interface and is implemented by both `FileStorage` and `MemoryStorage`.
 
 **Example:**
 ```go
-// Parse dictionary
-dictionary, err := cpeskills.ParseDictionaryFromFile("cpe-dictionary.xml")
+// Store in file storage
+storage, err := cpeskills.NewFileStorage("./data", true)
 if err != nil {
     log.Fatal(err)
 }
+defer storage.Close()
 
-// Store in file storage
-storage, _ := cpeskills.NewFileStorage("./data", true)
-storage.Initialize()
+if err := storage.Initialize(); err != nil {
+    log.Fatal(err)
+}
 
-err = storage.StoreDictionary(dictionary)
-if err != nil {
+if err := storage.StoreDictionary(dictionary); err != nil {
     log.Printf("Failed to store dictionary: %v", err)
 } else {
     fmt.Println("Dictionary stored successfully")
 }
 ```
 
-### Retrieve Dictionary
+### RetrieveDictionary
 
 ```go
-func (s *Storage) RetrieveDictionary() (*CPEDictionary, error)
+func (fs *FileStorage) RetrieveDictionary() (*CPEDictionary, error)
 ```
 
-Retrieves a stored dictionary.
+Retrieves a stored dictionary. Returns `ErrNotFound` if no dictionary has been stored.
 
 **Example:**
 ```go
@@ -304,72 +289,19 @@ if err != nil {
 }
 ```
 
-## Dictionary Validation
-
-### Validate Dictionary
-
-```go
-func ValidateDictionary(dict *CPEDictionary) error
-```
-
-Validates a dictionary for consistency and correctness.
-
-**Parameters:**
-- `dict` - Dictionary to validate
-
-**Returns:**
-- `error` - Error if validation fails
-
-**Example:**
-```go
-err := cpeskills.ValidateDictionary(dictionary)
-if err != nil {
-    log.Printf("Dictionary validation failed: %v", err)
-} else {
-    fmt.Println("Dictionary is valid")
-}
-```
-
-## Dictionary Merging
-
-### Merge Dictionaries
-
-```go
-func MergeDictionaries(dict1, dict2 *CPEDictionary) *CPEDictionary
-```
-
-Merges two dictionaries into a single dictionary.
-
-**Parameters:**
-- `dict1` - First dictionary
-- `dict2` - Second dictionary
-
-**Returns:**
-- `*CPEDictionary` - Merged dictionary
-
-**Example:**
-```go
-// Load two dictionaries
-dict1, _ := cpeskills.ParseDictionaryFromFile("dict1.xml")
-dict2, _ := cpeskills.ParseDictionaryFromFile("dict2.xml")
-
-// Merge them
-merged := cpeskills.MergeDictionaries(dict1, dict2)
-fmt.Printf("Merged dictionary has %d items\n", len(merged.Items))
-```
-
 ## Dictionary Export
 
-### Export to JSON
+### ExportDictionary
 
 ```go
-func (d *CPEDictionary) ExportToJSON(w io.Writer) error
+func ExportDictionary(dict *CPEDictionary, w io.Writer) error
 ```
 
-Exports the dictionary to JSON format.
+Exports the dictionary to NVD-style XML format.
 
 **Parameters:**
-- `w` - Writer to output JSON data
+- `dict` - Dictionary to export
+- `w` - Writer to output XML data
 
 **Returns:**
 - `error` - Error if export fails
@@ -377,40 +309,16 @@ Exports the dictionary to JSON format.
 **Example:**
 ```go
 // Export to file
-file, err := os.Create("dictionary.json")
+file, err := os.Create("dictionary.xml")
 if err != nil {
     log.Fatal(err)
 }
 defer file.Close()
 
-err = dictionary.ExportToJSON(file)
-if err != nil {
+if err := cpeskills.ExportDictionary(dictionary, file); err != nil {
     log.Printf("Failed to export dictionary: %v", err)
 } else {
-    fmt.Println("Dictionary exported to JSON")
-}
-```
-
-### Export to CSV
-
-```go
-func (d *CPEDictionary) ExportToCSV(w io.Writer) error
-```
-
-Exports the dictionary to CSV format.
-
-**Example:**
-```go
-// Export to CSV file
-file, err := os.Create("dictionary.csv")
-if err != nil {
-    log.Fatal(err)
-}
-defer file.Close()
-
-err = dictionary.ExportToCSV(file)
-if err != nil {
-    log.Printf("Failed to export to CSV: %v", err)
+    fmt.Println("Dictionary exported to XML")
 }
 ```
 
@@ -423,57 +331,61 @@ import (
     "fmt"
     "log"
     "os"
-    "github.com/scagogogo/cpe-skills"
+
+    cpeskills "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
     // Parse dictionary from NVD XML file
     fmt.Println("Parsing CPE dictionary...")
-    dictionary, err := cpeskills.ParseDictionaryFromFile("official-cpe-dictionary_v2.3.xml")
+    file, err := os.Open("official-cpe-dictionary_v2.3.xml")
+    if err != nil {
+        log.Fatalf("Failed to open dictionary file: %v", err)
+    }
+    defer file.Close()
+
+    dictionary, err := cpeskills.ParseDictionary(file)
     if err != nil {
         log.Fatalf("Failed to parse dictionary: %v", err)
     }
-    
+
     // Display basic information
     fmt.Printf("Dictionary loaded successfully!\n")
     fmt.Printf("Schema version: %s\n", dictionary.SchemaVersion)
     fmt.Printf("Generated at: %v\n", dictionary.GeneratedAt)
     fmt.Printf("Total items: %d\n", len(dictionary.Items))
-    
-    // Get statistics
-    stats := dictionary.GetStatistics()
-    fmt.Printf("Unique vendors: %d\n", stats.VendorCount)
-    fmt.Printf("Deprecated items: %d\n", stats.DeprecatedCount)
-    
-    // Search for specific products
+
+    // Add a new item
+    cpe, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+    dictionary.AddItem(cpeskills.NewCPEItem(cpe, "Apache Tomcat 9.0.0"))
+
+    // Find items matching a criteria
     fmt.Println("\nSearching for Apache products...")
-    apacheItems := dictionary.FilterByVendor("apache")
+    criteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*")
+    options := cpeskills.DefaultMatchOptions()
+    options.IgnoreVersion = true
+
+    apacheItems := dictionary.FindItemsByCriteria(criteria, options)
     fmt.Printf("Found %d Apache products:\n", len(apacheItems))
-    
-    for i, item := range apacheItems[:10] { // Show first 10
+
+    for i, item := range apacheItems {
         fmt.Printf("%d. %s\n", i+1, item.Title)
         if item.Deprecated {
             fmt.Printf("   (DEPRECATED)\n")
         }
-    }
-    
-    // Search by query
-    fmt.Println("\nSearching for 'tomcat'...")
-    tomcatItems := dictionary.Search("tomcat")
-    fmt.Printf("Found %d items containing 'tomcat':\n", len(tomcatItems))
-    
-    for _, item := range tomcatItems[:5] { // Show first 5
-        fmt.Printf("- %s: %s\n", item.Name, item.Title)
-        
+
         // Show references
-        if len(item.References) > 0 {
-            fmt.Printf("  References:\n")
-            for _, ref := range item.References {
-                fmt.Printf("    - %s: %s\n", ref.Text, ref.Href)
-            }
+        for _, ref := range item.References {
+            fmt.Printf("   Reference (%s): %s\n", ref.Type, ref.URL)
         }
     }
-    
+
+    // Look up a specific item by name
+    item := dictionary.FindItemByName("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+    if item != nil {
+        fmt.Printf("\nFound by name: %s\n", item.Title)
+    }
+
     // Store dictionary
     fmt.Println("\nStoring dictionary...")
     storage, err := cpeskills.NewFileStorage("./dictionary-data", true)
@@ -481,32 +393,29 @@ func main() {
         log.Fatal(err)
     }
     defer storage.Close()
-    
-    err = storage.Initialize()
-    if err != nil {
+
+    if err := storage.Initialize(); err != nil {
         log.Fatal(err)
     }
-    
-    err = storage.StoreDictionary(dictionary)
-    if err != nil {
+
+    if err := storage.StoreDictionary(dictionary); err != nil {
         log.Printf("Failed to store dictionary: %v", err)
     } else {
         fmt.Println("Dictionary stored successfully!")
     }
-    
-    // Export to JSON
-    fmt.Println("Exporting to JSON...")
-    jsonFile, err := os.Create("dictionary.json")
+
+    // Export to XML
+    fmt.Println("Exporting to XML...")
+    out, err := os.Create("dictionary.xml")
     if err != nil {
         log.Fatal(err)
     }
-    defer jsonFile.Close()
-    
-    err = dictionary.ExportToJSON(jsonFile)
-    if err != nil {
-        log.Printf("Failed to export to JSON: %v", err)
+    defer out.Close()
+
+    if err := cpeskills.ExportDictionary(dictionary, out); err != nil {
+        log.Printf("Failed to export dictionary: %v", err)
     } else {
-        fmt.Println("Dictionary exported to dictionary.json")
+        fmt.Println("Dictionary exported to dictionary.xml")
     }
 }
 ```

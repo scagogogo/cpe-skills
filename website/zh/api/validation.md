@@ -1,520 +1,261 @@
-# 验证功能
+# 验证
 
-本页面描述了CPE库中用于验证CPE数据完整性和正确性的各种验证功能。
+CPE 库提供了验证、格式检测和标准化函数，用于确保 CPE 数据的完整性以及对 CPE 规范的遵从。
 
-下图展示了验证流程：从单字段的组件级验证，逐级递进到 CPE 整体验证、格式验证、规范化，最后到批量验证：
+下图展示了验证流水线：从单字段组件检查，向上到整体 CPE 验证、格式检测和标准化：
 
 ```mermaid
 flowchart TD
-    Start(["验证入口"]) --> Comp["组件级验证"]
-    Comp --> C1["ValidatePart"]
-    Comp --> C2["ValidateVendor"]
-    Comp --> C3["ValidateProduct"]
-    Comp --> C4["ValidateVersion"]
-    C1 --> CPE["CPE 整体验证"]
-    C2 --> CPE
-    C3 --> CPE
-    C4 --> CPE
-    CPE --> V1["ValidateCPE (对象)"]
-    CPE --> V2["ValidateCPEString"]
-    V1 --> Fmt["格式验证"]
-    V2 --> Fmt
-    Fmt --> F1["IsCPE23Format"]
-    Fmt --> F2["IsCPE22Format"]
-    F1 --> Norm["规范化"]
+    Start(["验证入口"]) --> Comp["组件验证"]
+    Comp --> C1["ValidateComponent"]
+    C1 --> CPE["CPE 验证"]
+    CPE --> V1["ValidateCPE"]
+    V1 --> Fmt["格式检测"]
+    Fmt --> F1["IsCPE23String"]
+    Fmt --> F2["IsCPE22String"]
+    F1 --> Norm["标准化"]
     F2 --> Norm
     Norm --> N1["NormalizeComponent"]
     Norm --> N2["NormalizeCPE"]
-    N1 --> Batch["批量验证"]
-    N2 --> Batch
-    Batch --> B1["ValidateCPEList"]
 ```
 
-## 基本验证
+## 组件验证
+
+### ValidateComponent
+
+```go
+func ValidateComponent(value string, componentName string) error
+```
+
+验证单个 CPE 组件值（vendor、product、version 等）是否符合 CPE 命名规则。
+
+**参数：**
+- `value` - 要验证的组件值
+- `componentName` - 组件名称（用于错误消息中标识哪个字段出错）
+
+**返回值：**
+- `error` - 验证失败时返回错误，有效时返回 `nil`
+
+**验证规则：**
+- 空字符串被视为有效（通配符）
+- 允许特殊值 `*`（ANY）和 `-`（NA）
+- 不得包含非法字符（`! @ # $ % ^ & ( ) { } [ ] | \ ; " ' < > ?`）
+- 不得包含控制字符或可打印 ASCII 范围（32–126）之外的字符
+
+**示例：**
+```go
+// 有效组件
+err := cpeskills.ValidateComponent("microsoft", "Vendor")
+if err != nil {
+    fmt.Printf("Invalid: %v\n", err)
+} else {
+    fmt.Println("Valid component")
+}
+
+// 特殊值
+err = cpeskills.ValidateComponent("*", "Version") // ANY 值
+if err == nil {
+    fmt.Println("Wildcard is valid")
+}
+
+err = cpeskills.ValidateComponent("-", "Version") // NA 值
+if err == nil {
+    fmt.Println("NA value is valid")
+}
+
+// 含控制字符的无效组件
+err = cpeskills.ValidateComponent("invalid\x00component", "Product")
+if err != nil {
+    fmt.Printf("Invalid component: %v\n", err)
+}
+```
+
+## CPE 验证
 
 ### ValidateCPE
-
-验证CPE对象的完整性。
 
 ```go
 func ValidateCPE(cpe *CPE) error
 ```
 
-### ValidateCPEString
+验证完整的 CPE 对象的正确性和合规性。
 
-验证CPE字符串格式。
+**参数：**
+- `cpe` - 要验证的 CPE 对象
 
-```go
-func ValidateCPEString(cpeString string) error
-```
+**返回值：**
+- `error` - 验证失败时返回错误
 
-### ValidateCPEFormat
-
-验证CPE格式是否正确。
-
-```go
-func ValidateCPEFormat(cpeString string) error
-```
+**验证检查项：**
+- `cpe` 不得为 `nil`
+- `Part` 不得为空，且必须是 `a`、`h`、`o` 或 `*` 之一
+- `Vendor` 和 `ProductName` 不得为空
+- 每个组件字段都会经过 `ValidateComponent` 校验
 
 **示例：**
 ```go
-// 验证CPE对象
-cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+// 创建并验证一个 CPE
+cpeObj := &cpeskills.CPE{
+    Part:        *cpeskills.PartApplication,
+    Vendor:      cpeskills.Vendor("microsoft"),
+    ProductName: cpeskills.Product("windows"),
+    Version:     cpeskills.Version("10"),
+}
+
 err := cpeskills.ValidateCPE(cpeObj)
 if err != nil {
-    fmt.Printf("CPE验证失败: %v\n", err)
+    fmt.Printf("CPE validation failed: %v\n", err)
 } else {
-    fmt.Println("✅ CPE验证通过")
+    fmt.Println("CPE is valid")
 }
 
-// 验证CPE字符串
-testStrings := []string{
-    "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",  // 有效
-    "cpe:/a:apache:tomcat:9.0.0",                    // 有效
-    "invalid-cpe-format",                            // 无效
-    "cpe:2.3:x:vendor:product:1.0:*:*:*:*:*:*:*",   // 无效部件
+// 测试无效的 CPE
+invalidCPE := &cpeskills.CPE{
+    Part:        cpeskills.Part{ShortName: "x"}, // 无效的 part
+    Vendor:      cpeskills.Vendor("microsoft"),
+    ProductName: cpeskills.Product("windows"),
 }
 
-for _, testStr := range testStrings {
-    err := cpeskills.ValidateCPEString(testStr)
-    status := "✅"
-    if err != nil {
-        status = "❌"
-    }
-    fmt.Printf("%s %s\n", status, testStr)
-    if err != nil {
-        fmt.Printf("   错误: %v\n", err)
-    }
-}
-```
-
-## 组件验证
-
-### ValidatePart
-
-验证组件类型。
-
-```go
-func ValidatePart(part string) error
-```
-
-### ValidateVendor
-
-验证供应商名称。
-
-```go
-func ValidateVendor(vendor string) error
-```
-
-### ValidateProduct
-
-验证产品名称。
-
-```go
-func ValidateProduct(product string) error
-```
-
-### ValidateVersion
-
-验证版本信息。
-
-```go
-func ValidateVersion(version string) error
-```
-
-**示例：**
-```go
-// 验证各个组件
-components := map[string]string{
-    "part":    "a",
-    "vendor":  "microsoft",
-    "product": "windows",
-    "version": "10.0.19041",
-}
-
-validators := map[string]func(string) error{
-    "part":    cpeskills.ValidatePart,
-    "vendor":  cpeskills.ValidateVendor,
-    "product": cpeskills.ValidateProduct,
-    "version": cpeskills.ValidateVersion,
-}
-
-fmt.Println("组件验证结果:")
-for component, value := range components {
-    validator := validators[component]
-    err := validator(value)
-    
-    status := "✅"
-    if err != nil {
-        status = "❌"
-    }
-    
-    fmt.Printf("  %s %s: %s\n", status, component, value)
-    if err != nil {
-        fmt.Printf("     错误: %v\n", err)
-    }
-}
-```
-
-## 格式验证
-
-### IsCPE23Format
-
-检查是否为CPE 2.3格式。
-
-```go
-func IsCPE23Format(cpeString string) bool
-```
-
-### IsCPE22Format
-
-检查是否为CPE 2.2格式。
-
-```go
-func IsCPE22Format(cpeString string) bool
-```
-
-### IsValidCPEFormat
-
-检查是否为有效的CPE格式。
-
-```go
-func IsValidCPEFormat(cpeString string) bool
-```
-
-**示例：**
-```go
-testFormats := []string{
-    "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
-    "cpe:/a:apache:tomcat:9.0.0",
-    "invalid-format",
-    "cpe:2.3:incomplete",
-}
-
-fmt.Println("格式检查结果:")
-for _, testStr := range testFormats {
-    is23 := cpeskills.IsCPE23Format(testStr)
-    is22 := cpeskills.IsCPE22Format(testStr)
-    isValid := cpeskills.IsValidCPEFormat(testStr)
-    
-    fmt.Printf("字符串: %s\n", testStr)
-    fmt.Printf("  CPE 2.3: %t\n", is23)
-    fmt.Printf("  CPE 2.2: %t\n", is22)
-    fmt.Printf("  有效格式: %t\n\n", isValid)
-}
-```
-
-## 语义验证
-
-### ValidateSemantics
-
-验证CPE的语义正确性。
-
-```go
-func ValidateSemantics(cpe *CPE) error
-```
-
-### ValidateConsistency
-
-验证CPE组件之间的一致性。
-
-```go
-func ValidateConsistency(cpe *CPE) error
-```
-
-### ValidateLogicalConstraints
-
-验证逻辑约束。
-
-```go
-func ValidateLogicalConstraints(cpe *CPE) error
-```
-
-**示例：**
-```go
-// 创建测试CPE
-testCPEs := []*cpeskills.CPE{
-    // 语义正确的CPE
-    {
-        Part:        cpeskills.PartApplication,
-        Vendor:      "microsoft",
-        ProductName: "windows",
-        Version:     "10",
-    },
-    // 语义不一致的CPE（操作系统标记为应用程序）
-    {
-        Part:        cpeskills.PartApplication,
-        Vendor:      "microsoft",
-        ProductName: "windows_server", // 这应该是操作系统
-        Version:     "2019",
-    },
-}
-
-fmt.Println("语义验证结果:")
-for i, testCPE := range testCPEs {
-    fmt.Printf("\n测试CPE %d: %s %s %s\n", i+1, 
-        testCPE.Vendor, testCPE.ProductName, testCPE.Version)
-    
-    // 语义验证
-    err := cpeskills.ValidateSemantics(testCPE)
-    if err != nil {
-        fmt.Printf("  ❌ 语义验证失败: %v\n", err)
-    } else {
-        fmt.Printf("  ✅ 语义验证通过\n")
-    }
-    
-    // 一致性验证
-    err = cpeskills.ValidateConsistency(testCPE)
-    if err != nil {
-        fmt.Printf("  ❌ 一致性验证失败: %v\n", err)
-    } else {
-        fmt.Printf("  ✅ 一致性验证通过\n")
-    }
-}
-```
-
-## 批量验证
-
-### ValidateCPEList
-
-批量验证CPE列表。
-
-```go
-func ValidateCPEList(cpes []*CPE) []ValidationResult
-```
-
-### ValidationResult
-
-验证结果结构。
-
-```go
-type ValidationResult struct {
-    CPE     *CPE          // 被验证的CPE
-    Valid   bool          // 是否有效
-    Errors  []error       // 错误列表
-    Warnings []string     // 警告列表
-    Score   float64       // 质量分数 (0-1)
-}
-```
-
-### ValidateCPESet
-
-验证CPE集合。
-
-```go
-func ValidateCPESet(cpeSet *CPESet) *SetValidationResult
-```
-
-**示例：**
-```go
-// 创建测试CPE列表
-cpeStrings := []string{
-    "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
-    "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
-    "invalid-cpe-format",
-    "cpe:2.3:x:vendor:product:1.0:*:*:*:*:*:*:*", // 无效部件
-}
-
-cpes := []*cpeskills.CPE{}
-for _, cpeStr := range cpeStrings {
-    cpeObj, err := cpeskills.ParseCPE(cpeStr)
-    if err == nil {
-        cpes = append(cpes, cpeObj)
-    } else {
-        // 为无效CPE创建占位符
-        cpes = append(cpes, &cpeskills.CPE{Cpe23: cpeStr})
-    }
-}
-
-// 批量验证
-results := cpeskills.ValidateCPEList(cpes)
-
-fmt.Println("批量验证结果:")
-for i, result := range results {
-    fmt.Printf("\nCPE %d: %s\n", i+1, cpeStrings[i])
-    fmt.Printf("  有效: %t\n", result.Valid)
-    fmt.Printf("  质量分数: %.2f\n", result.Score)
-    
-    if len(result.Errors) > 0 {
-        fmt.Printf("  错误:\n")
-        for _, err := range result.Errors {
-            fmt.Printf("    - %v\n", err)
-        }
-    }
-    
-    if len(result.Warnings) > 0 {
-        fmt.Printf("  警告:\n")
-        for _, warning := range result.Warnings {
-            fmt.Printf("    - %s\n", warning)
-        }
-    }
-}
-```
-
-## 自定义验证
-
-### ValidationRule
-
-验证规则接口。
-
-```go
-type ValidationRule interface {
-    Validate(cpe *CPE) error
-    GetName() string
-    GetDescription() string
-}
-```
-
-### Validator
-
-验证器结构。
-
-```go
-type Validator struct {
-    Rules   []ValidationRule // 验证规则列表
-    Strict  bool            // 严格模式
-    Options *ValidationOptions // 验证选项
-}
-```
-
-### ValidationOptions
-
-验证选项。
-
-```go
-type ValidationOptions struct {
-    CheckSemantics    bool // 检查语义
-    CheckConsistency  bool // 检查一致性
-    CheckFormat       bool // 检查格式
-    AllowDeprecated   bool // 允许已弃用的CPE
-    RequireComplete   bool // 要求完整的CPE
-}
-```
-
-**示例：**
-```go
-// 创建自定义验证规则
-type VendorWhitelistRule struct {
-    AllowedVendors []string
-}
-
-func (r *VendorWhitelistRule) Validate(cpe *cpeskills.CPE) error {
-    for _, allowed := range r.AllowedVendors {
-        if cpeskills.Vendor == allowed {
-            return nil
-        }
-    }
-    return fmt.Errorf("供应商 '%s' 不在白名单中", cpeskills.Vendor)
-}
-
-func (r *VendorWhitelistRule) GetName() string {
-    return "VendorWhitelist"
-}
-
-func (r *VendorWhitelistRule) GetDescription() string {
-    return "检查供应商是否在允许的白名单中"
-}
-
-// 使用自定义验证器
-validator := &cpeskills.Validator{
-    Rules: []cpeskills.ValidationRule{
-        &VendorWhitelistRule{
-            AllowedVendors: []string{"microsoft", "apache", "oracle"},
-        },
-    },
-    Strict: true,
-    Options: &cpeskills.ValidationOptions{
-        CheckSemantics:   true,
-        CheckConsistency: true,
-        CheckFormat:      true,
-    },
-}
-
-// 验证CPE
-testCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:unknown_vendor:product:1.0:*:*:*:*:*:*:*")
-err := validator.Validate(testCPE)
+err = cpeskills.ValidateCPE(invalidCPE)
 if err != nil {
-    fmt.Printf("自定义验证失败: %v\n", err)
+    fmt.Printf("Expected validation error: %v\n", err)
 }
 ```
 
-## 质量评估
+## 格式检测
 
-### AssessQuality
-
-评估CPE质量。
+### IsCPE23String
 
 ```go
-func AssessQuality(cpe *CPE) *QualityAssessment
+func IsCPE23String(s string) bool
 ```
 
-### QualityAssessment
+判断字符串是否形如 CPE 2.3 URI（即以 `cpe:2.3:` 开头）。
 
-质量评估结果。
+**参数：**
+- `s` - 要检查的字符串
 
-```go
-type QualityAssessment struct {
-    OverallScore    float64            // 总体分数 (0-1)
-    ComponentScores map[string]float64 // 各组件分数
-    Issues          []QualityIssue     // 质量问题
-    Recommendations []string           // 改进建议
-}
-```
-
-### QualityIssue
-
-质量问题。
-
-```go
-type QualityIssue struct {
-    Type        IssueType // 问题类型
-    Severity    Severity  // 严重程度
-    Component   string    // 相关组件
-    Description string    // 问题描述
-    Suggestion  string    // 改进建议
-}
-```
+**返回值：**
+- `bool` - 若字符串为 CPE 2.3 形式则返回 `true`
 
 **示例：**
 ```go
-// 评估CPE质量
-testCPEs := []string{
-    "cpe:2.3:a:microsoft:windows:10.0.19041.1234:*:*:*:*:*:*:*", // 高质量
-    "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*",                // 中等质量
-    "cpe:2.3:a:*:*:*:*:*:*:*:*:*:*",                            // 低质量
+cpe23Examples := []string{
+    "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*", // CPE 2.3
+    "cpe:/a:apache:tomcat:8.5.0",                    // CPE 2.2
+    "not a cpe",                                      // 不是 CPE
 }
 
-fmt.Println("CPE质量评估:")
-for i, cpeStr := range testCPEs {
-    cpeObj, err := cpeskills.ParseCpe23(cpeStr)
-    if err != nil {
-        continue
-    }
-    
-    assessment := cpeskills.AssessQuality(cpeObj)
-    
-    fmt.Printf("\nCPE %d: %s\n", i+1, cpeStr)
-    fmt.Printf("  总体分数: %.2f\n", assessment.OverallScore)
-    
-    fmt.Printf("  组件分数:\n")
-    for component, score := range assessment.ComponentScores {
-        fmt.Printf("    %s: %.2f\n", component, score)
-    }
-    
-    if len(assessment.Issues) > 0 {
-        fmt.Printf("  质量问题:\n")
-        for _, issue := range assessment.Issues {
-            fmt.Printf("    - %s: %s\n", issue.Component, issue.Description)
-        }
-    }
-    
-    if len(assessment.Recommendations) > 0 {
-        fmt.Printf("  改进建议:\n")
-        for _, rec := range assessment.Recommendations {
-            fmt.Printf("    - %s\n", rec)
-        }
+for _, example := range cpe23Examples {
+    if cpeskills.IsCPE23String(example) {
+        fmt.Printf("CPE 2.3 string: %s\n", example)
+    } else {
+        fmt.Printf("Not a CPE 2.3 string: %s\n", example)
     }
 }
+```
+
+### IsCPE22String
+
+```go
+func IsCPE22String(s string) bool
+```
+
+判断字符串是否形如 CPE 2.2 URI（即以 `cpe:/` 开头）。
+
+**参数：**
+- `s` - 要检查的字符串
+
+**返回值：**
+- `bool` - 若字符串为 CPE 2.2 形式则返回 `true`
+
+**示例：**
+```go
+cpe22Examples := []string{
+    "cpe:/a:apache:tomcat:8.5.0",                    // CPE 2.2
+    "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*", // CPE 2.3
+    "invalid:/a:apache:tomcat:8.5.0",                // 无效前缀
+}
+
+for _, example := range cpe22Examples {
+    if cpeskills.IsCPE22String(example) {
+        fmt.Printf("CPE 2.2 string: %s\n", example)
+    } else {
+        fmt.Printf("Not a CPE 2.2 string: %s\n", example)
+    }
+}
+```
+
+## 标准化
+
+### NormalizeComponent
+
+```go
+func NormalizeComponent(value string) string
+```
+
+按照 CPE 规范规则标准化一个 CPE 组件。
+
+**参数：**
+- `value` - 要标准化的组件
+
+**返回值：**
+- `string` - 标准化后的组件
+
+**标准化规则：**
+- 特殊值（`*`、`-` 和空字符串）原样返回
+- 转换为小写
+- 将空格替换为下划线
+- 将连续的多个下划线合并为单个下划线
+
+**示例：**
+```go
+// 测试组件标准化
+components := []string{
+    "Microsoft",              // -> "microsoft"
+    "Windows 10",             // -> "windows_10"
+    "Microsoft  Office",      // -> "microsoft_office"
+    "*",                      // -> "*" (不变)
+    "-",                      // -> "-" (不变)
+}
+
+for _, comp := range components {
+    normalized := cpeskills.NormalizeComponent(comp)
+    fmt.Printf("'%s' -> '%s'\n", comp, normalized)
+}
+```
+
+### NormalizeCPE
+
+```go
+func NormalizeCPE(cpe *CPE) *CPE
+```
+
+标准化 CPE 对象的所有组件。输入对象保持不变；返回一个新的标准化对象（若输入为 `nil` 则返回 `nil`）。
+
+**参数：**
+- `cpe` - 要标准化的 CPE
+
+**返回值：**
+- `*CPE` - 组件已标准化的新 CPE
+
+**示例：**
+```go
+// 创建含未标准化组件的 CPE
+originalCPE := &cpeskills.CPE{
+    Part:        *cpeskills.PartApplication,
+    Vendor:      cpeskills.Vendor("Microsoft"),
+    ProductName: cpeskills.Product("Windows 10"),
+    Version:     cpeskills.Version("1.0"),
+}
+
+// 标准化该 CPE
+normalizedCPE := cpeskills.NormalizeCPE(originalCPE)
+
+fmt.Printf("Original vendor: %s\n", originalCPE.Vendor)
+fmt.Printf("Normalized vendor: %s\n", normalizedCPE.Vendor)
+fmt.Printf("Original product: %s\n", originalCPE.ProductName)
+fmt.Printf("Normalized product: %s\n", normalizedCPE.ProductName)
 ```
 
 ## 完整示例
@@ -524,161 +265,91 @@ package main
 
 import (
     "fmt"
-    "log"
     "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
-    fmt.Println("=== CPE验证功能示例 ===")
-    
-    // 测试CPE字符串
-    testCPEs := []string{
-        "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",  // 有效
-        "cpe:/a:apache:tomcat:9.0.0",                    // 有效
-        "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",  // 有效
-        "invalid-cpe-format",                            // 格式错误
-        "cpe:2.3:x:vendor:product:1.0:*:*:*:*:*:*:*",   // 无效部件
-        "cpe:2.3:a::product:1.0:*:*:*:*:*:*:*",         // 空供应商
+    // 组件验证
+    fmt.Println("=== Component Validation ===")
+    components := []string{
+        "microsoft",   // 有效
+        "windows_10",  // 有效
+        "*",           // 有效（通配符）
+        "-",           // 有效（NA）
+        "invalid\x00", // 无效（控制字符）
     }
-    
-    fmt.Println("1. 基本验证:")
-    for i, cpeStr := range testCPEs {
-        fmt.Printf("\n测试 %d: %s\n", i+1, cpeStr)
-        
-        // 格式验证
-        err := cpeskills.ValidateCPEFormat(cpeStr)
+
+    for _, comp := range components {
+        err := cpeskills.ValidateComponent(comp, "Component")
         if err != nil {
-            fmt.Printf("  ❌ 格式验证失败: %v\n", err)
-            continue
+            fmt.Printf("Invalid component '%s': %v\n", comp, err)
         } else {
-            fmt.Printf("  ✅ 格式验证通过\n")
-        }
-        
-        // 解析并验证CPE对象
-        cpeObj, err := cpeskills.ParseCPE(cpeStr)
-        if err != nil {
-            fmt.Printf("  ❌ 解析失败: %v\n", err)
-            continue
-        }
-        
-        err = cpeskills.ValidateCPE(cpeObj)
-        if err != nil {
-            fmt.Printf("  ❌ CPE验证失败: %v\n", err)
-        } else {
-            fmt.Printf("  ✅ CPE验证通过\n")
-        }
-        
-        // 质量评估
-        assessment := cpeskills.AssessQuality(cpeObj)
-        fmt.Printf("  质量分数: %.2f\n", assessment.OverallScore)
-    }
-    
-    fmt.Println("\n2. 组件验证:")
-    components := map[string][]string{
-        "part": {"a", "h", "o", "x"},           // x是无效的
-        "vendor": {"microsoft", "apache", ""},   // 空字符串无效
-        "product": {"windows", "tomcat", ""},    // 空字符串无效
-        "version": {"10", "9.0.0", "*", "-"},   // 都是有效的
-    }
-    
-    validators := map[string]func(string) error{
-        "part":    cpeskills.ValidatePart,
-        "vendor":  cpeskills.ValidateVendor,
-        "product": cpeskills.ValidateProduct,
-        "version": cpeskills.ValidateVersion,
-    }
-    
-    for component, values := range components {
-        fmt.Printf("\n%s 验证:\n", component)
-        validator := validators[component]
-        
-        for _, value := range values {
-            err := validator(value)
-            status := "✅"
-            if err != nil {
-                status = "❌"
-            }
-            
-            displayValue := value
-            if displayValue == "" {
-                displayValue = "(空字符串)"
-            }
-            
-            fmt.Printf("  %s %s", status, displayValue)
-            if err != nil {
-                fmt.Printf(" - %v", err)
-            }
-            fmt.Println()
+            fmt.Printf("Valid component: %s\n", comp)
         }
     }
-    
-    fmt.Println("\n3. 批量验证:")
-    
-    // 创建CPE列表进行批量验证
-    cpeList := []*cpeskills.CPE{}
-    for _, cpeStr := range testCPEs[:3] { // 只使用前3个有效的
-        cpeObj, err := cpeskills.ParseCPE(cpeStr)
-        if err == nil {
-            cpeList = append(cpeList, cpeObj)
+
+    // 格式检测
+    fmt.Println("\n=== Format Detection ===")
+    cpeStrings := []string{
+        "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
+        "cpe:/a:apache:tomcat:8.5.0",
+        "invalid:format",
+    }
+
+    for _, cpeStr := range cpeStrings {
+        switch {
+        case cpeskills.IsCPE23String(cpeStr):
+            fmt.Printf("CPE 2.3 string: %s\n", cpeStr)
+        case cpeskills.IsCPE22String(cpeStr):
+            fmt.Printf("CPE 2.2 string: %s\n", cpeStr)
+        default:
+            fmt.Printf("Not a CPE string: %s\n", cpeStr)
         }
     }
-    
-    results := cpeskills.ValidateCPEList(cpeList)
-    
-    fmt.Printf("批量验证了 %d 个CPE:\n", len(results))
-    for i, result := range results {
-        fmt.Printf("  CPE %d: 有效=%t, 分数=%.2f\n", 
-            i+1, result.Valid, result.Score)
-        
-        if len(result.Warnings) > 0 {
-            fmt.Printf("    警告: %v\n", result.Warnings)
-        }
+
+    // CPE 对象验证
+    fmt.Println("\n=== CPE Object Validation ===")
+    validCPE := &cpeskills.CPE{
+        Part:        *cpeskills.PartApplication,
+        Vendor:      cpeskills.Vendor("microsoft"),
+        ProductName: cpeskills.Product("windows"),
+        Version:     cpeskills.Version("10"),
     }
-    
-    fmt.Println("\n4. 自定义验证规则:")
-    
-    // 创建自定义验证器
-    validator := &cpeskills.Validator{
-        Strict: true,
-        Options: &cpeskills.ValidationOptions{
-            CheckSemantics:   true,
-            CheckConsistency: true,
-            CheckFormat:      true,
-            RequireComplete:  true,
-        },
-    }
-    
-    testCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-    err := validator.Validate(testCPE)
+
+    err := cpeskills.ValidateCPE(validCPE)
     if err != nil {
-        fmt.Printf("自定义验证失败: %v\n", err)
+        fmt.Printf("CPE validation failed: %v\n", err)
     } else {
-        fmt.Printf("✅ 自定义验证通过\n")
+        fmt.Println("CPE object is valid")
     }
-    
-    fmt.Println("\n5. 质量评估详情:")
-    
-    highQualityCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10.0.19041.1234:*:*:*:*:*:*:*")
-    assessment := cpeskills.AssessQuality(highQualityCPE)
-    
-    fmt.Printf("高质量CPE评估:\n")
-    fmt.Printf("  总体分数: %.2f\n", assessment.OverallScore)
-    fmt.Printf("  组件分数:\n")
-    for component, score := range assessment.ComponentScores {
-        fmt.Printf("    %s: %.2f\n", component, score)
+
+    // 组件标准化
+    fmt.Println("\n=== Component Normalization ===")
+    unnormalizedComponents := []string{
+        "Microsoft",
+        "Windows 10",
+        "Microsoft  Office",
+        "Product Name",
     }
-    
-    if len(assessment.Recommendations) > 0 {
-        fmt.Printf("  改进建议:\n")
-        for _, rec := range assessment.Recommendations {
-            fmt.Printf("    - %s\n", rec)
-        }
+
+    for _, comp := range unnormalizedComponents {
+        normalized := cpeskills.NormalizeComponent(comp)
+        fmt.Printf("'%s' -> '%s'\n", comp, normalized)
     }
+
+    // CPE 标准化
+    fmt.Println("\n=== CPE Normalization ===")
+    unnormalizedCPE := &cpeskills.CPE{
+        Part:        *cpeskills.PartApplication,
+        Vendor:      cpeskills.Vendor("Microsoft"),
+        ProductName: cpeskills.Product("Windows 10"),
+        Version:     cpeskills.Version("1.0"),
+    }
+
+    normalizedCPE := cpeskills.NormalizeCPE(unnormalizedCPE)
+    fmt.Printf("Original: %s %s %s\n",
+        unnormalizedCPE.Vendor, unnormalizedCPE.ProductName, unnormalizedCPE.Version)
+    fmt.Printf("Normalized: %s %s %s\n",
+        normalizedCPE.Vendor, normalizedCPE.ProductName, normalizedCPE.Version)
 }
 ```
-
-## 下一步
-
-- 了解[错误处理](./errors.md)来处理验证错误
-- 学习[存储接口](./storage.md)来持久化验证结果
-- 探索[集合操作](./sets.md)来批量验证CPE数据

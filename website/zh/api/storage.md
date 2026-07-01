@@ -1,8 +1,8 @@
-# 存储接口
+# 存储
 
-本页面描述了CPE库中用于数据持久化的存储接口和实现，包括文件存储、内存存储等多种存储后端。
+CPE 库提供了一个灵活的存储接口，并有多种实现，用于持久化 CPE 数据、CVE 信息和字典。
 
-下面的类图展示了存储体系结构：`FileStorage` 与 `MemoryStorage` 实现 `Storage` 接口，而 `StorageManager` 组合了一个主存储后端和一个可选的缓存后端。
+下面的类图展示了存储层次结构：`FileStorage` 和 `MemoryStorage` 实现了 `Storage` 接口，`StorageManager` 将一个主后端与一个可选的缓存后端组合在一起。
 
 ```mermaid
 classDiagram
@@ -10,16 +10,16 @@ classDiagram
         <<interface>>
         +Initialize() error
         +Close() error
-        +Store(cpe) error
-        +Retrieve(id) CPE
-        +Search(query) CPE
+        +StoreCPE(cpe) error
+        +RetrieveCPE(id) CPE
+        +SearchCPE(criteria, options) CPE
     }
     class FileStorage {
         +string BaseDir
         +bool EnableCache
     }
     class MemoryStorage {
-        +Store(cpe) error
+        +Initialize() error
     }
     class StorageManager {
         +Storage Primary
@@ -36,77 +36,61 @@ classDiagram
 
 ### Storage
 
-核心存储接口定义。
-
 ```go
 type Storage interface {
-    // 初始化存储
+    // 生命周期
     Initialize() error
-    
-    // 存储CPE对象
-    Store(cpe *CPE) error
-    
-    // 根据ID检索CPE
-    Retrieve(id string) (*CPE, error)
-    
-    // 删除CPE
-    Delete(id string) error
-    
-    // 列出所有CPE
-    List() ([]*CPE, error)
-    
-    // 搜索CPE
-    Search(query string) ([]*CPE, error)
-    
-    // 获取存储统计信息
-    Stats() (*StorageStats, error)
-    
-    // 关闭存储连接
     Close() error
-}
-```
-
-### StorageStats
-
-存储统计信息。
-
-```go
-type StorageStats struct {
-    TotalCount    int64     // 总CPE数量
-    LastModified  time.Time // 最后修改时间
-    StorageSize   int64     // 存储大小（字节）
-    IndexSize     int64     // 索引大小（字节）
+    
+    // CPE 操作
+    StoreCPE(cpe *CPE) error
+    RetrieveCPE(id string) (*CPE, error)
+    UpdateCPE(cpe *CPE) error
+    DeleteCPE(id string) error
+    SearchCPE(criteria *CPE, options *MatchOptions) ([]*CPE, error)
+    AdvancedSearchCPE(criteria *CPE, options *AdvancedMatchOptions) ([]*CPE, error)
+    
+    // CVE 操作
+    StoreCVE(cve *CVEReference) error
+    RetrieveCVE(cveID string) (*CVEReference, error)
+    UpdateCVE(cve *CVEReference) error
+    DeleteCVE(cveID string) error
+    SearchCVE(query string, options *SearchOptions) ([]*CVEReference, error)
+    FindCVEsByCPE(cpe *CPE) ([]*CVEReference, error)
+    FindCPEsByCVE(cveID string) ([]*CPE, error)
+    
+    // 字典操作
+    StoreDictionary(dict *CPEDictionary) error
+    RetrieveDictionary() (*CPEDictionary, error)
+    
+    // 元数据操作
+    StoreModificationTimestamp(key string, timestamp time.Time) error
+    RetrieveModificationTimestamp(key string) (time.Time, error)
 }
 ```
 
 ## 文件存储
 
-### FileStorage
-
-基于文件系统的存储实现。
-
-```go
-type FileStorage struct {
-    BaseDir     string // 基础目录
-    EnableCache bool   // 是否启用缓存
-    CacheSize   int    // 缓存大小
-    IndexFile   string // 索引文件路径
-}
-```
-
-#### 创建文件存储
+### NewFileStorage
 
 ```go
 func NewFileStorage(baseDir string, enableCache bool) (*FileStorage, error)
 ```
 
+创建一个新的基于文件的存储实现。
+
 **参数：**
-- `baseDir`: 存储基础目录
-- `enableCache`: 是否启用内存缓存
+- `baseDir` - 用于存储文件的基础目录
+- `enableCache` - 是否启用内存缓存
+
+**返回值：**
+- `*FileStorage` - 文件存储实例
+- `error` - 创建失败时返回的错误
 
 **示例：**
 ```go
-storage, err := cpeskills.NewFileStorage("./cpe_data", true)
+// 创建带缓存的文件存储
+storage, err := cpeskills.NewFileStorage("./cpe-data", true)
 if err != nil {
     log.Fatal(err)
 }
@@ -119,375 +103,294 @@ if err != nil {
 }
 ```
 
-#### 文件存储方法
+### FileStorage 结构
+
+文件存储按以下目录结构组织数据：
+```
+baseDir/
+├── cpes/           # CPE 文件（JSON 格式）
+├── cves/           # CVE 文件（JSON 格式）
+├── dictionary.json # CPE 字典
+└── metadata.json   # 时间戳和元数据
+```
+
+### FileStorage 方法
+
+#### StoreCPE
 
 ```go
-// 存储CPE
-func (fs *FileStorage) Store(cpe *CPE) error
-
-// 检索CPE
-func (fs *FileStorage) Retrieve(id string) (*CPE, error)
-
-// 删除CPE
-func (fs *FileStorage) Delete(id string) error
-
-// 批量存储
-func (fs *FileStorage) StoreBatch(cpes []*CPE) error
-
-// 备份数据
-func (fs *FileStorage) Backup(backupPath string) error
-
-// 恢复数据
-func (fs *FileStorage) Restore(backupPath string) error
+func (f *FileStorage) StoreCPE(cpe *CPE) error
 ```
+
+将 CPE 对象存储到文件系统。
+
+**参数：**
+- `cpe` - 要存储的 CPE 对象
+
+**返回值：**
+- `error` - 存储失败时返回的错误
 
 **示例：**
 ```go
-// 存储CPE
 cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-err = storage.Store(cpeObj)
+err := storage.StoreCPE(cpeObj)
 if err != nil {
-    log.Printf("存储失败: %v", err)
+    log.Printf("存储 CPE 失败: %v", err)
+}
+```
+
+#### RetrieveCPE
+
+```go
+func (f *FileStorage) RetrieveCPE(id string) (*CPE, error)
+```
+
+根据 ID（URI）检索 CPE 对象。
+
+**参数：**
+- `id` - CPE URI 或标识符
+
+**返回值：**
+- `*CPE` - 检索到的 CPE 对象
+- `error` - 检索失败或未找到 CPE 时返回的错误
+
+**示例：**
+```go
+cpeObj, err := storage.RetrieveCPE("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+if err != nil {
+    if errors.Is(err, cpeskills.ErrNotFound) {
+        fmt.Println("未找到 CPE")
+    } else {
+        log.Printf("检索 CPE 失败: %v", err)
+    }
+} else {
+    fmt.Printf("已检索: %s\n", cpeObj.GetURI())
+}
+```
+
+#### SearchCPE
+
+```go
+func (f *FileStorage) SearchCPE(criteria *CPE, options *MatchOptions) ([]*CPE, error)
+```
+
+搜索与给定条件匹配的 CPE。
+
+**参数：**
+- `criteria` - 要搜索的 CPE 模式
+- `options` - 匹配选项
+
+**返回值：**
+- `[]*CPE` - 匹配的 CPE 数组
+- `error` - 搜索失败时返回的错误
+
+**示例：**
+```go
+// 搜索所有 Microsoft 产品
+criteria := &cpeskills.CPE{
+    Vendor: cpeskills.Vendor("microsoft"),
 }
 
-// 检索CPE
-retrieved, err := storage.Retrieve(cpeObj.GetURI())
+options := cpeskills.DefaultMatchOptions()
+results, err := storage.SearchCPE(criteria, options)
 if err != nil {
-    log.Printf("检索失败: %v", err)
-} else {
-    fmt.Printf("检索到: %s\n", retrieved.GetURI())
+    log.Fatal(err)
 }
+
+fmt.Printf("找到 %d 个 Microsoft 产品\n", len(results))
+for _, result := range results {
+    fmt.Printf("- %s\n", result.GetURI())
+}
+```
+
+#### AdvancedSearchCPE
+
+```go
+func (f *FileStorage) AdvancedSearchCPE(criteria *CPE, options *AdvancedMatchOptions) ([]*CPE, error)
+```
+
+使用复杂的匹配算法执行高级搜索。
+
+**示例：**
+```go
+criteria := &cpeskills.CPE{
+    Vendor:      cpeskills.Vendor("microsoft"),
+    ProductName: cpeskills.Product("windows"),
+}
+
+options := cpeskills.NewAdvancedMatchOptions()
+options.MatchMode = "distance"
+options.ScoreThreshold = 0.8
+
+results, err := storage.AdvancedSearchCPE(criteria, options)
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Printf("找到 %d 个 Windows 产品\n", len(results))
 ```
 
 ## 内存存储
 
-### MemoryStorage
-
-基于内存的存储实现，适用于测试和临时数据。
-
-```go
-type MemoryStorage struct {
-    data  map[string]*CPE // 内存数据映射
-    mutex sync.RWMutex    // 读写锁
-}
-```
-
-#### 创建内存存储
+### NewMemoryStorage
 
 ```go
 func NewMemoryStorage() *MemoryStorage
 ```
 
+创建一个新的内存存储实现（主要用于测试）。
+
+**返回值：**
+- `*MemoryStorage` - 内存存储实例
+
 **示例：**
 ```go
 storage := cpeskills.NewMemoryStorage()
-
-// 内存存储不需要初始化
-cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
-err := storage.Store(cpeObj)
-if err != nil {
-    log.Printf("存储失败: %v", err)
-}
-```
-
-#### 内存存储特性
-
-- **快速访问**: 所有数据在内存中，访问速度极快
-- **无持久化**: 程序重启后数据丢失
-- **线程安全**: 使用读写锁保证并发安全
-- **适用场景**: 测试、缓存、临时数据处理
-
-## 数据库存储
-
-### DatabaseStorage
-
-基于数据库的存储实现。
-
-```go
-type DatabaseStorage struct {
-    DB       *sql.DB // 数据库连接
-    Driver   string  // 数据库驱动
-    ConnStr  string  // 连接字符串
-    TableName string // 表名
-}
-```
-
-#### 支持的数据库
-
-- **SQLite**: 轻量级文件数据库
-- **PostgreSQL**: 企业级关系数据库
-- **MySQL**: 流行的开源数据库
-- **MongoDB**: NoSQL文档数据库
-
-#### 创建数据库存储
-
-```go
-func NewDatabaseStorage(driver, connStr string) (*DatabaseStorage, error)
-```
-
-**示例：**
-```go
-// SQLite存储
-storage, err := cpeskills.NewDatabaseStorage("sqlite3", "./cpe.db")
+err := storage.Initialize()
 if err != nil {
     log.Fatal(err)
 }
 
-// PostgreSQL存储
-storage, err := cpeskills.NewDatabaseStorage("postgres", 
-    "host=localhost user=cpe dbname=cpe_db sslmode=disable")
+// 使用存储
+cpeObj, _ := cpeskills.ParseCpe23("cpe:2.3:a:test:product:1.0:*:*:*:*:*:*:*")
+err = storage.StoreCPE(cpeObj)
 if err != nil {
     log.Fatal(err)
 }
 ```
 
-## 存储配置
+## 存储管理器
 
-### StorageConfig
-
-存储配置选项。
+### StorageManager
 
 ```go
-type StorageConfig struct {
-    Type        string            // 存储类型
-    Path        string            // 存储路径
-    Options     map[string]string // 额外选项
-    EnableCache bool              // 启用缓存
-    CacheSize   int               // 缓存大小
-    Compression bool              // 启用压缩
-    Encryption  bool              // 启用加密
+type StorageManager struct {
+    Primary         Storage // 主存储后端
+    Cache           Storage // 缓存存储后端
+    CacheEnabled    bool    // 是否启用缓存
+    CacheTTLSeconds int     // 缓存有效期（秒）
 }
 ```
 
-### 配置示例
+### NewStorageManager
 
 ```go
-config := &cpeskills.StorageConfig{
-    Type:        "file",
-    Path:        "./cpe_data",
-    EnableCache: true,
-    CacheSize:   1000,
-    Compression: true,
-    Options: map[string]string{
-        "index_type": "btree",
-        "sync_mode":  "full",
-    },
-}
-
-storage, err := cpeskills.NewStorageFromConfig(config)
+func NewStorageManager(primary Storage) *StorageManager
 ```
 
-## 高级功能
+使用指定的主存储创建一个新的存储管理器。
 
-### 索引管理
+**参数：**
+- `primary` - 主存储后端
+
+**返回值：**
+- `*StorageManager` - 存储管理器实例
+
+### SetCache
 
 ```go
-// 创建索引
-func (s *Storage) CreateIndex(field string, indexType IndexType) error
-
-// 删除索引
-func (s *Storage) DropIndex(field string) error
-
-// 重建索引
-func (s *Storage) RebuildIndex(field string) error
-
-// 列出索引
-func (s *Storage) ListIndexes() ([]IndexInfo, error)
+func (sm *StorageManager) SetCache(cache Storage)
 ```
+
+设置缓存存储后端并启用缓存。
+
+**参数：**
+- `cache` - 缓存存储后端
 
 **示例：**
 ```go
-// 为供应商字段创建索引
-err = storage.CreateIndex("vendor", cpeskills.IndexTypeBTree)
-if err != nil {
-    log.Printf("创建索引失败: %v", err)
-}
+// 创建主存储
+primaryStorage, _ := cpeskills.NewFileStorage("./data", false)
+
+// 创建缓存存储
+cacheStorage := cpeskills.NewMemoryStorage()
+
+// 创建存储管理器
+manager := cpeskills.NewStorageManager(primaryStorage)
+manager.SetCache(cacheStorage)
+
+// 初始化两个存储
+primaryStorage.Initialize()
+cacheStorage.Initialize()
 ```
 
-### 事务支持
+## 搜索选项
+
+### SearchOptions
 
 ```go
-// 开始事务
-func (s *Storage) BeginTransaction() (Transaction, error)
-
-// 事务接口
-type Transaction interface {
-    Store(cpe *CPE) error
-    Delete(id string) error
-    Commit() error
-    Rollback() error
+type SearchOptions struct {
+    Offset            int                    // 要跳过的结果数量
+    Limit             int                    // 最大结果数量
+    SortBy            string                 // 排序字段
+    SortAscending     bool                   // 排序方向（true 为升序）
+    Filters           map[string]interface{} // 过滤条件
+    FullTextQuery     string                 // 全文搜索查询
+    IncludeDeprecated bool                   // 是否包含已弃用的项
+    DateStart         *time.Time             // 日期范围过滤（起始）
+    DateEnd           *time.Time             // 日期范围过滤（结束）
+    MinCVSS           float64                // 最小 CVSS 评分
+    MaxCVSS           float64                // 最大 CVSS 评分
 }
 ```
+
+### NewSearchOptions
+
+```go
+func NewSearchOptions() *SearchOptions
+```
+
+返回默认搜索选项（`Offset: 0`、`Limit: 100`、`SortBy: "id"`、`SortAscending: true`）。
 
 **示例：**
 ```go
-tx, err := storage.BeginTransaction()
+options := cpeskills.NewSearchOptions()
+options.Limit = 50
+options.SortBy = "vendor"
+options.SortAscending = true
+
+cves, err := storage.SearchCVE("apache", options)
 if err != nil {
     log.Fatal(err)
 }
+```
 
-// 在事务中执行操作
-err = tx.Store(cpe1)
-if err != nil {
-    tx.Rollback()
-    return
-}
+## 存储统计
 
-err = tx.Store(cpe2)
-if err != nil {
-    tx.Rollback()
-    return
-}
+### StorageStats
 
-// 提交事务
-err = tx.Commit()
-if err != nil {
-    log.Printf("提交失败: %v", err)
+```go
+type StorageStats struct {
+    TotalCPEs            int       // CPE 总数
+    TotalCVEs            int       // CVE 总数
+    TotalDictionaryItems int       // 字典项总数
+    StorageBytes         int64     // 存储占用空间（字节）
+    LastUpdated          time.Time // 上次更新时间戳
 }
 ```
 
-### 批量操作
+## 错误处理
+
+存储接口定义了若干标准错误：
 
 ```go
-// 批量存储
-func (s *Storage) StoreBatch(cpes []*CPE) error
-
-// 批量删除
-func (s *Storage) DeleteBatch(ids []string) error
-
-// 批量更新
-func (s *Storage) UpdateBatch(updates map[string]*CPE) error
-```
-
-**示例：**
-```go
-cpes := []*CPE{cpe1, cpe2, cpe3}
-err = storage.StoreBatch(cpes)
-if err != nil {
-    log.Printf("批量存储失败: %v", err)
-}
-```
-
-## 查询功能
-
-### Query
-
-查询构建器。
-
-```go
-type Query struct {
-    Filters    []Filter    // 过滤条件
-    SortBy     string      // 排序字段
-    SortOrder  SortOrder   // 排序顺序
-    Limit      int         // 限制数量
-    Offset     int         // 偏移量
-}
-```
-
-### Filter
-
-过滤条件。
-
-```go
-type Filter struct {
-    Field    string      // 字段名
-    Operator Operator    // 操作符
-    Value    interface{} // 值
-}
-```
-
-### 查询示例
-
-```go
-// 构建查询
-query := cpeskills.NewQuery().
-    Filter("vendor", cpeskills.OpEquals, "microsoft").
-    Filter("part", cpeskills.OpEquals, "a").
-    SortBy("product", cpeskills.SortAsc).
-    Limit(10)
-
-// 执行查询
-results, err := storage.Query(query)
-if err != nil {
-    log.Printf("查询失败: %v", err)
-} else {
-    fmt.Printf("找到 %d 个结果\n", len(results))
-}
-```
-
-## 缓存机制
-
-### CacheConfig
-
-缓存配置。
-
-```go
-type CacheConfig struct {
-    Enabled    bool          // 是否启用
-    Size       int           // 缓存大小
-    TTL        time.Duration // 生存时间
-    Strategy   CacheStrategy // 缓存策略
-}
-```
-
-### 缓存策略
-
-```go
-const (
-    CacheLRU  CacheStrategy = "lru"  // 最近最少使用
-    CacheLFU  CacheStrategy = "lfu"  // 最少使用频率
-    CacheFIFO CacheStrategy = "fifo" // 先进先出
+var (
+    ErrNotFound              = errors.New("record not found")
+    ErrDuplicate             = errors.New("duplicate record")
+    ErrInvalidData           = errors.New("invalid data")
+    ErrStorageDisconnected   = errors.New("storage is disconnected")
 )
 ```
 
 **示例：**
 ```go
-cacheConfig := &cpeskills.CacheConfig{
-    Enabled:  true,
-    Size:     1000,
-    TTL:      30 * time.Minute,
-    Strategy: cpeskills.CacheLRU,
-}
-
-storage.SetCacheConfig(cacheConfig)
-```
-
-## 数据迁移
-
-### Migration
-
-数据迁移接口。
-
-```go
-type Migration interface {
-    // 迁移数据
-    Migrate(source, target Storage) error
-    
-    // 验证迁移
-    Validate(source, target Storage) error
-    
-    // 获取进度
-    Progress() MigrationProgress
-}
-```
-
-### 迁移示例
-
-```go
-// 从文件存储迁移到数据库存储
-sourceStorage, _ := cpeskills.NewFileStorage("./old_data", false)
-targetStorage, _ := cpeskills.NewDatabaseStorage("sqlite3", "./new_data.db")
-
-migration := cpeskills.NewMigration()
-err = migration.Migrate(sourceStorage, targetStorage)
+cpeObj, err := storage.RetrieveCPE("non-existent-cpe")
 if err != nil {
-    log.Printf("迁移失败: %v", err)
-}
-
-// 验证迁移结果
-err = migration.Validate(sourceStorage, targetStorage)
-if err != nil {
-    log.Printf("验证失败: %v", err)
+    if errors.Is(err, cpeskills.ErrNotFound) {
+        fmt.Println("未找到 CPE")
+    } else {
+        log.Printf("存储错误: %v", err)
+    }
 }
 ```
 
@@ -503,125 +406,62 @@ import (
 )
 
 func main() {
-    fmt.Println("=== 存储示例 ===")
-    
-    // 创建文件存储
-    storage, err := cpeskills.NewFileStorage("./cpe_storage", true)
+    // 创建并初始化存储
+    storage, err := cpeskills.NewFileStorage("./cpe-storage", true)
     if err != nil {
         log.Fatal(err)
     }
     defer storage.Close()
     
-    // 初始化存储
     err = storage.Initialize()
     if err != nil {
         log.Fatal(err)
     }
     
-    // 创建测试CPE
-    cpes := []*cpeskills.CPE{}
-    cpeStrings := []string{
+    // 存储一些 CPE
+    cpes := []string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
-        "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
-        "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",
+        "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
+        "cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*",
     }
     
-    for _, cpeStr := range cpeStrings {
+    for _, cpeStr := range cpes {
         cpeObj, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
-            log.Printf("解析失败: %v", err)
+            log.Printf("解析 %s 失败: %v", cpeStr, err)
             continue
         }
-        cpes = append(cpes, cpeObj)
-    }
-    
-    // 批量存储
-    fmt.Println("存储CPE数据...")
-    err = storage.StoreBatch(cpes)
-    if err != nil {
-        log.Printf("批量存储失败: %v", err)
-    } else {
-        fmt.Printf("成功存储 %d 个CPE\n", len(cpes))
-    }
-    
-    // 列出所有CPE
-    fmt.Println("\n列出所有存储的CPE:")
-    allCPEs, err := storage.List()
-    if err != nil {
-        log.Printf("列出失败: %v", err)
-    } else {
-        for i, cpeObj := range allCPEs {
-            fmt.Printf("  %d. %s %s %s\n", i+1, 
-                cpeObj.Vendor, cpeObj.ProductName, cpeObj.Version)
-        }
-    }
-    
-    // 搜索CPE
-    fmt.Println("\n搜索Microsoft产品:")
-    results, err := storage.Search("microsoft")
-    if err != nil {
-        log.Printf("搜索失败: %v", err)
-    } else {
-        fmt.Printf("找到 %d 个结果:\n", len(results))
-        for i, cpeObj := range results {
-            fmt.Printf("  %d. %s\n", i+1, cpeObj.GetURI())
-        }
-    }
-    
-    // 获取统计信息
-    fmt.Println("\n存储统计信息:")
-    stats, err := storage.Stats()
-    if err != nil {
-        log.Printf("获取统计失败: %v", err)
-    } else {
-        fmt.Printf("  总数量: %d\n", stats.TotalCount)
-        fmt.Printf("  存储大小: %d 字节\n", stats.StorageSize)
-        fmt.Printf("  最后修改: %s\n", stats.LastModified.Format("2006-01-02 15:04:05"))
-    }
-    
-    // 演示查询功能
-    fmt.Println("\n高级查询示例:")
-    query := cpeskills.NewQuery().
-        Filter("vendor", cpeskills.OpEquals, "apache").
-        SortBy("product", cpeskills.SortAsc).
-        Limit(5)
-    
-    queryResults, err := storage.Query(query)
-    if err != nil {
-        log.Printf("查询失败: %v", err)
-    } else {
-        fmt.Printf("查询到 %d 个Apache产品:\n", len(queryResults))
-        for i, cpeObj := range queryResults {
-            fmt.Printf("  %d. %s\n", i+1, cpeObj.ProductName)
-        }
-    }
-    
-    // 演示事务
-    fmt.Println("\n事务示例:")
-    tx, err := storage.BeginTransaction()
-    if err != nil {
-        log.Printf("开始事务失败: %v", err)
-    } else {
-        // 在事务中添加新CPE
-        newCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:mozilla:firefox:95.0:*:*:*:*:*:*:*")
-        err = tx.Store(newCPE)
+        
+        err = storage.StoreCPE(cpeObj)
         if err != nil {
-            tx.Rollback()
-            log.Printf("事务存储失败: %v", err)
+            log.Printf("存储 %s 失败: %v", cpeStr, err)
         } else {
-            err = tx.Commit()
-            if err != nil {
-                log.Printf("提交事务失败: %v", err)
-            } else {
-                fmt.Println("事务提交成功")
-            }
+            fmt.Printf("已存储: %s\n", cpeStr)
         }
+    }
+    
+    // 搜索 Microsoft 产品
+    criteria := &cpeskills.CPE{
+        Vendor: cpeskills.Vendor("microsoft"),
+    }
+    
+    results, err := storage.SearchCPE(criteria, cpeskills.DefaultMatchOptions())
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Printf("\n找到 %d 个 Microsoft 产品:\n", len(results))
+    for _, result := range results {
+        fmt.Printf("- %s %s %s\n", 
+            result.Vendor, result.ProductName, result.Version)
+    }
+    
+    // 检索特定 CPE
+    retrieved, err := storage.RetrieveCPE("cpe:2.3:a:apache:tomcat:9.0:*:*:*:*:*:*:*")
+    if err != nil {
+        log.Printf("检索失败: %v", err)
+    } else {
+        fmt.Printf("\n已检索: %s\n", retrieved.GetURI())
     }
 }
 ```
-
-## 下一步
-
-- 了解[字典管理](./dictionary.md)来处理CPE字典数据
-- 学习[集合操作](./sets.md)来批量处理存储的CPE
-- 探索[NVD集成](./nvd.md)来存储漏洞数据

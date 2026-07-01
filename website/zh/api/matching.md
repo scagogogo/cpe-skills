@@ -1,19 +1,19 @@
-# 匹配算法
+# 匹配
 
-本页面描述了CPE库中用于比较和匹配CPE对象的各种算法和函数。
+CPE 库提供了强大的匹配能力，用于比较 CPE 对象，包括基础匹配、使用多种算法的高级匹配以及版本比较。
 
-下图展示了高级匹配的流程：两个 CPE 在四种模式之一下进行比较，所选模式决定返回布尔判定还是相似度得分。
+下面的流程图展示了高级匹配的流程：两个 CPE 在四种模式之一下进行比较，所选模式决定返回布尔判定结果还是相似度得分。
 
 ```mermaid
 flowchart TD
-    Start["两个 CPE (criteria, target)"]
+    Start["两个 CPE（criteria、target）"]
     Mode{"选择 MatchMode"}
-    Exact["精确: 各字段全等"]
-    Subset["子集: target 落在 criteria 内"]
-    Superset["超集: criteria 落在 target 内"]
-    Distance["距离: 计算相似度得分"]
+    Exact["Exact：每个字段相等"]
+    Subset["Subset：target 包含于 criteria"]
+    Superset["Superset：criteria 包含于 target"]
+    Distance["Distance：相似度得分"]
     Bool["返回 bool"]
-    Score["得分与 ScoreThreshold 比较"]
+    Score["得分对比 ScoreThreshold"]
     Start --> Mode
     Mode -- "exact" --> Exact --> Bool
     Mode -- "subset" --> Subset --> Bool
@@ -21,440 +21,312 @@ flowchart TD
     Mode -- "distance" --> Distance --> Score --> Bool
 ```
 
-## 基本匹配函数
+## 基础匹配
 
-### Match
-
-CPE对象的基本匹配方法。
+### CPE.Match
 
 ```go
 func (c *CPE) Match(other *CPE) bool
 ```
 
+根据 CPE 名称匹配规范执行基础 CPE 匹配。
+
 **参数：**
-- `other`: 要匹配的另一个CPE对象
+- `other` - 用于匹配的目标 CPE
 
 **返回值：**
-- `bool`: 是否匹配
+- `bool` - 匹配返回 `true`，否则返回 `false`
+
+**匹配规则：**
+1. 如果两个 CPE URI 相同，返回 `true`
+2. Part 必须完全匹配
+3. 对于其他属性：
+   - 如果任一值是通配符（`*`），则匹配
+   - 如果两个值都是"不适用"（`-`），则匹配
+   - 否则，值必须完全相等
 
 **示例：**
 ```go
-cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
-cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+// 创建 CPE
+windows10, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+windowsPattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
 
-if cpe1.Match(cpe2) {
-    fmt.Println("CPE匹配成功")
+// 测试匹配
+if windowsPattern.Match(windows10) {
+    fmt.Println("Windows 10 匹配 Windows 模式")
+}
+
+// 测试不匹配
+office, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+if !windowsPattern.Match(office) {
+    fmt.Println("Office 不匹配 Windows 模式")
 }
 ```
 
 ### MatchCPE
 
-高级CPE匹配函数，支持自定义选项。
-
 ```go
 func MatchCPE(cpe1, cpe2 *CPE, options *MatchOptions) bool
 ```
 
-**参数：**
-- `cpe1`: 第一个CPE对象
-- `cpe2`: 第二个CPE对象
-- `options`: 匹配选项
-
-**返回值：**
-- `bool`: 是否匹配
-
-**示例：**
-```go
-options := &cpeskills.MatchOptions{
-    ExactMatch:     false,
-    IgnoreCase:     true,
-    AllowWildcards: true,
-}
-
-match := cpeskills.MatchCPE(cpe1, cpe2, options)
-```
-
-## 高级匹配算法
-
-### FuzzyMatch
-
-模糊匹配算法，返回相似度分数。
-
-```go
-func FuzzyMatch(cpe1, cpe2 *CPE) float64
-```
+使用可配置选项执行 CPE 匹配。
 
 **参数：**
-- `cpe1`: 第一个CPE对象
-- `cpe2`: 第二个CPE对象
+- `cpe1` - 要比较的第一个 CPE
+- `cpe2` - 要比较的第二个 CPE
+- `options` - 匹配选项（可以为 `nil` 以使用默认值）
 
 **返回值：**
-- `float64`: 相似度分数（0.0-1.0）
-
-**示例：**
-```go
-score := cpeskills.FuzzyMatch(cpe1, cpe2)
-fmt.Printf("相似度分数: %.2f\n", score)
-
-if score >= 0.8 {
-    fmt.Println("高度相似")
-} else if score >= 0.6 {
-    fmt.Println("中等相似")
-} else {
-    fmt.Println("相似度较低")
-}
-```
-
-### WeightedMatch
-
-加权匹配算法，允许为不同组件设置权重。
-
-```go
-func WeightedMatch(cpe1, cpe2 *CPE, weights MatchWeights) float64
-```
-
-**参数：**
-- `cpe1`: 第一个CPE对象
-- `cpe2`: 第二个CPE对象
-- `weights`: 组件权重配置
-
-**返回值：**
-- `float64`: 加权匹配分数
-
-**示例：**
-```go
-weights := cpeskills.MatchWeights{
-    Part:    0.1,  // 组件类型权重较低
-    Vendor:  0.3,  // 供应商权重中等
-    Product: 0.4,  // 产品权重最高
-    Version: 0.2,  // 版本权重中等
-}
-
-score := cpeskills.WeightedMatch(cpe1, cpe2, weights)
-fmt.Printf("加权匹配分数: %.3f\n", score)
-```
-
-### SemanticMatch
-
-语义匹配算法，理解同义词和缩写。
-
-```go
-func SemanticMatch(cpe1, cpe2 *CPE) bool
-```
-
-**示例：**
-```go
-// 这些CPE在语义上是等价的
-ie1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:internet_explorer:*:*:*:*:*:*:*:*")
-ie2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:ie:*:*:*:*:*:*:*:*")
-
-if cpeskills.SemanticMatch(ie1, ie2) {
-    fmt.Println("语义匹配成功")
-}
-```
-
-## 模式匹配
-
-### MatchPattern
-
-模式匹配函数，支持通配符和正则表达式。
-
-```go
-func MatchPattern(target *CPE, pattern *CPE) bool
-```
-
-**参数：**
-- `target`: 目标CPE对象
-- `pattern`: 模式CPE对象
-
-**返回值：**
-- `bool`: 是否匹配模式
-
-**示例：**
-```go
-// 创建匹配所有Microsoft产品的模式
-pattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
-
-// 测试目标CPE
-target, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
-
-if cpeskills.MatchPattern(target, pattern) {
-    fmt.Println("匹配Microsoft产品模式")
-}
-```
-
-### MatchRegex
-
-正则表达式匹配。
-
-```go
-func MatchRegex(cpe *CPE, field string, pattern string) bool
-```
-
-**参数：**
-- `cpe`: CPE对象
-- `field`: 要匹配的字段名
-- `pattern`: 正则表达式模式
-
-**示例：**
-```go
-// 匹配版本号模式
-match := cpeskills.MatchRegex(cpeObj, "version", `^\d+\.\d+\.\d+$`)
-if match {
-    fmt.Println("版本号格式正确")
-}
-```
-
-## 版本匹配
-
-### CompareVersions
-
-比较两个版本字符串。
-
-```go
-func CompareVersions(version1, version2 string) int
-```
-
-**返回值：**
-- `-1`: version1 < version2
-- `0`: version1 == version2
-- `1`: version1 > version2
-
-**示例：**
-```go
-result := cpeskills.CompareVersions("1.2.3", "1.2.4")
-switch result {
-case -1:
-    fmt.Println("版本1较旧")
-case 0:
-    fmt.Println("版本相同")
-case 1:
-    fmt.Println("版本1较新")
-}
-```
-
-### IsVersionInRange
-
-检查版本是否在指定范围内。
-
-```go
-func IsVersionInRange(version, minVersion, maxVersion string) bool
-```
-
-**示例：**
-```go
-inRange := cpeskills.IsVersionInRange("1.2.5", "1.2.0", "1.3.0")
-if inRange {
-    fmt.Println("版本在范围内")
-}
-```
-
-### MatchVersionPattern
-
-版本模式匹配。
-
-```go
-func MatchVersionPattern(version, pattern string) bool
-```
-
-**示例：**
-```go
-// 匹配1.x.x版本
-match := cpeskills.MatchVersionPattern("1.2.3", "1.*.*")
-if match {
-    fmt.Println("匹配版本模式")
-}
-```
-
-## 集合匹配
-
-### MatchAny
-
-检查CPE是否匹配集合中的任一项。
-
-```go
-func MatchAny(target *CPE, cpeSet *CPESet) bool
-```
-
-### MatchAll
-
-检查CPE是否匹配集合中的所有项。
-
-```go
-func MatchAll(target *CPE, cpeSet *CPESet) bool
-```
-
-### FindMatches
-
-在集合中查找所有匹配项。
-
-```go
-func FindMatches(target *CPE, cpeSet *CPESet) []*CPE
-```
-
-**示例：**
-```go
-// 创建CPE集合
-cpeSet := cpeskills.NewCPESet()
-cpeSet.Add(cpe1)
-cpeSet.Add(cpe2)
-cpeSet.Add(cpe3)
-
-// 查找匹配项
-matches := cpeskills.FindMatches(targetCPE, cpeSet)
-fmt.Printf("找到 %d 个匹配项\n", len(matches))
-```
-
-## 匹配选项配置
+- `bool` - 如果两个 CPE 根据选项匹配，则返回 `true`
 
 ### MatchOptions
 
-匹配选项结构体。
-
 ```go
 type MatchOptions struct {
-    ExactMatch      bool    // 精确匹配
-    IgnoreCase      bool    // 忽略大小写
-    AllowWildcards  bool    // 允许通配符
-    FuzzyThreshold  float64 // 模糊匹配阈值
-    UseSemantics    bool    // 使用语义匹配
-    VersionTolerance string // 版本容差
+    IgnoreVersion    bool   // 匹配时忽略版本字段
+    AllowSubVersions bool   // 允许子版本匹配（例如 "1.0" 匹配 "1.0.1"）
+    UseRegex         bool   // 对字符串字段使用正则表达式
+    VersionRange     bool   // 匹配版本范围而非精确值
+    MinVersion       string // 版本范围下限（含）
+    MaxVersion       string // 版本范围上限（含）
+}
+```
+
+**示例：**
+```go
+// 创建匹配选项
+options := &cpeskills.MatchOptions{
+    IgnoreVersion: true,
+}
+
+cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*")
+
+// 忽略版本进行匹配
+if cpeskills.MatchCPE(cpe1, cpe2, options) {
+    fmt.Println("忽略版本时 CPE 匹配")
 }
 ```
 
 ### DefaultMatchOptions
 
-获取默认匹配选项。
-
 ```go
 func DefaultMatchOptions() *MatchOptions
 ```
 
-### StrictMatchOptions
+返回默认匹配选项（`IgnoreVersion: false`、`AllowSubVersions: true`、`UseRegex: false`、`VersionRange: false`）。
 
-获取严格匹配选项。
+**返回值：**
+- `*MatchOptions` - 默认匹配选项
+
+## 高级匹配
+
+### AdvancedMatchCPE
 
 ```go
-func StrictMatchOptions() *MatchOptions
+func AdvancedMatchCPE(criteria *CPE, target *CPE, options *AdvancedMatchOptions) bool
 ```
 
-### FuzzyMatchOptions
+使用复杂算法执行高级 CPE 匹配。
 
-获取模糊匹配选项。
+**参数：**
+- `criteria` - 用于匹配的 CPE 模式
+- `target` - 要测试匹配的 CPE
+- `options` - 高级匹配选项
 
-```go
-func FuzzyMatchOptions(threshold float64) *MatchOptions
-```
+**返回值：**
+- `bool` - 如果 target 匹配 criteria，则返回 `true`
 
-## 匹配结果
-
-### MatchResult
-
-详细的匹配结果。
+### AdvancedMatchOptions
 
 ```go
-type MatchResult struct {
-    Match       bool              // 是否匹配
-    Score       float64           // 匹配分数
-    Confidence  float64           // 置信度
-    Details     map[string]float64 // 各组件匹配详情
-    Explanation string            // 匹配说明
+type AdvancedMatchOptions struct {
+    UseRegex            bool                        // 启用正则表达式匹配
+    IgnoreCase          bool                        // 不区分大小写匹配
+    UseFuzzyMatch       bool                        // 启用模糊匹配
+    MatchCommonOnly     bool                        // 仅匹配常见字段
+    PartialMatch        bool                        // 启用部分匹配
+    MatchMode           string                      // 匹配模式
+    VersionCompareMode  string                      // 版本比较模式
+    VersionLower        string                      // 版本下界
+    VersionUpper        string                      // 版本上界
+    FieldOptions        map[string]FieldMatchOption // 字段特定选项
+    ScoreThreshold      float64                     // 最小匹配得分（0.0-1.0）
 }
 ```
 
-### DetailedMatch
-
-获取详细匹配结果。
+### FieldMatchOption
 
 ```go
-func DetailedMatch(cpe1, cpe2 *CPE, options *MatchOptions) *MatchResult
+type FieldMatchOption struct {
+    Weight      float64 // 字段权重（0.0-1.0）
+    Required    bool    // 该字段是否必须匹配
+    MatchMethod string  // 该字段的匹配方法
+}
 ```
+
+### NewAdvancedMatchOptions
+
+```go
+func NewAdvancedMatchOptions() *AdvancedMatchOptions
+```
+
+创建默认的高级匹配选项。
+
+**返回值：**
+- `*AdvancedMatchOptions` - 默认高级选项
 
 **示例：**
 ```go
-result := cpeskills.DetailedMatch(cpe1, cpe2, options)
+// 创建高级匹配选项
+options := cpeskills.NewAdvancedMatchOptions()
+options.MatchMode = "distance"
+options.ScoreThreshold = 0.8
+options.IgnoreCase = true
 
-fmt.Printf("匹配结果: %t\n", result.Match)
-fmt.Printf("匹配分数: %.3f\n", result.Score)
-fmt.Printf("置信度: %.3f\n", result.Confidence)
-fmt.Printf("说明: %s\n", result.Explanation)
+// 设置字段特定选项
+options.FieldOptions = map[string]cpeskills.FieldMatchOption{
+    "vendor": {
+        Weight:   1.0,
+        Required: true,
+    },
+    "product": {
+        Weight:   1.0,
+        Required: true,
+    },
+    "version": {
+        Weight:   0.7,
+        Required: false,
+    },
+}
 
-for component, score := range result.Details {
-    fmt.Printf("  %s: %.3f\n", component, score)
+criteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+target, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+
+if cpeskills.AdvancedMatchCPE(criteria, target, options) {
+    fmt.Println("高级匹配成功")
 }
 ```
 
-## 性能优化
+## 匹配模式
 
-### 匹配缓存
+### Exact 模式
+
+执行精确字段匹配，并处理特殊值。
 
 ```go
-// 启用匹配缓存
-cpeskills.EnableMatchCache(5000)
-
-// 匹配操作会被缓存
-match1 := cpe1.Match(cpe2) // 计算并缓存
-match2 := cpe1.Match(cpe2) // 从缓存获取
-
-// 清除缓存
-cpeskills.ClearMatchCache()
+options := cpeskills.NewAdvancedMatchOptions()
+options.MatchMode = "exact"
 ```
 
-### 批量匹配
+### Subset 模式
+
+检查 target 是否是 criteria 的子集。
 
 ```go
-// 批量匹配优化
-func BatchMatch(targets []*CPE, patterns []*CPE) [][]bool
+options := cpeskills.NewAdvancedMatchOptions()
+options.MatchMode = "subset"
 ```
 
-### 并行匹配
+### Superset 模式
+
+检查 target 是否是 criteria 的超集。
 
 ```go
-// 并行匹配大型数据集
-func ParallelMatch(targets []*CPE, pattern *CPE, workers int) []bool
+options := cpeskills.NewAdvancedMatchOptions()
+options.MatchMode = "superset"
 ```
 
-## 匹配策略
+### Distance 模式
 
-### 精确匹配策略
+使用相似度评分来判定匹配。
 
 ```go
-func ExactMatchStrategy() MatchStrategy
+options := cpeskills.NewAdvancedMatchOptions()
+options.MatchMode = "distance"
+options.ScoreThreshold = 0.7  // 要求 70% 的相似度
 ```
 
-### 模糊匹配策略
+## 版本比较
+
+### CompareVersions
 
 ```go
-func FuzzyMatchStrategy(threshold float64) MatchStrategy
+func CompareVersions(v1, v2 string) int
 ```
 
-### 语义匹配策略
+比较两个版本字符串。
 
+**参数：**
+- `v1` - 第一个版本字符串
+- `v2` - 第二个版本字符串
+
+**返回值：**
+- `int` - 若 v1 < v2 返回 `-1`，若 v1 == v2 返回 `0`，若 v1 > v2 返回 `1`
+
+**示例：**
 ```go
-func SemanticMatchStrategy() MatchStrategy
+result := cpeskills.CompareVersions("1.0.0", "1.0.1")
+fmt.Printf("比较结果: %d\n", result) // -1
+
+result = cpeskills.CompareVersions("2.0", "1.9.9")
+fmt.Printf("比较结果: %d\n", result) // 1
+
+result = cpeskills.CompareVersions("1.0", "1.0.0")
+fmt.Printf("比较结果: %d\n", result) // 0
 ```
 
-### 自定义匹配策略
+### 版本范围匹配
+
+高级匹配支持版本范围比较：
 
 ```go
-type MatchStrategy interface {
-    Match(cpe1, cpe2 *CPE) bool
-    Score(cpe1, cpe2 *CPE) float64
+options := cpeskills.NewAdvancedMatchOptions()
+options.VersionCompareMode = "range"
+options.VersionLower = "1.0"
+options.VersionUpper = "2.0"
+
+// 这将匹配 1.0 到 2.0 之间的版本
+criteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:vendor:product:*:*:*:*:*:*:*:*")
+target, _ := cpeskills.ParseCpe23("cpe:2.3:a:vendor:product:1.5:*:*:*:*:*:*:*")
+
+if cpeskills.AdvancedMatchCPE(criteria, target, options) {
+    fmt.Println("版本在范围内")
 }
+```
 
-// 实现自定义策略
-type CustomMatchStrategy struct {
-    // 自定义字段
+## 正则表达式匹配
+
+启用正则表达式匹配以实现灵活的模式匹配：
+
+```go
+options := cpeskills.NewAdvancedMatchOptions()
+options.UseRegex = true
+
+// 在 CPE 字段中使用正则表达式模式
+criteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:.*office.*:*:*:*:*:*:*:*:*")
+target, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:ms_office:2019:*:*:*:*:*:*:*")
+
+if cpeskills.AdvancedMatchCPE(criteria, target, options) {
+    fmt.Println("正则表达式匹配成功")
 }
+```
 
-func (s *CustomMatchStrategy) Match(cpe1, cpe2 *CPE) bool {
-    // 自定义匹配逻辑
-    return true
-}
+## 模糊匹配
 
-func (s *CustomMatchStrategy) Score(cpe1, cpe2 *CPE) float64 {
-    // 自定义评分逻辑
-    return 0.8
+启用模糊匹配以实现近似字符串匹配：
+
+```go
+options := cpeskills.NewAdvancedMatchOptions()
+options.UseFuzzyMatch = true
+options.ScoreThreshold = 0.8
+
+// 即使有轻微的拼写差异也可能匹配
+criteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:*:*:*:*:*:*:*:*")
+target, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomkat:8.5:*:*:*:*:*:*:*") // 注意："tomkat" 与 "tomcat"
+
+if cpeskills.AdvancedMatchCPE(criteria, target, options) {
+    fmt.Println("模糊匹配成功")
 }
 ```
 
@@ -465,94 +337,45 @@ package main
 
 import (
     "fmt"
+    "log"
     "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
-    // 创建测试CPE
-    cpe1, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
-    cpe2, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*")
-    cpe3, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*")
+    // 解析 CPE
+    pattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*")
+    windows10, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    office2019, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
     
-    fmt.Println("=== 基本匹配测试 ===")
+    // 基础匹配
+    fmt.Println("=== 基础匹配 ===")
+    fmt.Printf("模式匹配 Windows 10: %t\n", pattern.Match(windows10))
+    fmt.Printf("模式匹配 Office 2019: %t\n", pattern.Match(office2019))
     
-    // 基本匹配
-    fmt.Printf("cpe1 匹配 cpe2: %t\n", cpe1.Match(cpe2))
-    fmt.Printf("cpe1 匹配 cpe3: %t\n", cpe1.Match(cpe3))
+    // 使用 distance 模式的高级匹配
+    fmt.Println("\n=== 高级匹配 ===")
+    options := cpeskills.NewAdvancedMatchOptions()
+    options.MatchMode = "distance"
+    options.ScoreThreshold = 0.7
     
-    fmt.Println("\n=== 模糊匹配测试 ===")
-    
-    // 模糊匹配
-    score12 := cpeskills.FuzzyMatch(cpe1, cpe2)
-    score13 := cpeskills.FuzzyMatch(cpe1, cpe3)
-    
-    fmt.Printf("cpe1 与 cpe2 相似度: %.3f\n", score12)
-    fmt.Printf("cpe1 与 cpe3 相似度: %.3f\n", score13)
-    
-    fmt.Println("\n=== 加权匹配测试 ===")
-    
-    // 加权匹配
-    weights := cpeskills.MatchWeights{
-        Part:    0.1,
-        Vendor:  0.3,
-        Product: 0.4,
-        Version: 0.2,
-    }
-    
-    weightedScore := cpeskills.WeightedMatch(cpe1, cpe2, weights)
-    fmt.Printf("加权匹配分数: %.3f\n", weightedScore)
-    
-    fmt.Println("\n=== 详细匹配结果 ===")
-    
-    // 详细匹配
-    options := cpeskills.DefaultMatchOptions()
-    result := cpeskills.DetailedMatch(cpe1, cpe2, options)
-    
-    fmt.Printf("匹配: %t\n", result.Match)
-    fmt.Printf("分数: %.3f\n", result.Score)
-    fmt.Printf("置信度: %.3f\n", result.Confidence)
-    fmt.Printf("说明: %s\n", result.Explanation)
-    
-    fmt.Println("组件详情:")
-    for component, score := range result.Details {
-        fmt.Printf("  %s: %.3f\n", component, score)
-    }
-    
-    fmt.Println("\n=== 版本比较测试 ===")
+    fmt.Printf("高级匹配 Windows 10: %t\n", 
+        cpeskills.AdvancedMatchCPE(pattern, windows10, options))
+    fmt.Printf("高级匹配 Office 2019: %t\n", 
+        cpeskills.AdvancedMatchCPE(pattern, office2019, options))
     
     // 版本比较
-    versions := []string{"9.0.0", "9.0.1", "9.1.0", "10.0.0"}
-    baseVersion := "9.0.0"
+    fmt.Println("\n=== 版本比较 ===")
+    fmt.Printf("1.0 vs 1.1: %d\n", cpeskills.CompareVersions("1.0", "1.1"))
+    fmt.Printf("2.0 vs 1.9: %d\n", cpeskills.CompareVersions("2.0", "1.9"))
+    fmt.Printf("1.0 vs 1.0: %d\n", cpeskills.CompareVersions("1.0", "1.0"))
     
-    for _, version := range versions {
-        result := cpeskills.CompareVersions(baseVersion, version)
-        var relation string
-        switch result {
-        case -1:
-            relation = "较旧"
-        case 0:
-            relation = "相同"
-        case 1:
-            relation = "较新"
-        }
-        fmt.Printf("%s 相对于 %s: %s\n", baseVersion, version, relation)
-    }
+    // 正则表达式匹配
+    fmt.Println("\n=== 正则表达式匹配 ===")
+    regexOptions := cpeskills.NewAdvancedMatchOptions()
+    regexOptions.UseRegex = true
     
-    fmt.Println("\n=== 模式匹配测试 ===")
-    
-    // 模式匹配
-    pattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*")
-    targets := []*cpeskills.CPE{cpe1, cpe2}
-    
-    for i, target := range targets {
-        match := cpeskills.MatchPattern(target, pattern)
-        fmt.Printf("目标 %d 匹配Apache模式: %t\n", i+1, match)
-    }
+    regexPattern, _ := cpeskills.ParseCpe23("cpe:2.3:a:.*soft.*:.*:*:*:*:*:*:*:*:*")
+    fmt.Printf("正则模式匹配 Windows: %t\n", 
+        cpeskills.AdvancedMatchCPE(regexPattern, windows10, regexOptions))
 }
 ```
-
-## 下一步
-
-- 了解[存储接口](./storage.md)来持久化匹配结果
-- 学习[集合操作](./sets.md)来处理大量CPE匹配
-- 探索[NVD集成](./nvd.md)来进行漏洞匹配
