@@ -31,7 +31,7 @@ classDiagram
     }
     class CPEDictionary {
         +string SchemaVersion
-        +Items CPEItem
+        +CPEItem[] Items
     }
     class CPEItem {
         +string Name

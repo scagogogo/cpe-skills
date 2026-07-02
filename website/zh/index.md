@@ -82,7 +82,7 @@ flowchart LR
 
 添加到你的 Claude Code skills 配置：
 
-```
+```text
 https://github.com/scagogogo/cpe-skills
 ```
 

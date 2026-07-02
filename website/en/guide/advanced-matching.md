@@ -40,354 +40,152 @@ package main
 import (
     "fmt"
     "log"
+
     "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
     fmt.Println("=== Advanced CPE Matching Examples ===")
-    
-    // Example 1: Fuzzy Matching
-    fmt.Println("\n1. Fuzzy Matching:")
-    
-    // Target CPE with slight variations
-    targetCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
-    
-    // Test CPEs with variations
-    testCPEs := []string{
-        "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",     // Exact match
-        "cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*",     // Version difference
-        "cpe:2.3:a:apache:tomcat_server:9.0.0:*:*:*:*:*:*:*", // Product name variation
-        "cpe:2.3:a:apache_software:tomcat:9.0.0:*:*:*:*:*:*:*", // Vendor variation
-        "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",     // Completely different
-    }
-    
-    fmt.Printf("Target: %s\n", targetCPE.GetURI())
-    fmt.Println("Fuzzy matching results:")
-    
-    for i, testCPEStr := range testCPEs {
-        testCPE, err := cpeskills.ParseCpe23(testCPEStr)
-        if err != nil {
-            log.Printf("Failed to parse %s: %v", testCPEStr, err)
-            continue
-        }
-        
-        // Calculate fuzzy match score (0.0 to 1.0)
-        score := cpeskills.FuzzyMatch(targetCPE, testCPE)
-        
-        var status string
-        switch {
-        case score >= 0.9:
-            status = "🟢 Excellent"
-        case score >= 0.7:
-            status = "🟡 Good"
-        case score >= 0.5:
-            status = "🟠 Fair"
-        default:
-            status = "🔴 Poor"
-        }
-        
-        fmt.Printf("  %d. %s (Score: %.2f) %s\n", i+1, testCPE.ProductName, score, status)
-    }
-    
-    // Example 2: Pattern Matching
-    fmt.Println("\n2. Pattern Matching:")
-    
-    // Define patterns with wildcards and regex
-    patterns := []struct {
-        name    string
-        pattern string
-        desc    string
-    }{
-        {
-            "Microsoft Products",
-            "cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*",
-            "Any Microsoft application",
-        },
-        {
-            "Java Versions 8.x",
-            "cpe:2.3:a:oracle:java:8.*:*:*:*:*:*:*:*",
-            "Oracle Java version 8.x",
-        },
-        {
-            "Windows Operating Systems",
-            "cpe:2.3:o:microsoft:windows:*:*:*:*:*:*:*:*",
-            "Any Windows OS version",
-        },
-        {
-            "Apache Web Technologies",
-            "cpe:2.3:a:apache:*:*:*:*:*:*:*:*:*",
-            "Any Apache application",
-        },
-    }
-    
-    // Test CPEs against patterns
-    testTargets := []string{
-        "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
-        "cpe:2.3:a:oracle:java:8.0.291:*:*:*:*:*:*:*",
-        "cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*",
-        "cpe:2.3:a:apache:http_server:2.4.41:*:*:*:*:*:*:*",
-        "cpe:2.3:a:mozilla:firefox:95.0:*:*:*:*:*:*:*",
-    }
-    
-    fmt.Println("Pattern matching results:")
-    for _, target := range testTargets {
-        targetCPE, _ := cpeskills.ParseCpe23(target)
-        fmt.Printf("\nTarget: %s\n", target)
-        
-        for _, pattern := range patterns {
-            patternCPE, _ := cpeskills.ParseCpe23(pattern.pattern)
-            matches := cpeskills.MatchPattern(targetCPE, patternCPE)
-            
-            status := "❌"
-            if matches {
-                status = "✅"
-            }
-            
-            fmt.Printf("  %s %s: %s\n", status, pattern.name, pattern.desc)
-        }
-    }
-    
-    // Example 3: Semantic Matching
-    fmt.Println("\n3. Semantic Matching:")
-    
-    // Define semantic equivalences
-    semanticRules := []struct {
-        primary    string
-        equivalent string
-        reason     string
-    }{
-        {
-            "cpe:2.3:a:microsoft:internet_explorer:*:*:*:*:*:*:*:*",
-            "cpe:2.3:a:microsoft:ie:*:*:*:*:*:*:*:*",
-            "IE is common abbreviation for Internet Explorer",
-        },
-        {
-            "cpe:2.3:a:apache:http_server:*:*:*:*:*:*:*:*",
-            "cpe:2.3:a:apache:httpd:*:*:*:*:*:*:*:*",
-            "httpd is the daemon name for Apache HTTP Server",
-        },
-        {
-            "cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*",
-            "cpe:2.3:o:microsoft:win10:*:*:*:*:*:*:*:*",
-            "Win10 is common abbreviation for Windows 10",
-        },
-    }
-    
-    fmt.Println("Semantic matching examples:")
-    for i, rule := range semanticRules {
-        primaryCPE, _ := cpeskills.ParseCpe23(rule.primary)
-        equivalentCPE, _ := cpeskills.ParseCpe23(rule.equivalent)
-        
-        // Test semantic matching
-        matches := cpeskills.SemanticMatch(primaryCPE, equivalentCPE)
-        
-        status := "❌"
-        if matches {
-            status = "✅"
-        }
-        
-        fmt.Printf("  %d. %s\n", i+1, status)
-        fmt.Printf("     Primary: %s\n", primaryCPE.ProductName)
-        fmt.Printf("     Equivalent: %s\n", equivalentCPE.ProductName)
-        fmt.Printf("     Reason: %s\n", rule.reason)
-    }
-    
-    // Example 4: Version Range Matching
-    fmt.Println("\n4. Version Range Matching:")
-    
-    // Define version ranges
-    versionRanges := []struct {
-        name     string
-        minVer   string
-        maxVer   string
-        inclusive bool
-    }{
-        {"Java 8 Updates", "8.0.0", "8.0.999", true},
-        {"Tomcat 9.0.x", "9.0.0", "9.0.999", true},
-        {"Windows 10 Builds", "10.0.10240", "10.0.19999", true},
-        {"Office 2019 Versions", "16.0.0", "16.9.999", true},
-    }
-    
-    // Test versions against ranges
-    testVersions := []struct {
-        cpe     string
-        version string
-    }{
-        {"cpe:2.3:a:oracle:java:8.0.291:*:*:*:*:*:*:*", "8.0.291"},
-        {"cpe:2.3:a:apache:tomcat:9.0.45:*:*:*:*:*:*:*", "9.0.45"},
-        {"cpe:2.3:o:microsoft:windows:10.0.19041:*:*:*:*:*:*:*", "10.0.19041"},
-        {"cpe:2.3:a:microsoft:office:16.0.13901:*:*:*:*:*:*:*", "16.0.13901"},
-        {"cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*", "11.0.12"},
-    }
-    
-    fmt.Println("Version range matching:")
-    for _, test := range testVersions {
-        testCPE, _ := cpeskills.ParseCpe23(test.cpe)
-        fmt.Printf("\nTesting: %s %s (v%s)\n", testCPE.Vendor, testCPE.ProductName, test.version)
-        
-        for _, vrange := range versionRanges {
-            inRange := cpeskills.IsVersionInRange(test.version, vrange.minVer, vrange.maxVer)
-            
-            status := "❌"
-            if inRange {
-                status = "✅"
-            }
-            
-            fmt.Printf("  %s %s (%s - %s)\n", status, vrange.name, vrange.minVer, vrange.maxVer)
-        }
-    }
-    
-    // Example 5: Weighted Matching
-    fmt.Println("\n5. Weighted Matching:")
-    
-    // Define matching weights for different components
-    weights := cpeskills.MatchWeights{
-        Part:    0.1,  // Part is less important
-        Vendor:  0.3,  // Vendor is important
-        Product: 0.4,  // Product is most important
-        Version: 0.2,  // Version is moderately important
-    }
-    
-    referenceCPE, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
-    
-    candidateCPEs := []string{
-        "cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*",     // Same product, different version
-        "cpe:2.3:a:apache:tomcat_server:9.0.0:*:*:*:*:*:*:*", // Similar product name
-        "cpe:2.3:a:apache:http_server:2.4.41:*:*:*:*:*:*:*", // Same vendor, different product
-        "cpe:2.3:o:apache:tomcat:9.0.0:*:*:*:*:*:*:*",     // Different part type
-    }
-    
-    fmt.Printf("Reference: %s\n", referenceCPE.GetURI())
-    fmt.Println("Weighted matching scores:")
-    
-    for i, candidateStr := range candidateCPEs {
-        candidateCPE, _ := cpeskills.ParseCpe23(candidateStr)
-        score := cpeskills.WeightedMatch(referenceCPE, candidateCPE, weights)
-        
-        fmt.Printf("  %d. Score: %.3f - %s\n", i+1, score, candidateCPE.GetURI())
-    }
-    
-    // Example 6: Contextual Matching
-    fmt.Println("\n6. Contextual Matching:")
-    
-    // Define context for matching
-    context := cpeskills.MatchContext{
-        Environment: "production",
-        Platform:    "linux",
-        Purpose:     "web_server",
-    }
-    
-    // CPEs with context information
-    contextualCPEs := []struct {
-        cpe     string
-        context cpeskills.MatchContext
-    }{
-        {
-            "cpe:2.3:a:apache:http_server:2.4.41:*:*:*:*:*:*:*",
-            cpeskills.MatchContext{Environment: "production", Platform: "linux", Purpose: "web_server"},
-        },
-        {
-            "cpe:2.3:a:apache:http_server:2.4.41:*:*:*:*:*:*:*",
-            cpeskills.MatchContext{Environment: "development", Platform: "linux", Purpose: "web_server"},
-        },
-        {
-            "cpe:2.3:a:nginx:nginx:1.18.0:*:*:*:*:*:*:*",
-            cpeskills.MatchContext{Environment: "production", Platform: "linux", Purpose: "web_server"},
-        },
-        {
-            "cpe:2.3:a:microsoft:iis:10.0:*:*:*:*:*:*:*",
-            cpeskills.MatchContext{Environment: "production", Platform: "windows", Purpose: "web_server"},
-        },
-    }
-    
-    fmt.Printf("Target context: %+v\n", context)
-    fmt.Println("Contextual matching results:")
-    
-    for i, item := range contextualCPEs {
-        itemCPE, _ := cpeskills.ParseCpe23(item.cpe)
-        contextMatch := cpeskills.ContextualMatch(context, item.context)
-        
-        var status string
-        switch {
-        case contextMatch >= 0.9:
-            status = "🟢 Perfect"
-        case contextMatch >= 0.7:
-            status = "🟡 Good"
-        case contextMatch >= 0.5:
-            status = "🟠 Partial"
-        default:
-            status = "🔴 Poor"
-        }
-        
-        fmt.Printf("  %d. %s %s (Score: %.2f) %s\n", 
-            i+1, itemCPE.Vendor, itemCPE.ProductName, contextMatch, status)
-        fmt.Printf("     Context: %+v\n", item.context)
-    }
-    
-    // Example 7: Machine Learning Enhanced Matching
-    fmt.Println("\n7. ML-Enhanced Matching:")
-    
-    // Simulate ML model predictions
-    mlModel := cpeskills.NewMLMatchingModel()
-    
-    // Train with sample data (in real implementation, this would use actual training data)
-    trainingPairs := []cpeskills.MatchingPair{
-        {
-            CPE1: mustParseCPE("cpe:2.3:a:apache:tomcat:8.5.0:*:*:*:*:*:*:*"),
-            CPE2: mustParseCPE("cpe:2.3:a:apache:tomcat:8.5.1:*:*:*:*:*:*:*"),
-            Match: true,
-            Score: 0.95,
-        },
-        {
-            CPE1: mustParseCPE("cpe:2.3:a:apache:tomcat:8.5.0:*:*:*:*:*:*:*"),
-            CPE2: mustParseCPE("cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*"),
-            Match: false,
-            Score: 0.1,
-        },
-    }
-    
-    err := mlModel.Train(trainingPairs)
-    if err != nil {
-        log.Printf("Failed to train ML model: %v", err)
-    } else {
-        fmt.Println("ML model trained successfully")
-        
-        // Test ML predictions
-        testPairs := []struct {
-            cpe1 string
-            cpe2 string
-        }{
-            {
-                "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
-                "cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*",
-            },
-            {
-                "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
-                "cpe:2.3:a:microsoft:word:2019:*:*:*:*:*:*:*",
-            },
-        }
-        
-        fmt.Println("ML matching predictions:")
-        for i, pair := range testPairs {
-            cpe1, _ := cpeskills.ParseCpe23(pair.cpe1)
-            cpe2, _ := cpeskills.ParseCpe23(pair.cpe2)
-            
-            prediction := mlModel.Predict(cpe1, cpe2)
-            
-            fmt.Printf("  %d. Score: %.3f\n", i+1, prediction.Score)
-            fmt.Printf("     CPE1: %s\n", cpe1.ProductName)
-            fmt.Printf("     CPE2: %s\n", cpe2.ProductName)
-            fmt.Printf("     Confidence: %.2f\n", prediction.Confidence)
-        }
-    }
-}
 
-func mustParseCPE(cpeStr string) *cpeskills.CPE {
-    cpeObj, err := cpeskills.ParseCpe23(cpeStr)
+    // Example 1: Basic Matching (CPE.Match / MatchCPE)
+    fmt.Println("\n1. Basic Matching:")
+
+    // A wildcard pattern matches any version of Windows.
+    patternCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
     if err != nil {
-        panic(err)
+        log.Fatal(err)
     }
-    return cpeObj
+    targetCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Method form: pattern.Match(target) follows the CPE Name Matching spec,
+    // where a "*" in any field matches any value in the corresponding field.
+    fmt.Printf("Pattern %s matches %s: %v\n",
+        patternCPE.GetURI(), targetCPE.GetURI(), patternCPE.Match(targetCPE))
+
+    // Functional form using MatchOptions. Here IgnoreVersion lets the version
+    // field be skipped during comparison.
+    opts := cpeskills.DefaultMatchOptions()
+    opts.IgnoreVersion = true
+    fmt.Printf("MatchCPE (IgnoreVersion=true): %v\n",
+        cpeskills.MatchCPE(patternCPE, targetCPE, opts))
+
+    // Example 2: Advanced Matching Modes (exact / subset / superset / distance)
+    fmt.Println("\n2. Advanced Matching Modes:")
+
+    // criteria is a more general pattern; target is a specific CPE.
+    criteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+    specific, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+
+    modes := []struct {
+        name string
+        mode string
+    }{
+        {"exact", "exact"},
+        {"subset", "subset"},      // criteria is a subset of (more specific than) target
+        {"superset", "superset"}, // criteria is a superset of (more general than) target
+        {"distance", "distance"}, // distance / similarity based matching
+    }
+
+    for _, m := range modes {
+        o := cpeskills.NewAdvancedMatchOptions()
+        o.MatchMode = m.mode
+        result := cpeskills.AdvancedMatchCPE(criteria, specific, o)
+        fmt.Printf("  mode=%-8s -> %v\n", m.name, result)
+    }
+
+    // Example 3: Regex, IgnoreCase, and PartialMatch Options
+    fmt.Println("\n3. Regex / IgnoreCase / PartialMatch Options:")
+
+    // UseRegex treats vendor/product fields as regular expressions.
+    // IgnoreCase makes those regex matches case-insensitive.
+    regexCriteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:.*soft.*:.*:1.*:*:*:*:*:*:*")
+    regexTarget, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+
+    regexOpts := cpeskills.NewAdvancedMatchOptions()
+    regexOpts.MatchMode = "exact"
+    regexOpts.UseRegex = true
+    regexOpts.IgnoreCase = true
+    fmt.Printf("UseRegex+IgnoreCase match: %v\n",
+        cpeskills.AdvancedMatchCPE(regexCriteria, regexTarget, regexOpts))
+
+    // PartialMatch allows substring matching on string fields.
+    partialCriteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:*:*:*:*:*:*:*:*")
+    partialTarget, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat_server:9.0.0:*:*:*:*:*:*:*")
+    partialOpts := cpeskills.NewAdvancedMatchOptions()
+    partialOpts.MatchMode = "exact"
+    partialOpts.PartialMatch = true
+    fmt.Printf("PartialMatch (tomcat in tomcat_server): %v\n",
+        cpeskills.AdvancedMatchCPE(partialCriteria, partialTarget, partialOpts))
+
+    // Example 4: FieldOptions (per-field Weight and Required)
+    fmt.Println("\n4. FieldOptions (Weight / Required):")
+
+    // Configure per-field behavior. "vendor" and "product" are required and
+    // carry higher weight; "version" is optional with a lower weight.
+    fieldCriteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:*:*:*:*:*:*:*:*")
+    fieldTarget, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+
+    fieldOpts := cpeskills.NewAdvancedMatchOptions()
+    fieldOpts.MatchMode = "exact"
+    fieldOpts.FieldOptions = map[string]cpeskills.FieldMatchOption{
+        "vendor":  {Weight: 0.3, Required: true, MatchMethod: "exact"},
+        "product": {Weight: 0.4, Required: true, MatchMethod: "exact"},
+        "version": {Weight: 0.2, Required: false, MatchMethod: "exact"},
+    }
+    fmt.Printf("FieldOptions match: %v\n",
+        cpeskills.AdvancedMatchCPE(fieldCriteria, fieldTarget, fieldOpts))
+
+    // Example 5: ScoreThreshold
+    fmt.Println("\n5. ScoreThreshold:")
+
+    // Lowering ScoreThreshold relaxes distance matching so near-misses pass.
+    distCriteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+    distTarget, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*")
+
+    strictOpts := cpeskills.NewAdvancedMatchOptions()
+    strictOpts.MatchMode = "distance"
+    strictOpts.ScoreThreshold = 0.9
+    fmt.Printf("ScoreThreshold=0.9: %v\n",
+        cpeskills.AdvancedMatchCPE(distCriteria, distTarget, strictOpts))
+
+    looseOpts := cpeskills.NewAdvancedMatchOptions()
+    looseOpts.MatchMode = "distance"
+    looseOpts.ScoreThreshold = 0.5
+    fmt.Printf("ScoreThreshold=0.5: %v\n",
+        cpeskills.AdvancedMatchCPE(distCriteria, distTarget, looseOpts))
+
+    // Example 6: Version Comparison (CompareVersions + type conversion)
+    fmt.Println("\n6. Version Comparison:")
+
+    // CPE field types (Vendor/Product/Version) are `type X string` aliases,
+    // so they must be converted with string() before being passed to generic
+    // string helpers like strings.Contains or CompareVersions.
+    v1 := targetCPE.Version
+    fmt.Printf("CompareVersions(%q, %q) = %d\n",
+        string(v1), "10", cpeskills.CompareVersions(string(v1), "10"))
+
+    fmt.Printf("IsVersionInRange(%q, %q, %q) = %v\n",
+        string(v1), "1.0", "99.0",
+        cpeskills.IsVersionInRange(string(v1), "1.0", "99.0"))
+
+    // Example 7: Version Range Matching via AdvancedMatchOptions
+    fmt.Println("\n7. Version Range Matching:")
+
+    // VersionCompareMode together with VersionLower / VersionUpper performs
+    // range-based version matching inside AdvancedMatchCPE.
+    rangeCriteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:*:*:*:*:*:*:*:*")
+    rangeTarget, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:8.0.291:*:*:*:*:*:*:*")
+
+    rangeOpts := cpeskills.NewAdvancedMatchOptions()
+    rangeOpts.MatchMode = "exact"
+    rangeOpts.VersionCompareMode = "range"
+    rangeOpts.VersionLower = "8.0.0"
+    rangeOpts.VersionUpper = "8.0.999"
+    fmt.Printf("Java 8.0.291 in [8.0.0, 8.0.999]: %v\n",
+        cpeskills.AdvancedMatchCPE(rangeCriteria, rangeTarget, rangeOpts))
 }
 ```
 

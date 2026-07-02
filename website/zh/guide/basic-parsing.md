@@ -1,10 +1,10 @@
 # 基础解析
 
-本示例演示了CPE库的基本解析功能，展示如何解析CPE 2.2和2.3格式的字符串。
+本示例演示了 CPE 库的基本解析功能，展示如何解析 CPE 2.2 和 2.3 格式的字符串。
 
 ## 概览
 
-CPE库支持解析两种标准格式的通用平台枚举字符串：
+CPE 库支持解析两种标准格式的通用平台枚举字符串：
 - **CPE 2.3**: `cpe:2.3:part:vendor:product:version:update:edition:language:sw_edition:target_sw:target_hw:other`
 - **CPE 2.2**: `cpe:/part:vendor:product:version:update:edition:language`
 
@@ -186,7 +186,7 @@ func main() {
 
 ## 预期输出
 
-```
+```text
 === CPE解析示例 ===
 
 1. 解析CPE 2.3格式：
@@ -229,9 +229,9 @@ func main() {
 
 ## 关键概念
 
-### 1. CPE组件
+### 1. CPE 组件
 
-每个CPE都有这些主要组件：
+每个 CPE 都有这些主要组件：
 - **部件**: 组件类型（a=应用程序，h=硬件，o=操作系统）
 - **供应商**: 制造商或开发者
 - **产品**: 产品名称
@@ -246,23 +246,23 @@ func main() {
 ### 3. 错误处理
 
 库提供特定的错误类型：
-- `InvalidFormatError`: 格式错误的CPE字符串
+- `InvalidFormatError`: 格式错误的 CPE 字符串
 - `InvalidPartError`: 无效的部件值
 - `ParsingError`: 一般解析失败
 
 ### 4. 格式转换
 
-库自动处理CPE 2.2和2.3格式之间的转换，允许你无缝地使用任一格式。
+库自动处理 CPE 2.2 和 2.3 格式之间的转换，允许你无缝地使用任一格式。
 
 ## 最佳实践
 
-1. **始终处理错误** 解析CPE字符串时
+1. **始终处理错误** 解析 CPE 字符串时
 2. **验证输入** 如果来源不可信，解析前先验证
 3. **使用适当的格式** 根据你的用例
-4. **检查特殊值** 处理CPE组件时
+4. **检查特殊值** 处理 CPE 组件时
 
 ## 下一步
 
-- 学习[CPE匹配](./matching.md)来比较CPE对象
-- 探索[WFN转换](./wfn-conversion.md)了解内部表示
-- 查看[存储操作](./storage.md)来持久化解析的CPE数据
+- 学习[CPE 匹配](./matching.md)来比较 CPE 对象
+- 探索[WFN 转换](./wfn-conversion.md)了解内部表示
+- 查看[存储操作](./storage.md)来持久化解析的 CPE 数据

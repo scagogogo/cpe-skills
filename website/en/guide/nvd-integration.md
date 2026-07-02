@@ -31,339 +31,184 @@ import (
     "fmt"
     "log"
     "time"
+
     "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
     fmt.Println("=== NVD Integration Examples ===")
-    
-    // Example 1: Download NVD CPE Dictionary
-    fmt.Println("\n1. Downloading NVD CPE Dictionary:")
-    
-    // Initialize NVD client
-    nvdClient := cpeskills.NewNVDClient(&cpeskills.NVDConfig{
-        APIKey:      "", // Optional: Add your NVD API key for higher rate limits
-        CacheDir:    "./nvd_cache",
-        UpdateInterval: 24 * time.Hour, // Update daily
-    })
-    
-    // Download the latest CPE dictionary
-    fmt.Println("Downloading CPE dictionary from NVD...")
-    dictionary, err := nvdClient.DownloadCPEDictionary()
+
+    // Example 1: Configure NVD feed options.
+    // NVDFeedOptions controls caching, concurrency and the HTTP client used
+    // when downloading NVD data. Start from the defaults and tweak as needed.
+    fmt.Println("\n1. Configuring NVD feed options:")
+
+    options := cpeskills.DefaultNVDFeedOptions()
+    options.CacheDir = "./nvd_cache" // store downloaded feeds here
+    options.CacheMaxAge = 24         // refresh cache after 24 hours
+    options.MaxConcurrentDownloads = 2
+    options.ShowProgress = false
+
+    fmt.Printf("CacheDir:               %s\n", options.CacheDir)
+    fmt.Printf("CacheMaxAge:            %d hours\n", options.CacheMaxAge)
+    fmt.Printf("MaxConcurrentDownloads: %d\n", options.MaxConcurrentDownloads)
+
+    // Example 2: Download all NVD data (CPE dictionary + CPE/CVE mappings).
+    // DownloadAllNVDData fetches the CPE dictionary and the CPE match data,
+    // returning an NVDCPEData that bundles both. It needs network access, so
+    // here we only keep the error and continue with an empty data set.
+    fmt.Println("\n2. Downloading NVD data:")
+
+    fmt.Println("Downloading CPE dictionary and CPE/CVE mappings from NVD...")
+    nvdData, err := cpeskills.DownloadAllNVDData(options)
     if err != nil {
-        log.Printf("Failed to download CPE dictionary: %v", err)
-        // For demo purposes, create a sample dictionary
-        dictionary = createSampleDictionary()
+        log.Printf("Failed to download NVD data: %v", err)
+        // Fall back to an empty data set so the rest of the example compiles
+        // and runs without network access.
+        nvdData = &cpeskills.NVDCPEData{
+            CPEDictionary: &cpeskills.CPEDictionary{
+                Items:         []*cpeskills.CPEItem{},
+                GeneratedAt:   time.Now(),
+                SchemaVersion: "2.3",
+            },
+            CPEMatchData: &cpeskills.CPEMatchData{
+                CVEToCPEs: map[string][]string{},
+                CPEToCVEs: map[string][]string{},
+            },
+            DownloadTime: time.Now(),
+        }
     } else {
-        fmt.Printf("✅ Downloaded %d CPE entries\n", len(dictionary.Entries))
+        fmt.Printf("Downloaded %d CPE entries (schema %s)\n",
+            len(nvdData.CPEDictionary.Items), nvdData.CPEDictionary.SchemaVersion)
+        fmt.Printf("Data downloaded at: %s\n", nvdData.DownloadTime.Format(time.RFC3339))
     }
-    
-    // Example 2: Search CPE Dictionary
-    fmt.Println("\n2. Searching CPE Dictionary:")
-    
-    searchTerms := []string{
-        "microsoft",
-        "apache",
-        "oracle java",
-        "linux kernel",
-        "cisco",
-    }
-    
-    for _, term := range searchTerms {
-        fmt.Printf("\nSearching for '%s':\n", term)
-        results := dictionary.Search(term, 5) // Limit to 5 results
-        
-        for i, entry := range results {
-            fmt.Printf("  %d. %s\n", i+1, entry.CPE23)
-            fmt.Printf("     Title: %s\n", entry.Title)
-            if len(entry.References) > 0 {
-                fmt.Printf("     Reference: %s\n", entry.References[0])
-            }
+
+    // Example 3: Inspect the CPE dictionary.
+    fmt.Println("\n3. Inspecting the CPE dictionary:")
+
+    dict := nvdData.CPEDictionary
+    fmt.Printf("Dictionary generated at: %s\n", dict.GeneratedAt.Format("2006-01-02"))
+    fmt.Printf("Schema version:          %s\n", dict.SchemaVersion)
+    fmt.Printf("Total entries:           %d\n", len(dict.Items))
+
+    // Show a few dictionary entries (title, name and first reference URL).
+    shown := 0
+    for _, item := range dict.Items {
+        if item.Deprecated {
+            continue
+        }
+        fmt.Printf("  - %s\n", item.Title)
+        fmt.Printf("    %s\n", item.Name)
+        if len(item.References) > 0 {
+            fmt.Printf("    ref: %s\n", item.References[0].URL)
+        }
+        shown++
+        if shown >= 3 {
+            break
         }
     }
-    
-    // Example 3: CPE Validation Against NVD
-    fmt.Println("\n3. CPE Validation Against NVD:")
-    
-    testCPEs := []string{
-        "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
-        "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
-        "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",
-        "cpe:2.3:a:nonexistent:product:1.0:*:*:*:*:*:*:*", // Invalid CPE
+    if shown == 0 {
+        fmt.Println("  (no non-deprecated entries available)")
     }
-    
-    fmt.Println("Validating CPEs against NVD dictionary:")
-    for i, cpeStr := range testCPEs {
-        isValid := dictionary.ValidateCPE(cpeStr)
-        
-        status := "❌ Invalid"
-        if isValid {
-            status = "✅ Valid"
-        }
-        
-        fmt.Printf("  %d. %s %s\n", i+1, status, cpeStr)
-        
-        // Get additional information if valid
-        if isValid {
-            entry := dictionary.GetEntry(cpeStr)
-            if entry != nil {
-                fmt.Printf("     Title: %s\n", entry.Title)
-                fmt.Printf("     Last Modified: %s\n", entry.LastModified.Format("2006-01-02"))
-            }
-        }
-    }
-    
-    // Example 4: Download Vulnerability Data
-    fmt.Println("\n4. Downloading Vulnerability Data:")
-    
-    // Download recent CVE data
-    fmt.Println("Downloading recent CVE data...")
-    cveData, err := nvdClient.DownloadCVEData(time.Now().AddDate(0, -1, 0)) // Last month
+
+    // Example 4: Find CVEs for a specific CPE.
+    fmt.Println("\n4. Finding CVEs for a CPE:")
+
+    tomcatCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
     if err != nil {
-        log.Printf("Failed to download CVE data: %v", err)
-        // Create sample CVE data for demo
-        cveData = createSampleCVEData()
-    } else {
-        fmt.Printf("✅ Downloaded %d CVE entries\n", len(cveData.CVEs))
+        log.Fatalf("Failed to parse CPE: %v", err)
     }
-    
-    // Example 5: CPE to CVE Mapping
-    fmt.Println("\n5. CPE to CVE Mapping:")
-    
-    // Find vulnerabilities for specific CPEs
-    targetCPEs := []string{
-        "cpe:2.3:a:apache:tomcat:8.5.0:*:*:*:*:*:*:*",
-        "cpe:2.3:a:oracle:java:8.0.291:*:*:*:*:*:*:*",
-        "cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*",
-    }
-    
-    for _, cpeStr := range targetCPEs {
-        fmt.Printf("\nFinding vulnerabilities for: %s\n", cpeStr)
-        
-        vulnerabilities := cveData.FindVulnerabilitiesForCPE(cpeStr)
-        
-        if len(vulnerabilities) == 0 {
-            fmt.Println("  No vulnerabilities found")
-        } else {
-            fmt.Printf("  Found %d vulnerabilities:\n", len(vulnerabilities))
-            
-            for i, vuln := range vulnerabilities[:min(3, len(vulnerabilities))] { // Show first 3
-                fmt.Printf("    %d. %s (CVSS: %.1f)\n", i+1, vuln.ID, vuln.CVSSScore)
-                fmt.Printf("       %s\n", vuln.Description)
-                fmt.Printf("       Published: %s\n", vuln.PublishedDate.Format("2006-01-02"))
-            }
-            
-            if len(vulnerabilities) > 3 {
-                fmt.Printf("    ... and %d more\n", len(vulnerabilities)-3)
-            }
+
+    cves := nvdData.FindCVEsForCPE(tomcatCPE)
+    fmt.Printf("Found %d CVE(s) for %s\n", len(cves), tomcatCPE.Cpe23)
+    for i, cveID := range cves {
+        if i >= 5 {
+            fmt.Printf("  ... and %d more\n", len(cves)-5)
+            break
         }
+        fmt.Printf("  %d. %s\n", i+1, cveID)
     }
-    
-    // Example 6: Vulnerability Assessment
-    fmt.Println("\n6. Vulnerability Assessment:")
-    
-    // Assess a system inventory
+
+    // Example 5: Find CPEs affected by a specific CVE.
+    fmt.Println("\n5. Finding CPEs affected by a CVE:")
+
+    log4Shell := "CVE-2021-44228"
+    affectedCPEs := nvdData.FindCPEsForCVE(log4Shell)
+    fmt.Printf("%s affects %d CPE(s)\n", log4Shell, len(affectedCPEs))
+    for i, cpe := range affectedCPEs {
+        if i >= 5 {
+            fmt.Printf("  ... and %d more\n", len(affectedCPEs)-5)
+            break
+        }
+        fmt.Printf("  %d. %s\n", i+1, cpe.Cpe23)
+    }
+
+    // Example 6: Enrich a CPE with vulnerability data.
+    // EnrichCPEWithVulnerabilityData sets the CPE's Cve field to the first
+    // related CVE ID found in the NVD data.
+    fmt.Println("\n6. Enriching a CPE with vulnerability data:")
+
+    fmt.Printf("Before: Cve=%q\n", tomcatCPE.Cve)
+    nvdData.EnrichCPEWithVulnerabilityData(tomcatCPE)
+    fmt.Printf("After:  Cve=%q\n", tomcatCPE.Cve)
+
+    // Example 7: Vulnerability assessment over a system inventory.
+    fmt.Println("\n7. Vulnerability assessment:")
+
     systemInventory := []string{
         "cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:8.5.0:*:*:*:*:*:*:*",
         "cpe:2.3:a:oracle:java:8.0.291:*:*:*:*:*:*:*",
-        "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
         "cpe:2.3:a:mozilla:firefox:95.0:*:*:*:*:*:*:*",
     }
-    
-    fmt.Println("System Vulnerability Assessment:")
+
     fmt.Printf("Inventory: %d components\n", len(systemInventory))
-    
-    assessment := cpeskills.NewVulnerabilityAssessment()
-    
+
     totalVulns := 0
-    criticalVulns := 0
-    highVulns := 0
-    
     for _, cpeStr := range systemInventory {
-        vulns := cveData.FindVulnerabilitiesForCPE(cpeStr)
-        totalVulns += len(vulns)
-        
-        for _, vuln := range vulns {
-            switch {
-            case vuln.CVSSScore >= 9.0:
-                criticalVulns++
-            case vuln.CVSSScore >= 7.0:
-                highVulns++
-            }
-        }
-        
-        assessment.AddComponent(cpeStr, vulns)
-    }
-    
-    fmt.Printf("\nAssessment Results:\n")
-    fmt.Printf("  Total Vulnerabilities: %d\n", totalVulns)
-    fmt.Printf("  Critical (CVSS 9.0+): %d\n", criticalVulns)
-    fmt.Printf("  High (CVSS 7.0-8.9): %d\n", highVulns)
-    fmt.Printf("  Risk Score: %.1f/10\n", assessment.CalculateRiskScore())
-    
-    // Example 7: Automated Updates
-    fmt.Println("\n7. Automated Updates:")
-    
-    // Set up automatic updates
-    updateConfig := &cpeskills.UpdateConfig{
-        CheckInterval: 6 * time.Hour, // Check every 6 hours
-        AutoDownload:  true,
-        NotifyOnUpdate: true,
-    }
-    
-    updater := cpeskills.NewNVDUpdater(nvdClient, updateConfig)
-    
-    fmt.Println("Setting up automated NVD updates...")
-    
-    // Check for updates
-    hasUpdates, err := updater.CheckForUpdates()
-    if err != nil {
-        log.Printf("Failed to check for updates: %v", err)
-    } else {
-        if hasUpdates {
-            fmt.Println("✅ Updates available")
-            
-            // Download updates
-            fmt.Println("Downloading updates...")
-            err = updater.DownloadUpdates()
-            if err != nil {
-                log.Printf("Failed to download updates: %v", err)
-            } else {
-                fmt.Println("✅ Updates downloaded successfully")
-            }
-        } else {
-            fmt.Println("📅 No updates available")
-        }
-    }
-    
-    // Example 8: Custom NVD Queries
-    fmt.Println("\n8. Custom NVD Queries:")
-    
-    // Query for specific vulnerability types
-    queries := []struct {
-        name  string
-        query cpeskills.NVDQuery
-    }{
-        {
-            "Recent Critical Vulnerabilities",
-            cpeskills.NVDQuery{
-                CVSSScoreMin: 9.0,
-                PublishedAfter: time.Now().AddDate(0, -3, 0), // Last 3 months
-                Limit: 10,
-            },
-        },
-        {
-            "Apache Product Vulnerabilities",
-            cpeskills.NVDQuery{
-                CPEVendor: "apache",
-                CVSSScoreMin: 7.0,
-                Limit: 5,
-            },
-        },
-        {
-            "Windows OS Vulnerabilities",
-            cpeskills.NVDQuery{
-                CPEProduct: "windows",
-                CPEPart: "o", // Operating system
-                Limit: 5,
-            },
-        },
-    }
-    
-    for _, q := range queries {
-        fmt.Printf("\n%s:\n", q.name)
-        
-        results, err := nvdClient.QueryVulnerabilities(q.query)
+        cpe, err := cpeskills.ParseCpe23(cpeStr)
         if err != nil {
-            log.Printf("Query failed: %v", err)
+            log.Printf("  skipping invalid CPE %q: %v", cpeStr, err)
             continue
         }
-        
-        if len(results) == 0 {
-            fmt.Println("  No results found")
-        } else {
-            for i, vuln := range results {
-                fmt.Printf("  %d. %s (CVSS: %.1f)\n", i+1, vuln.ID, vuln.CVSSScore)
-                fmt.Printf("     %s\n", truncateString(vuln.Description, 80))
-            }
+        vulns := nvdData.FindCVEsForCPE(cpe)
+        totalVulns += len(vulns)
+        fmt.Printf("  %s -> %d vulnerability(ies)\n", cpeStr, len(vulns))
+    }
+
+    fmt.Printf("Assessment results:\n")
+    fmt.Printf("  Total vulnerabilities: %d\n", totalVulns)
+
+    // Example 8: Download only the CPE dictionary.
+    // When you do not need CVE mappings, DownloadAndParseCPEDict is cheaper
+    // than DownloadAllNVDData.
+    fmt.Println("\n8. Downloading only the CPE dictionary:")
+
+    dictOnly, err := cpeskills.DownloadAndParseCPEDict(options)
+    if err != nil {
+        log.Printf("Failed to download CPE dictionary: %v", err)
+    } else {
+        fmt.Printf("Downloaded %d CPE entries\n", len(dictOnly.Items))
+    }
+
+    // Example 9: Download only the CPE match data.
+    fmt.Println("\n9. Downloading only the CPE match data:")
+
+    matchData, err := cpeskills.DownloadAndParseCPEMatch(options)
+    if err != nil {
+        log.Printf("Failed to download CPE match data: %v", err)
+    } else {
+        fmt.Printf("CPE match data: %d CVE->CPE entries, %d CPE->CVE entries\n",
+            len(matchData.CVEToCPEs), len(matchData.CPEToCVEs))
+
+        // Direct map lookups are available on CPEMatchData.
+        for cveID, cpeURIs := range matchData.CVEToCPEs {
+            fmt.Printf("  %s -> %d CPE(s)\n", cveID, len(cpeURIs))
+            break // just show one example
         }
     }
-    
-    // Example 9: Export and Reporting
-    fmt.Println("\n9. Export and Reporting:")
-    
-    // Generate vulnerability report
-    report := cpeskills.NewVulnerabilityReport()
-    report.SetTitle("System Vulnerability Assessment Report")
-    report.SetGeneratedDate(time.Now())
-    
-    // Add system information
-    for _, cpeStr := range systemInventory {
-        vulns := cveData.FindVulnerabilitiesForCPE(cpeStr)
-        report.AddSystemComponent(cpeStr, vulns)
-    }
-    
-    // Export to different formats
-    formats := []string{"json", "csv", "html"}
-    
-    for _, format := range formats {
-        filename := fmt.Sprintf("vulnerability_report.%s", format)
-        err := report.ExportToFile(filename, format)
-        if err != nil {
-            log.Printf("Failed to export %s: %v", format, err)
-        } else {
-            fmt.Printf("✅ Report exported to %s\n", filename)
-        }
-    }
-}
 
-// Helper functions for demo
-func createSampleDictionary() *cpeskills.CPEDictionary {
-    return &cpeskills.CPEDictionary{
-        Entries: []*cpeskills.CPEDictionaryEntry{
-            {
-                CPE23: "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
-                Title: "Microsoft Windows 10",
-                LastModified: time.Now(),
-            },
-            {
-                CPE23: "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
-                Title: "Apache Tomcat 9.0.0",
-                LastModified: time.Now(),
-            },
-        },
-    }
-}
-
-func createSampleCVEData() *cpeskills.CVEData {
-    return &cpeskills.CVEData{
-        CVEs: []*cpeskills.CVEEntry{
-            {
-                ID: "CVE-2021-44228",
-                Description: "Apache Log4j2 JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints.",
-                CVSSScore: 10.0,
-                PublishedDate: time.Date(2021, 12, 10, 0, 0, 0, 0, time.UTC),
-                AffectedCPEs: []string{
-                    "cpe:2.3:a:apache:log4j:2.0:*:*:*:*:*:*:*",
-                },
-            },
-        },
-    }
-}
-
-func min(a, b int) int {
-    if a < b {
-        return a
-    }
-    return b
-}
-
-func truncateString(s string, maxLen int) string {
-    if len(s) <= maxLen {
-        return s
-    }
-    return s[:maxLen-3] + "..."
+    fmt.Println("\n=== NVD integration example finished ===")
 }
 ```
 

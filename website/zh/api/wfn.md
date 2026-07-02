@@ -319,13 +319,13 @@ WFN 对逻辑值使用特殊的值处理方式：
 func FSStringToURI(fs string) string
 ```
 
-将 CPE 2.3 格式化字符串转换为 CPE 2.2 URI 格式。
+将文件系统安全的 CPE 字符串（其中 `:` 分隔符被替换为 `___` 与 `_`）转换回标准 CPE URI 字符串。文件系统安全形式用于将 CPE 转换为可作为路径安全的文件名组成部分。
 
 **参数：**
-- `fs` - 格式化字符串值
+- `fs` - 文件系统安全的 CPE 字符串（例如 `"cpe___2.3_a_microsoft_windows_10_-_-_-_-_-_-_-"`）
 
 **返回值：**
-- `string` - URI 格式的值
+- `string` - 标准 CPE URI 字符串（例如 `"cpe:2.3:a:microsoft:windows:10:-:-:-:-:-:-:-"`）
 
 ### URIToFSString
 
@@ -333,13 +333,13 @@ func FSStringToURI(fs string) string
 func URIToFSString(uri string) string
 ```
 
-将 CPE 2.2 URI 值转换为 CPE 2.3 格式化字符串。
+将标准 CPE URI 字符串转换为文件系统安全形式，把 `:` 分隔符替换为 `___` 与 `_`，使结果可安全地用作文件名组成部分。
 
 **参数：**
-- `uri` - URI 值
+- `uri` - 标准 CPE URI 字符串（例如 `"cpe:2.3:a:microsoft:windows:10:-:-:-:-:-:-:-"`）
 
 **返回值：**
-- `string` - 格式化字符串值
+- `string` - 文件系统安全的 CPE 字符串（例如 `"cpe___2.3_a_microsoft_windows_10_-_-_-_-_-_-_-"`）
 
 ## 格式绑定
 

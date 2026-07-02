@@ -1,10 +1,10 @@
-# CPE匹配
+# CPE 匹配
 
-本示例演示如何使用CPE库进行基本的CPE匹配操作，包括精确匹配、模式匹配和批量匹配。
+本示例演示如何使用 CPE 库进行基本的 CPE 匹配操作，包括精确匹配、模式匹配和批量匹配。
 
 ## 概述
 
-CPE匹配是识别和比较软件组件的核心功能。本示例展示了各种匹配技术，从简单的字符串比较到复杂的模式匹配。
+CPE 匹配是识别和比较软件组件的核心功能。本示例展示了各种匹配技术，从简单的字符串比较到复杂的模式匹配。
 
 下图展示了两个 CPE 如何逐组件比较并得出它们之间的关系：
 
@@ -40,7 +40,7 @@ package main
 
 import (
     "fmt"
-    "log"
+    "strings"
     "github.com/scagogogo/cpe-skills"
 )
 
@@ -99,22 +99,22 @@ func main() {
     versions := []string{"8.5.0", "9.0.0", "9.0.1", "9.1.0", "10.0.0"}
     
     // 目标版本范围：9.x系列
-    targetPattern := "9.*"
-    
-    fmt.Printf("匹配Tomcat %s版本:\n", targetPattern)
-    
+    targetPattern := "9."
+
+    fmt.Printf("匹配Tomcat %s*版本:\n", targetPattern)
+
     for _, version := range versions {
         cpeStr := fmt.Sprintf("%s:%s:*:*:*:*:*:*:*", baseProduct, version)
         testCPE, _ := cpeskills.ParseCpe23(cpeStr)
-        
-        // 简单的版本模式匹配
-        match := cpeskills.MatchVersionPattern(testCPE.Version, targetPattern)
-        
+
+        // 判断版本是否属于 9.x 系列
+        match := strings.HasPrefix(string(testCPE.Version), targetPattern)
+
         status := "❌"
         if match {
             status = "✅"
         }
-        
+
         fmt.Printf("  %s Tomcat %s\n", status, version)
     }
     
@@ -151,7 +151,7 @@ func main() {
         for i, cpeStr := range mixedCPEs {
             testCPE, _ := cpeskills.ParseCpe23(cpeStr)
             
-            if testCPE.Vendor == vendor {
+            if string(testCPE.Vendor) == vendor {
                 fmt.Printf("  ✅ %d. %s (%s)\n", i+1, testCPE.ProductName, testCPE.Part.LongName)
             }
         }
@@ -287,7 +287,7 @@ func main() {
 
 ## 预期输出
 
-```
+```text
 === CPE匹配示例 ===
 
 1. 基本匹配:
@@ -389,7 +389,7 @@ Microsoft应用程序:
 - **字段级匹配**: 逐个字段比较
 - **语义匹配**: 理解同义词和缩写
 - **模糊匹配**: 基于相似度的匹配
-- **结构化匹配**: 考虑CPE层次结构
+- **结构化匹配**: 考虑 CPE 层次结构
 
 ### 3. 性能考虑
 
@@ -409,7 +409,7 @@ Microsoft应用程序:
 
 1. **选择合适的匹配类型**: 根据需求选择精确匹配或模糊匹配
 2. **使用通配符**: 合理使用通配符提高匹配灵活性
-3. **验证输入**: 在匹配前验证CPE格式的正确性
+3. **验证输入**: 在匹配前验证 CPE 格式的正确性
 4. **处理边界情况**: 考虑空值、特殊字符等情况
 5. **性能监控**: 监控匹配操作的性能表现
 
@@ -417,4 +417,4 @@ Microsoft应用程序:
 
 - 学习[高级匹配](./advanced-matching.md)技术
 - 了解[版本比较](./version-comparison.md)的详细方法
-- 探索[CPE集合](./sets.md)的批量匹配操作
+- 探索[CPE 集合](./sets.md)的批量匹配操作

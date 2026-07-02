@@ -64,7 +64,7 @@ if err != nil {
 ### CPE 2.3 Format Structure
 
 The CPE 2.3 format follows this structure:
-```
+```text
 cpe:2.3:<part>:<vendor>:<product>:<version>:<update>:<edition>:<language>:<sw_edition>:<target_sw>:<target_hw>:<other>
 ```
 
@@ -130,12 +130,12 @@ fmt.Printf("Software edition: %s\n", mysqlCPE.SoftwareEdition) // enterprise
 ### CPE 2.2 Format Structure
 
 The CPE 2.2 format follows this structure:
-```
+```text
 cpe:/<part>:<vendor>:<product>:<version>:<update>:<edition>:<language>
 ```
 
 Extended format with additional fields:
-```
+```text
 cpe:/<part>:<vendor>:<product>:<version>:<update>:<edition>:<language>:~<sw_edition>~<target_sw>~<target_hw>~<other>
 ```
 

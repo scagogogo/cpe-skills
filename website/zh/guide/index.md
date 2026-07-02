@@ -1,6 +1,6 @@
 # 使用指南
 
-本节提供了实用的示例，演示如何在实际场景中使用CPE库。每个示例都包含完整的、可运行的代码和解释。
+本节提供了实用的示例，演示如何在实际场景中使用 CPE 库。每个示例都包含完整的、可运行的代码和解释。
 
 下面的脑图概览了本指南涵盖的主题：
 
@@ -22,20 +22,20 @@ mindmap
 ## 可用示例
 
 ### 基础用法
-- **[基础解析](./basic-parsing.md)** - 解析CPE字符串并访问组件
-- **[CPE匹配](./matching.md)** - 比较和匹配CPE对象
-- **[WFN转换](./wfn-conversion.md)** - CPE和WFN格式之间的转换
+- **[基础解析](./basic-parsing.md)** - 解析 CPE 字符串并访问组件
+- **[CPE 匹配](./matching.md)** - 比较和匹配 CPE 对象
+- **[WFN 转换](./wfn-conversion.md)** - CPE 和 WFN 格式之间的转换
 
 ### 高级功能
 - **[版本比较](./version-comparison.md)** - 比较版本字符串和范围
-- **[适用性语言](./applicability.md)** - 使用CPE适用性表达式
-- **[CPE集合](./sets.md)** - 处理CPE集合
+- **[适用性语言](./applicability.md)** - 使用 CPE 适用性表达式
+- **[CPE 集合](./sets.md)** - 处理 CPE 集合
 - **[高级匹配](./advanced-matching.md)** - 使用复杂的匹配算法
 
 ### 集成
-- **[存储操作](./storage.md)** - 使用不同后端持久化CPE数据
-- **[NVD集成](./nvd-integration.md)** - 下载和使用NVD数据
-- **[CVE映射](./cve-mapping.md)** - 将CPE映射到漏洞
+- **[存储操作](./storage.md)** - 使用不同后端持久化 CPE 数据
+- **[NVD 集成](./nvd-integration.md)** - 下载和使用 NVD 数据
+- **[CVE 映射](./cve-mapping.md)** - 将 CPE 映射到漏洞
 
 ## 快速开始示例
 
@@ -75,19 +75,19 @@ func main() {
 ## 示例分类
 
 ### 🔍 解析和格式化
-学习如何解析CPE字符串、处理不同格式，以及在CPE 2.2和2.3之间转换。
+学习如何解析 CPE 字符串、处理不同格式，以及在 CPE 2.2 和 2.3 之间转换。
 
 ### 🎯 匹配和比较
 发现各种匹配技术，从基本的通配符匹配到带有评分的高级模糊匹配。
 
 ### 📊 数据管理
-探索如何高效地存储、检索和管理大量CPE数据集合。
+探索如何高效地存储、检索和管理大量 CPE 数据集合。
 
 ### 🔗 外部集成
 了解如何与国家漏洞数据库等外部数据源集成。
 
 ### 🛡️ 安全应用
-学习如何使用CPE进行漏洞管理、资产清单和安全扫描。
+学习如何使用 CPE 进行漏洞管理、资产清单和安全扫描。
 
 ## 运行示例
 
@@ -98,7 +98,7 @@ func main() {
    go get github.com/scagogogo/cpe-skills
    ```
 
-2. **创建新的Go文件** 包含示例代码
+2. **创建新的 Go 文件** 包含示例代码
 
 3. **运行示例：**
    ```bash
@@ -193,7 +193,7 @@ if err != nil {
 }
 ```
 
-### 4. 对集合使用Sets
+### 4. 对集合使用 Sets
 ```go
 // 对大集合高效
 cpeSet := cpeskills.NewCPESet()
@@ -232,10 +232,10 @@ for _, cpe := range cpes {
 
 如果你需要示例帮助：
 
-1. 查看[API参考](/zh/api/)获取详细的函数文档
+1. 查看[API 参考](/zh/api/)获取详细的函数文档
 2. 查看完整的示例代码以获取上下文
 3. 查看错误处理模式
-4. 查看[GitHub仓库](https://github.com/scagogogo/cpe-skills)的问题和讨论
+4. 查看[GitHub 仓库](https://github.com/scagogogo/cpe-skills)的问题和讨论
 
 ## 贡献示例
 

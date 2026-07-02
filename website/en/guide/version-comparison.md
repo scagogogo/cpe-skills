@@ -33,59 +33,85 @@ package main
 import (
     "fmt"
     "log"
+    "sort"
+    "strings"
+
     "github.com/scagogogo/cpe-skills"
 )
 
+// matchVersionPattern checks whether a concrete version matches a pattern that
+// may use the "*" wildcard (e.g. "1.8.*" matches "1.8.0_291").
+// The pattern is split on "."; each segment matches if the pattern segment is
+// "*" or equals the target segment. A pattern shorter than the version matches
+// as long as all its segments match the corresponding prefix.
+func matchVersionPattern(version, pattern string) bool {
+    pSeg := strings.Split(pattern, ".")
+    vSeg := strings.Split(version, ".")
+    for i, p := range pSeg {
+        if p == "*" {
+            return true
+        }
+        if i >= len(vSeg) {
+            return false
+        }
+        if p != vSeg[i] {
+            return false
+        }
+    }
+    return len(pSeg) >= len(vSeg)
+}
+
 func main() {
     fmt.Println("=== CPE Version Comparison Examples ===")
-    
+
     // Example 1: Basic Version Comparison
     fmt.Println("\n1. Basic Version Comparison:")
-    
+
     versions := []string{
         "cpe:2.3:a:apache:tomcat:8.5.0:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:8.5.1:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*",
     }
-    
+
     for i, versionStr := range versions {
         cpeObj, err := cpeskills.ParseCpe23(versionStr)
         if err != nil {
             log.Printf("Failed to parse %s: %v", versionStr, err)
             continue
         }
-        
+
         fmt.Printf("Version %d: %s (Version: %s)\n", i+1, cpeObj.ProductName, cpeObj.Version)
     }
-    
+
     // Example 2: Version Range Matching
     fmt.Println("\n2. Version Range Matching:")
-    
+
     targetVersion, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:8.5.5:*:*:*:*:*:*:*")
-    
+
     ranges := []struct {
-        min string
-        max string
+        min         string
+        max         string
         description string
     }{
         {"8.5.0", "8.5.10", "Tomcat 8.5.x series (0-10)"},
         {"8.0.0", "9.0.0", "Tomcat 8.x series"},
         {"9.0.0", "10.0.0", "Tomcat 9.x series"},
     }
-    
+
     for _, r := range ranges {
-        inRange := cpeskills.IsVersionInRange(targetVersion.Version, r.min, r.max)
-        fmt.Printf("Version %s in range %s - %s (%s): %t\n", 
+        // Version is a named type, convert to string for IsVersionInRange.
+        inRange := cpeskills.IsVersionInRange(string(targetVersion.Version), r.min, r.max)
+        fmt.Printf("Version %s in range %s - %s (%s): %t\n",
             targetVersion.Version, r.min, r.max, r.description, inRange)
     }
-    
+
     // Example 3: Semantic Version Comparison
     fmt.Println("\n3. Semantic Version Comparison:")
-    
+
     baseVersion := "8.5.0"
     compareVersions := []string{"8.4.9", "8.5.0", "8.5.1", "9.0.0"}
-    
+
     for _, compareVer := range compareVersions {
         result := cpeskills.CompareVersions(baseVersion, compareVer)
         var relationship string
@@ -97,67 +123,70 @@ func main() {
         case 1:
             relationship = "newer than"
         }
-        
+
         fmt.Printf("%s is %s %s\n", baseVersion, relationship, compareVer)
     }
-    
+
     // Example 4: Version Pattern Matching
     fmt.Println("\n4. Version Pattern Matching:")
-    
+
     patterns := []string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:microsoft:windows:11:*:*:*:*:*:*:*",
         "cpe:2.3:a:oracle:java:1.8.*:*:*:*:*:*:*:*",
         "cpe:2.3:a:oracle:java:11.*:*:*:*:*:*:*:*",
     }
-    
+
     testCPEs := []string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:oracle:java:1.8.0_291:*:*:*:*:*:*:*",
         "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",
     }
-    
+
     for _, testCPE := range testCPEs {
         testObj, _ := cpeskills.ParseCpe23(testCPE)
         fmt.Printf("\nTesting: %s\n", testCPE)
-        
+
         for _, pattern := range patterns {
             patternObj, _ := cpeskills.ParseCpe23(pattern)
-            if cpeskills.MatchesVersionPattern(testObj, patternObj) {
+            // Compare only the Version field using our helper; the wildcard "*"
+            // in the pattern is handled segment by segment.
+            if matchVersionPattern(string(testObj.Version), string(patternObj.Version)) {
                 fmt.Printf("  ✓ Matches pattern: %s\n", pattern)
             }
         }
     }
-    
+
     // Example 5: Version Vulnerability Checking
     fmt.Println("\n5. Version Vulnerability Checking:")
-    
+
     vulnerableRanges := []struct {
-        product string
-        minVersion string
-        maxVersion string
+        product     string
+        minVersion  string
+        maxVersion  string
         description string
     }{
         {"tomcat", "8.5.0", "8.5.4", "CVE-2021-25122"},
         {"java", "1.8.0", "1.8.0_291", "CVE-2021-2163"},
         {"windows", "10.0.0", "10.0.19041", "CVE-2021-1675"},
     }
-    
+
     checkCPEs := []string{
         "cpe:2.3:a:apache:tomcat:8.5.3:*:*:*:*:*:*:*",
         "cpe:2.3:a:oracle:java:1.8.0_281:*:*:*:*:*:*:*",
         "cpe:2.3:o:microsoft:windows:10.0.19042:*:*:*:*:*:*:*",
     }
-    
+
     for _, checkCPE := range checkCPEs {
         cpeObj, _ := cpeskills.ParseCpe23(checkCPE)
         fmt.Printf("\nChecking: %s\n", checkCPE)
-        
+
         for _, vuln := range vulnerableRanges {
-            if cpeObj.ProductName == vuln.product {
-                isVulnerable := cpeskills.IsVersionInRange(cpeObj.Version, vuln.minVersion, vuln.maxVersion)
+            // ProductName is a named type; convert to string before comparing.
+            if string(cpeObj.ProductName) == vuln.product {
+                isVulnerable := cpeskills.IsVersionInRange(string(cpeObj.Version), vuln.minVersion, vuln.maxVersion)
                 if isVulnerable {
-                    fmt.Printf("  ⚠️  VULNERABLE: %s (versions %s - %s)\n", 
+                    fmt.Printf("  ⚠️  VULNERABLE: %s (versions %s - %s)\n",
                         vuln.description, vuln.minVersion, vuln.maxVersion)
                 } else {
                     fmt.Printf("  ✅ Not vulnerable to %s\n", vuln.description)
@@ -165,10 +194,10 @@ func main() {
             }
         }
     }
-    
+
     // Example 6: Version Sorting
     fmt.Println("\n6. Version Sorting:")
-    
+
     unsortedCPEs := []string{
         "cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:8.5.0:*:*:*:*:*:*:*",
@@ -176,17 +205,23 @@ func main() {
         "cpe:2.3:a:apache:tomcat:8.5.10:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:10.0.0:*:*:*:*:*:*:*",
     }
-    
+
     fmt.Println("Unsorted versions:")
     for _, cpeStr := range unsortedCPEs {
         cpeObj, _ := cpeskills.ParseCpe23(cpeStr)
         fmt.Printf("  %s\n", cpeObj.Version)
     }
-    
-    sortedCPEs := cpeskills.SortCPEsByVersion(unsortedCPEs)
-    
+
+    // Sort ascending with sort.Slice + CompareVersions.
+    sort.Slice(unsortedCPEs, func(i, j int) bool {
+        ci, _ := cpeskills.ParseCpe23(unsortedCPEs[i])
+        cj, _ := cpeskills.ParseCpe23(unsortedCPEs[j])
+        return cpeskills.CompareVersions(string(ci.Version), string(cj.Version)) < 0
+    })
+
     fmt.Println("\nSorted versions (ascending):")
-    for _, cpeObj := range sortedCPEs {
+    for _, cpeStr := range unsortedCPEs {
+        cpeObj, _ := cpeskills.ParseCpe23(cpeStr)
         fmt.Printf("  %s\n", cpeObj.Version)
     }
 }
@@ -194,7 +229,7 @@ func main() {
 
 ## Expected Output
 
-```
+```text
 === CPE Version Comparison Examples ===
 
 1. Basic Version Comparison:

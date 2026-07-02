@@ -6,7 +6,7 @@ This example demonstrates how to work with collections of CPE objects using the 
 
 CPE Sets provide a powerful way to manage collections of CPE objects, perform set operations (union, intersection, difference), and apply bulk transformations and filters.
 
-The diagram below shows how two CPE sets A and B combine under the four set operations, each producing its own result set.
+The diagram below shows how two CPE sets A and B combine under the three set operations, each producing its own result set.
 
 ```mermaid
 flowchart LR
@@ -15,18 +15,15 @@ flowchart LR
     U["Union: A or B"]
     I["Intersection: A and B"]
     D["Difference: A minus B"]
-    S["SymmetricDifference: A xor B"]
     A --> U
     B --> U
     A --> I
     B --> I
     A --> D
     B --> D
-    A --> S
-    B --> S
 ```
 
-Sets are typically processed through a pipeline: create the set, add or remove elements, apply set operations, filter, and finally run statistical analysis.
+Sets are typically processed through a pipeline: create the set, add or remove elements, apply set operations, filter, and finally sort or extract the results.
 
 ```mermaid
 flowchart TD
@@ -34,7 +31,7 @@ flowchart TD
     M["Add / Remove elements"]
     O["Set operations"]
     F["Filter"]
-    ST["Statistical analysis"]
+    ST["Sort / ToSlice"]
     C --> M
     M --> O
     O --> F
@@ -49,16 +46,39 @@ package main
 import (
     "fmt"
     "log"
+
     "github.com/scagogogo/cpe-skills"
 )
 
+// parseAll parses a list of CPE 2.3 strings into CPE objects, skipping any
+// that fail to parse. Returns the successfully parsed objects.
+func parseAll(strs []string) []*cpeskills.CPE {
+    var out []*cpeskills.CPE
+    for _, s := range strs {
+        c, err := cpeskills.ParseCpe23(s)
+        if err != nil {
+            log.Printf("Failed to parse %s: %v", s, err)
+            continue
+        }
+        out = append(out, c)
+    }
+    return out
+}
+
+// printSet prints every CPE in a set, in the order returned by ToSlice.
+func printSet(label string, s *cpeskills.CPESet) {
+    fmt.Printf("%s (size: %d):\n", label, s.Size())
+    for _, c := range s.ToSlice() {
+        fmt.Printf("  - %s\n", c.GetURI())
+    }
+}
+
 func main() {
     fmt.Println("=== CPE Sets Examples ===")
-    
+
     // Example 1: Creating CPE Sets
     fmt.Println("\n1. Creating CPE Sets:")
-    
-    // Create individual CPE objects
+
     cpeStrings := []string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
@@ -66,78 +86,46 @@ func main() {
         "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",
         "cpe:2.3:o:canonical:ubuntu:20.04:*:*:*:*:*:*:*",
     }
-    
-    // Method 1: Create set from strings
-    set1 := cpeskills.NewCPESetFromStrings(cpeStrings)
+
+    // Method 1: Parse the strings, then build a set from the resulting slice.
+    // FromArray takes a []*CPE plus a name and description for the set.
+    set1 := cpeskills.FromArray(parseAll(cpeStrings), "set1", "all parsed CPEs")
     fmt.Printf("Set 1 size: %d\n", set1.Size())
-    
-    // Method 2: Create empty set and add items
-    set2 := cpeskills.NewCPESet()
-    for _, cpeStr := range cpeStrings[:3] { // Add first 3 items
-        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
-        if err != nil {
-            log.Printf("Failed to parse %s: %v", cpeStr, err)
-            continue
-        }
-        set2.Add(cpeObj)
+
+    // Method 2: Create an empty set (name + description are required) and Add items.
+    set2 := cpeskills.NewCPESet("set2", "first three CPEs")
+    for _, c := range parseAll(cpeStrings[:3]) {
+        set2.Add(c)
     }
     fmt.Printf("Set 2 size: %d\n", set2.Size())
-    
-    // Method 3: Create from slice of CPE objects
-    cpeObjects := make([]*cpeskills.CPE, 0, len(cpeStrings))
-    for _, cpeStr := range cpeStrings[2:] { // Add last 3 items
-        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
-        if err != nil {
-            continue
-        }
-        cpeObjects = append(cpeObjects, cpeObj)
-    }
-    set3 := cpeskills.NewCPESetFromSlice(cpeObjects)
+
+    // Method 3: Build from a sub-slice of CPE objects.
+    set3 := cpeskills.FromArray(parseAll(cpeStrings[2:]), "set3", "last three CPEs")
     fmt.Printf("Set 3 size: %d\n", set3.Size())
-    
+
     // Example 2: Set Operations
     fmt.Println("\n2. Set Operations:")
-    
-    fmt.Println("Set 1 contents:")
-    set1.ForEach(func(cpe *cpeskills.CPE) {
-        fmt.Printf("  - %s\n", cpeskills.GetURI())
-    })
-    
-    fmt.Println("Set 2 contents:")
-    set2.ForEach(func(cpe *cpeskills.CPE) {
-        fmt.Printf("  - %s\n", cpeskills.GetURI())
-    })
-    
-    fmt.Println("Set 3 contents:")
-    set3.ForEach(func(cpe *cpeskills.CPE) {
-        fmt.Printf("  - %s\n", cpeskills.GetURI())
-    })
-    
-    // Union: All unique items from both sets
+
+    printSet("Set 1", set1)
+    printSet("Set 2", set2)
+    printSet("Set 3", set3)
+
+    // Union: all unique items from both sets.
     unionSet := set2.Union(set3)
-    fmt.Printf("\nUnion of Set 2 and Set 3 (size: %d):\n", unionSet.Size())
-    unionSet.ForEach(func(cpe *cpeskills.CPE) {
-        fmt.Printf("  - %s\n", cpeskills.GetURI())
-    })
-    
-    // Intersection: Items present in both sets
+    printSet("\nUnion of Set 2 and Set 3", unionSet)
+
+    // Intersection: items present in both sets.
     intersectionSet := set1.Intersection(set2)
-    fmt.Printf("\nIntersection of Set 1 and Set 2 (size: %d):\n", intersectionSet.Size())
-    intersectionSet.ForEach(func(cpe *cpeskills.CPE) {
-        fmt.Printf("  - %s\n", cpeskills.GetURI())
-    })
-    
-    // Difference: Items in first set but not in second
+    printSet("\nIntersection of Set 1 and Set 2", intersectionSet)
+
+    // Difference: items in the first set but not in the second.
     differenceSet := set1.Difference(set2)
-    fmt.Printf("\nDifference of Set 1 - Set 2 (size: %d):\n", differenceSet.Size())
-    differenceSet.ForEach(func(cpe *cpeskills.CPE) {
-        fmt.Printf("  - %s\n", cpeskills.GetURI())
-    })
-    
+    printSet("\nDifference of Set 1 - Set 2", differenceSet)
+
     // Example 3: Filtering Sets
     fmt.Println("\n3. Filtering Sets:")
-    
-    // Create a larger set for filtering examples
+
+    // Build a larger set for the filtering examples.
     largeSetStrings := []string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
@@ -150,181 +138,102 @@ func main() {
         "cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:h:cisco:catalyst_2960:*:*:*:*:*:*:*:*",
     }
-    
-    largeSet := cpeskills.NewCPESetFromStrings(largeSetStrings)
+    largeSet := cpeskills.FromArray(parseAll(largeSetStrings), "largeSet", "filtering demo set")
     fmt.Printf("Large set size: %d\n", largeSet.Size())
-    
-    // Filter by vendor
-    microsoftCPEs := largeSet.FilterByVendor("microsoft")
-    fmt.Printf("\nMicrosoft CPEs (size: %d):\n", microsoftCPEs.Size())
-    microsoftCPEs.ForEach(func(cpe *cpeskills.CPE) {
-        fmt.Printf("  - %s\n", cpeskills.GetURI())
-    })
-    
-    // Filter by part (applications only)
-    applicationCPEs := largeSet.FilterByPart("a")
-    fmt.Printf("\nApplication CPEs (size: %d):\n", applicationCPEs.Size())
-    applicationCPEs.ForEach(func(cpe *cpeskills.CPE) {
-        fmt.Printf("  - %s\n", cpeskills.GetURI())
-    })
-    
-    // Filter by product pattern
-    apacheCPEs := largeSet.FilterByProduct("apache")
-    fmt.Printf("\nApache CPEs (size: %d):\n", apacheCPEs.Size())
-    apacheCPEs.ForEach(func(cpe *cpeskills.CPE) {
-        fmt.Printf("  - %s\n", cpeskills.GetURI())
-    })
-    
-    // Custom filter function
-    customFilter := func(cpe *cpeskills.CPE) bool {
-        // Filter for applications with version information
-        return cpeskills.Part.ShortName == "a" && cpeskills.Version != "*" && cpeskills.Version != ""
+
+    // Filter accepts a criteria CPE and MatchOptions. Empty / "*" fields in
+    // the criteria act as wildcards, so setting only Vendor matches any CPE
+    // from that vendor. IgnoreVersion keeps version out of the comparison.
+    msOpts := &cpeskills.MatchOptions{IgnoreVersion: true}
+
+    microsoftCPE := &cpeskills.CPE{Vendor: cpeskills.Vendor("microsoft")}
+    printSet("\nMicrosoft CPEs", largeSet.Filter(microsoftCPE, msOpts))
+
+    // Filter by part (applications only). Part is a struct; only ShortName
+    // participates in the match.
+    appCPE := &cpeskills.CPE{Part: cpeskills.Part{ShortName: "a"}}
+    printSet("\nApplication CPEs", largeSet.Filter(appCPE, msOpts))
+
+    // Filter by product. Apache ships two products, so use a regex match.
+    apacheOpts := &cpeskills.MatchOptions{IgnoreVersion: true, UseRegex: true}
+    apacheCPE := &cpeskills.CPE{ProductName: cpeskills.Product("apache")}
+    // Vendor "apache" alone won't match http_server, so match by vendor via
+    // regex on the vendor field instead.
+    apacheVendor := &cpeskills.CPE{Vendor: cpeskills.Vendor("apache")}
+    printSet("\nApache CPEs", largeSet.Filter(apacheVendor, apacheOpts))
+    _ = apacheCPE // criteria demonstrating the Product field
+
+    // Example 4: Iteration and Aggregation
+    fmt.Println("\n4. Iteration and Aggregation:")
+
+    // There is no built-in Map/GroupBy; iterate ToSlice() and aggregate with
+    // ordinary Go maps and slices.
+    vendorGroups := make(map[string][]*cpeskills.CPE)
+    for _, c := range largeSet.ToSlice() {
+        vendorGroups[string(c.Vendor)] = append(vendorGroups[string(c.Vendor)], c)
     }
-    
-    versionedApps := largeSet.Filter(customFilter)
-    fmt.Printf("\nVersioned Applications (size: %d):\n", versionedApps.Size())
-    versionedApps.ForEach(func(cpe *cpeskills.CPE) {
-        fmt.Printf("  - %s (v%s)\n", cpeskills.ProductName, cpeskills.Version)
-    })
-    
-    // Example 4: Set Transformations
-    fmt.Println("\n4. Set Transformations:")
-    
-    // Transform to extract vendor information
-    vendors := largeSet.Map(func(cpe *cpeskills.CPE) string {
-        return cpeskills.Vendor
-    })
-    
-    uniqueVendors := removeDuplicateStrings(vendors)
-    fmt.Printf("Unique vendors: %v\n", uniqueVendors)
-    
-    // Transform to create summary information
-    summaries := largeSet.Map(func(cpe *cpeskills.CPE) string {
-        return fmt.Sprintf("%s %s %s", cpeskills.Vendor, cpeskills.ProductName, cpeskills.Version)
-    })
-    
-    fmt.Println("\nCPE Summaries:")
-    for i, summary := range summaries {
-        fmt.Printf("  %d. %s\n", i+1, summary)
-    }
-    
-    // Example 5: Set Aggregation
-    fmt.Println("\n5. Set Aggregation:")
-    
-    // Group by vendor
-    vendorGroups := largeSet.GroupBy(func(cpe *cpeskills.CPE) string {
-        return cpeskills.Vendor
-    })
-    
+
     fmt.Println("CPEs grouped by vendor:")
     for vendor, cpes := range vendorGroups {
         fmt.Printf("  %s (%d items):\n", vendor, len(cpes))
-        for _, cpe := range cpes {
-            fmt.Printf("    - %s\n", cpeskills.ProductName)
+        for _, c := range cpes {
+            fmt.Printf("    - %s\n", c.GetURI())
         }
     }
-    
-    // Group by part type
-    partGroups := largeSet.GroupBy(func(cpe *cpeskills.CPE) string {
-        return cpeskills.Part.LongName
-    })
-    
-    fmt.Println("\nCPEs grouped by part type:")
-    for partType, cpes := range partGroups {
-        fmt.Printf("  %s: %d items\n", partType, len(cpes))
+
+    // Collect a unique, sorted list of vendors.
+    uniqueVendors := make([]string, 0, len(vendorGroups))
+    for v := range vendorGroups {
+        uniqueVendors = append(uniqueVendors, v)
     }
-    
-    // Example 6: Set Statistics
-    fmt.Println("\n6. Set Statistics:")
-    
-    stats := largeSet.GetStatistics()
-    fmt.Printf("Set Statistics:\n")
-    fmt.Printf("  Total CPEs: %d\n", stats.TotalCount)
-    fmt.Printf("  Applications: %d\n", stats.ApplicationCount)
-    fmt.Printf("  Operating Systems: %d\n", stats.OperatingSystemCount)
-    fmt.Printf("  Hardware: %d\n", stats.HardwareCount)
-    fmt.Printf("  Unique Vendors: %d\n", stats.UniqueVendors)
-    fmt.Printf("  Unique Products: %d\n", stats.UniqueProducts)
-    
-    // Example 7: Set Persistence
-    fmt.Println("\n7. Set Persistence:")
-    
-    // Save set to file
-    filename := "cpe_set_export.json"
-    err := largeSet.SaveToFile(filename)
-    if err != nil {
-        log.Printf("Failed to save set: %v", err)
-    } else {
-        fmt.Printf("Set saved to %s\n", filename)
+    fmt.Printf("\nUnique vendors: %v\n", uniqueVendors)
+
+    // Example 5: Sorting
+    fmt.Println("\n5. Sorting:")
+
+    // Sort returns a sorted []*CPE slice. Valid sortBy values are "part",
+    // "vendor", "product", "version"; anything else falls back to Cpe23.
+    sortedByProduct := largeSet.Sort("product", true)
+    fmt.Println("Sorted by product (ascending):")
+    for _, c := range sortedByProduct {
+        fmt.Printf("  - %s\n", c.GetURI())
     }
-    
-    // Load set from file
-    loadedSet, err := cpeskills.LoadCPESetFromFile(filename)
-    if err != nil {
-        log.Printf("Failed to load set: %v", err)
-    } else {
-        fmt.Printf("Set loaded from %s (size: %d)\n", filename, loadedSet.Size())
-        
-        // Verify loaded set matches original
-        if loadedSet.Size() == largeSet.Size() {
-            fmt.Println("✅ Loaded set size matches original")
-        } else {
-            fmt.Println("❌ Loaded set size differs from original")
-        }
-    }
-    
-    // Example 8: Set Comparison
-    fmt.Println("\n8. Set Comparison:")
-    
-    // Create two similar sets
-    setA := cpeskills.NewCPESetFromStrings([]string{
+
+    // Example 6: Set Comparison
+    fmt.Println("\n6. Set Comparison:")
+
+    setA := cpeskills.FromArray(parseAll([]string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
-    })
-    
-    setB := cpeskills.NewCPESetFromStrings([]string{
+    }), "setA", "comparison set A")
+
+    setB := cpeskills.FromArray(parseAll([]string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*",
         "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",
-    })
-    
+    }), "setB", "comparison set B")
+
     fmt.Printf("Set A size: %d\n", setA.Size())
     fmt.Printf("Set B size: %d\n", setB.Size())
-    
-    // Check equality
-    areEqual := setA.Equals(setB)
-    fmt.Printf("Sets are equal: %t\n", areEqual)
-    
-    // Check if one is subset of another
-    isSubset := setA.IsSubsetOf(setB)
-    fmt.Printf("Set A is subset of Set B: %t\n", isSubset)
-    
-    // Find common elements
+
+    // Check equality.
+    fmt.Printf("Sets are equal: %t\n", setA.Equals(setB))
+
+    // Check subset / superset relationships.
+    fmt.Printf("Set A is subset of Set B: %t\n", setA.IsSubsetOf(setB))
+    fmt.Printf("Set A is superset of Set B: %t\n", setA.IsSupersetOf(setB))
+
+    // Find common and unique elements via set operations.
     common := setA.Intersection(setB)
-    fmt.Printf("Common elements: %d\n", common.Size())
-    
-    // Find unique elements in each set
     uniqueA := setA.Difference(setB)
     uniqueB := setB.Difference(setA)
-    
+    fmt.Printf("Common elements: %d\n", common.Size())
     fmt.Printf("Unique to Set A: %d\n", uniqueA.Size())
     fmt.Printf("Unique to Set B: %d\n", uniqueB.Size())
-}
 
-// Helper function to remove duplicate strings
-func removeDuplicateStrings(slice []string) []string {
-    seen := make(map[string]bool)
-    result := []string{}
-    
-    for _, item := range slice {
-        if !seen[item] {
-            seen[item] = true
-            result = append(result, item)
-        }
-    }
-    
-    return result
+    // ToString produces a human-readable summary of the whole set.
+    fmt.Printf("\nSet A summary: %s\n", setA.ToString())
 }
 ```
 

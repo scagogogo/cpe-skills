@@ -31,26 +31,28 @@ package main
 import (
     "fmt"
     "log"
+
     "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
     fmt.Println("=== CPE Applicability Language Examples ===")
-    
+
     // Example 1: Basic Applicability Expressions
     fmt.Println("\n1. Basic Applicability Expressions:")
-    
+
     // Simple expression: applies to Windows 10
     expr1 := "cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*"
-    
+
     // OR expression: applies to Windows 10 OR Windows 11
-    expr2 := `(cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:* OR 
-               cpe:2.3:o:microsoft:windows:11:*:*:*:*:*:*:*)`
-    
-    // AND expression: applies to Windows 10 AND specific update
-    expr3 := `(cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:* AND 
-               cpe:2.3:a:microsoft:windows_update:kb5005565:*:*:*:*:*:*:*)`
-    
+    expr2 := "OR(cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*, cpe:2.3:o:microsoft:windows:11:*:*:*:*:*:*:*)"
+
+    // AND expression: a single CPE that is BOTH Windows 10 AND has a specific
+    // update applied. Note: AND is evaluated against one target CPE, so in
+    // practice you combine CPEs that can all match the same name (e.g. using
+    // wildcards), or you evaluate the expression against each CPE in a system.
+    expr3 := "AND(cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*, cpe:2.3:o:microsoft:windows_update:kb5005565:*:*:*:*:*:*:*)"
+
     expressions := []struct {
         name string
         expr string
@@ -58,54 +60,48 @@ func main() {
     }{
         {"Simple", expr1, "Single CPE match"},
         {"OR Logic", expr2, "Multiple alternatives"},
-        {"AND Logic", expr3, "Multiple requirements"},
+        {"AND Logic", expr3, "Multiple requirements on one target"},
     }
-    
+
     for _, e := range expressions {
         fmt.Printf("\n%s Expression:\n", e.name)
         fmt.Printf("  Description: %s\n", e.desc)
         fmt.Printf("  Expression: %s\n", e.expr)
-        
-        // Parse the expression
-        parsedExpr, err := cpeskills.ParseApplicabilityExpression(e.expr)
+
+        // Parse the expression with the real ParseExpression API.
+        parsedExpr, err := cpeskills.ParseExpression(e.expr)
         if err != nil {
             log.Printf("Failed to parse expression: %v", err)
             continue
         }
-        
+
         fmt.Printf("  Parsed successfully: %t\n", parsedExpr != nil)
+        fmt.Printf("  Expression type: %d\n", parsedExpr.Type())
+        fmt.Printf("  String form: %s\n", parsedExpr.String())
     }
-    
+
     // Example 2: Complex Nested Expressions
     fmt.Println("\n2. Complex Nested Expressions:")
-    
-    // Complex vulnerability applicability
-    complexExpr := `
-    (
-        (cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:* OR 
-         cpe:2.3:o:microsoft:windows:11:*:*:*:*:*:*:*) 
-        AND 
-        (cpe:2.3:a:microsoft:internet_explorer:*:*:*:*:*:*:*:* OR 
-         cpe:2.3:a:microsoft:edge:*:*:*:*:*:*:*:*)
-        AND NOT 
-        cpe:2.3:a:microsoft:windows_update:kb5005565:*:*:*:*:*:*:*
-    )`
-    
+
+    // Complex vulnerability applicability.
+    // Syntax: AND(...), OR(...), NOT(...) with comma-separated operands.
+    complexExpr := "AND(OR(cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*, cpe:2.3:o:microsoft:windows:11:*:*:*:*:*:*:*), NOT(cpe:2.3:a:microsoft:edge:*:*:*:*:*:*:*:*))"
+
     fmt.Printf("Complex Expression:\n%s\n", complexExpr)
-    
-    parsedComplex, err := cpeskills.ParseApplicabilityExpression(complexExpr)
+
+    parsedComplex, err := cpeskills.ParseExpression(complexExpr)
     if err != nil {
         log.Printf("Failed to parse complex expression: %v", err)
     } else {
         fmt.Printf("Successfully parsed complex expression\n")
-        fmt.Printf("Expression type: %s\n", parsedComplex.Type())
-        fmt.Printf("Number of operands: %d\n", len(parsedComplex.Operands()))
+        fmt.Printf("Expression type: %d\n", parsedComplex.Type())
+        fmt.Printf("String form: %s\n", parsedComplex.String())
     }
-    
+
     // Example 3: Testing Applicability
     fmt.Println("\n3. Testing Applicability:")
-    
-    // Define test systems
+
+    // Define test systems. Each system is a set of CPEs installed on it.
     testSystems := []struct {
         name string
         cpes []string
@@ -140,11 +136,23 @@ func main() {
             },
         },
     }
-    
-    // Test each system against the complex expression
+
+    // The real Evaluate API evaluates an expression against a single target
+    // CPE. To decide whether an expression "applies" to a whole system, we
+    // evaluate it against every CPE in the system and OR the results: if any
+    // installed CPE satisfies the expression, the system is applicable.
+    systemApplies := func(expr cpeskills.Expression, cpes []*cpeskills.CPE) bool {
+        for _, c := range cpes {
+            if expr.Evaluate(c) {
+                return true
+            }
+        }
+        return false
+    }
+
     for _, system := range testSystems {
         fmt.Printf("\nTesting system: %s\n", system.name)
-        
+
         // Convert CPE strings to objects
         systemCPEs := make([]*cpeskills.CPE, 0, len(system.cpes))
         for _, cpeStr := range system.cpes {
@@ -155,35 +163,33 @@ func main() {
             }
             systemCPEs = append(systemCPEs, cpeObj)
         }
-        
-        // Test applicability
-        applies := cpeskills.EvaluateApplicability(parsedComplex, systemCPEs)
-        
-        status := "❌ Not applicable"
-        if applies {
-            status = "✅ Applicable"
+
+        var applies bool
+        if parsedComplex != nil {
+            applies = systemApplies(parsedComplex, systemCPEs)
         }
-        
+
+        status := "Not applicable"
+        if applies {
+            status = "Applicable"
+        }
+
         fmt.Printf("  Result: %s\n", status)
         fmt.Printf("  System CPEs:\n")
         for _, cpeStr := range system.cpes {
             fmt.Printf("    - %s\n", cpeStr)
         }
     }
-    
+
     // Example 4: Version Range Applicability
     fmt.Println("\n4. Version Range Applicability:")
-    
-    // Expression for Java versions 8.0 to 11.0 (exclusive)
-    javaRangeExpr := `
-    (cpe:2.3:a:oracle:java:8.*:*:*:*:*:*:*:* OR
-     cpe:2.3:a:oracle:java:9.*:*:*:*:*:*:*:* OR
-     cpe:2.3:a:oracle:java:10.*:*:*:*:*:*:*:*)
-    `
-    
+
+    // Expression for Java versions 8.x, 9.x, or 10.x
+    javaRangeExpr := "OR(cpe:2.3:a:oracle:java:8.*:*:*:*:*:*:*:*, cpe:2.3:a:oracle:java:9.*:*:*:*:*:*:*:*, cpe:2.3:a:oracle:java:10.*:*:*:*:*:*:*:*)"
+
     fmt.Printf("Java Version Range Expression:\n%s\n", javaRangeExpr)
-    
-    javaExpr, err := cpeskills.ParseApplicabilityExpression(javaRangeExpr)
+
+    javaExpr, err := cpeskills.ParseExpression(javaRangeExpr)
     if err != nil {
         log.Printf("Failed to parse Java expression: %v", err)
     } else {
@@ -195,37 +201,35 @@ func main() {
             "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",
             "cpe:2.3:a:oracle:java:17.0.1:*:*:*:*:*:*:*",
         }
-        
+
         fmt.Println("\nTesting Java versions:")
         for _, javaVer := range javaVersions {
-            javaCPE, _ := cpeskills.ParseCpe23(javaVer)
-            applies := cpeskills.EvaluateApplicability(javaExpr, []*cpeskills.CPE{javaCPE})
-            
-            status := "❌"
-            if applies {
-                status = "✅"
+            javaCPE, perr := cpeskills.ParseCpe23(javaVer)
+            if perr != nil {
+                log.Printf("Failed to parse %s: %v", javaVer, perr)
+                continue
             }
-            
-            fmt.Printf("  %s %s\n", status, javaVer)
+            // Evaluate the expression against a single target CPE.
+            applies := javaExpr.Evaluate(javaCPE)
+
+            status := "no"
+            if applies {
+                status = "yes"
+            }
+
+            fmt.Printf("  [%s] %s\n", status, javaVer)
         }
     }
-    
+
     // Example 5: Platform-Specific Applicability
     fmt.Println("\n5. Platform-Specific Applicability:")
-    
-    // Expression for web servers on Linux
-    webServerLinuxExpr := `
-    (cpe:2.3:o:*:linux:*:*:*:*:*:*:*:* OR
-     cpe:2.3:o:canonical:ubuntu:*:*:*:*:*:*:*:* OR
-     cpe:2.3:o:redhat:enterprise_linux:*:*:*:*:*:*:*:*)
-    AND
-    (cpe:2.3:a:apache:http_server:*:*:*:*:*:*:*:* OR
-     cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*)
-    `
-    
+
+    // Expression for a web server running on Linux.
+    webServerLinuxExpr := "AND(OR(cpe:2.3:o:*:linux:*:*:*:*:*:*:*:*, cpe:2.3:o:canonical:ubuntu:*:*:*:*:*:*:*:*, cpe:2.3:o:redhat:enterprise_linux:*:*:*:*:*:*:*:*), OR(cpe:2.3:a:apache:http_server:*:*:*:*:*:*:*:*, cpe:2.3:a:nginx:nginx:*:*:*:*:*:*:*:*))"
+
     fmt.Printf("Web Server on Linux Expression:\n%s\n", webServerLinuxExpr)
-    
-    webServerExpr, err := cpeskills.ParseApplicabilityExpression(webServerLinuxExpr)
+
+    webServerExpr, err := cpeskills.ParseExpression(webServerLinuxExpr)
     if err != nil {
         log.Printf("Failed to parse web server expression: %v", err)
     } else {
@@ -256,64 +260,51 @@ func main() {
                 },
             },
         }
-        
+
         fmt.Println("\nTesting server configurations:")
         for _, config := range serverConfigs {
             configCPEs := make([]*cpeskills.CPE, 0, len(config.cpes))
             for _, cpeStr := range config.cpes {
-                cpeObj, _ := cpeskills.ParseCpe23(cpeStr)
+                cpeObj, perr := cpeskills.ParseCpe23(cpeStr)
+                if perr != nil {
+                    log.Printf("Failed to parse %s: %v", cpeStr, perr)
+                    continue
+                }
                 configCPEs = append(configCPEs, cpeObj)
             }
-            
-            applies := cpeskills.EvaluateApplicability(webServerExpr, configCPEs)
-            
-            status := "❌"
+
+            applies := systemApplies(webServerExpr, configCPEs)
+
+            status := "no"
             if applies {
-                status = "✅"
+                status = "yes"
             }
-            
-            fmt.Printf("  %s %s\n", status, config.name)
+
+            fmt.Printf("  [%s] %s\n", status, config.name)
         }
     }
-    
-    // Example 6: Expression Optimization
-    fmt.Println("\n6. Expression Optimization:")
-    
-    // Original verbose expression
-    verboseExpr := `
-    (cpe:2.3:a:microsoft:office:2016:*:*:*:*:*:*:* OR
-     cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:* OR
-     cpe:2.3:a:microsoft:office:365:*:*:*:*:*:*:*)
-    AND
-    (cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:* OR
-     cpe:2.3:o:microsoft:windows:11:*:*:*:*:*:*:*)
-    `
-    
-    // Optimized expression using wildcards
-    optimizedExpr := `
-    cpe:2.3:a:microsoft:office:*:*:*:*:*:*:*:*
-    AND
-    cpe:2.3:o:microsoft:windows:*:*:*:*:*:*:*:*
-    `
-    
-    fmt.Printf("Verbose Expression:\n%s\n", verboseExpr)
-    fmt.Printf("Optimized Expression:\n%s\n", optimizedExpr)
-    
-    verboseParsed, _ := cpeskills.ParseApplicabilityExpression(verboseExpr)
-    optimizedParsed, _ := cpeskills.ParseApplicabilityExpression(optimizedExpr)
-    
-    // Test both expressions
-    testCPEs := []*cpeskills.CPE{
+
+    // Example 6: Filtering a CPE List
+    fmt.Println("\n6. Filtering a CPE List:")
+
+    // FilterCPEs returns every CPE in a list that satisfies the expression.
+    allCPEs := []*cpeskills.CPE{
         mustParse("cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*"),
-        mustParse("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*"),
+        mustParse("cpe:2.3:o:microsoft:windows:11:*:*:*:*:*:*:*"),
+        mustParse("cpe:2.3:o:canonical:ubuntu:20.04:*:*:*:*:*:*:*"),
+        mustParse("cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*"),
     }
-    
-    verboseResult := cpeskills.EvaluateApplicability(verboseParsed, testCPEs)
-    optimizedResult := cpeskills.EvaluateApplicability(optimizedParsed, testCPEs)
-    
-    fmt.Printf("Verbose result: %t\n", verboseResult)
-    fmt.Printf("Optimized result: %t\n", optimizedResult)
-    fmt.Printf("Results match: %t\n", verboseResult == optimizedResult)
+
+    winExpr, err := cpeskills.ParseExpression("OR(cpe:2.3:o:microsoft:windows:10:*:*:*:*:*:*:*, cpe:2.3:o:microsoft:windows:11:*:*:*:*:*:*:*)")
+    if err != nil {
+        log.Fatalf("Failed to parse Windows expression: %v", err)
+    }
+
+    matched := cpeskills.FilterCPEs(allCPEs, winExpr)
+    fmt.Printf("Matched %d Windows CPE(s):\n", len(matched))
+    for _, c := range matched {
+        fmt.Printf("  - %s\n", c.Cpe23)
+    }
 }
 
 func mustParse(cpeStr string) *cpeskills.CPE {

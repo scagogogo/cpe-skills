@@ -15,8 +15,11 @@ classDiagram
         +SearchCPE(criteria, options) CPE
     }
     class FileStorage {
-        +string BaseDir
-        +bool EnableCache
+        +Initialize() error
+        +Close() error
+        +StoreCPE(cpe) error
+        +RetrieveCPE(id) CPE
+        +SearchCPE(criteria, options) CPE
     }
     class MemoryStorage {
         +Initialize() error
@@ -74,14 +77,14 @@ type Storage interface {
 ### NewFileStorage
 
 ```go
-func NewFileStorage(baseDir string, enableCache bool) (*FileStorage, error)
+func NewFileStorage(baseDir string, useCache bool) (*FileStorage, error)
 ```
 
 创建一个新的基于文件的存储实现。
 
 **参数：**
 - `baseDir` - 用于存储文件的基础目录
-- `enableCache` - 是否启用内存缓存
+- `useCache` - 是否启用内存缓存
 
 **返回值：**
 - `*FileStorage` - 文件存储实例
@@ -106,7 +109,7 @@ if err != nil {
 ### FileStorage 结构
 
 文件存储按以下目录结构组织数据：
-```
+```text
 baseDir/
 ├── cpes/           # CPE 文件（JSON 格式）
 ├── cves/           # CVE 文件（JSON 格式）

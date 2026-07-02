@@ -66,14 +66,14 @@ if !windowsPattern.Match(office) {
 ### MatchCPE
 
 ```go
-func MatchCPE(cpe1, cpe2 *CPE, options *MatchOptions) bool
+func MatchCPE(criteria *CPE, target *CPE, options *MatchOptions) bool
 ```
 
 使用可配置选项执行 CPE 匹配。
 
 **参数：**
-- `cpe1` - 要比较的第一个 CPE
-- `cpe2` - 要比较的第二个 CPE
+- `criteria` - 用于匹配的 CPE 模式
+- `target` - 待测试是否匹配的 CPE
 - `options` - 匹配选项（可以为 `nil` 以使用默认值）
 
 **返回值：**
@@ -337,7 +337,6 @@ package main
 
 import (
     "fmt"
-    "log"
     "github.com/scagogogo/cpe-skills"
 )
 

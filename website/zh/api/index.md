@@ -1,20 +1,20 @@
 # API 参考
 
-CPE库提供了一套全面的API，用于处理通用平台枚举（CPE）数据。本节涵盖了库中所有可用的公共类型、函数和接口。
+CPE 库提供了一套全面的 API，用于处理通用平台枚举（CPE）数据。本节涵盖了库中所有可用的公共类型、函数和接口。
 
 ## 概览
 
 该库分为几个关键领域：
 
 - **[核心类型](./types.md)** - 基本数据结构和类型定义
-- **[解析功能](./parsing.md)** - 解析CPE字符串的函数
-- **[匹配算法](./matching.md)** - CPE匹配和比较函数
+- **[解析功能](./parsing.md)** - 解析 CPE 字符串的函数
+- **[匹配算法](./matching.md)** - CPE 匹配和比较函数
 - **[存储接口](./storage.md)** - 数据持久化接口和实现
-- **[字典管理](./dictionary.md)** - CPE字典管理
-- **[NVD集成](./nvd.md)** - 国家漏洞数据库集成
-- **[WFN格式](./wfn.md)** - Well-Formed Name格式支持
-- **[验证功能](./validation.md)** - CPE验证函数
-- **[集合操作](./sets.md)** - CPE集合操作
+- **[字典管理](./dictionary.md)** - CPE 字典管理
+- **[NVD 集成](./nvd.md)** - 国家漏洞数据库集成
+- **[WFN 格式](./wfn.md)** - Well-Formed Name 格式支持
+- **[验证功能](./validation.md)** - CPE 验证函数
+- **[集合操作](./sets.md)** - CPE 集合操作
 - **[错误处理](./errors.md)** - 错误类型和处理
 
 下面的脑图从整体上展示了各 API 模块的组织方式：
@@ -60,12 +60,12 @@ func FormatCpe23(cpe *CPE) string
 func FormatCpe22(cpe *CPE) string
 
 // 匹配CPE
-func (c *CPE) Match(other *CPE) bool
-func MatchCPE(cpe1, cpe2 *CPE, options *MatchOptions) bool
-func AdvancedMatchCPE(criteria, target *CPE, options *AdvancedMatchOptions) bool
+func (x *CPE) Match(other *CPE) bool
+func MatchCPE(criteria *CPE, target *CPE, options *MatchOptions) bool
+func AdvancedMatchCPE(criteria *CPE, target *CPE, options *AdvancedMatchOptions) bool
 
 // 存储操作
-func NewFileStorage(baseDir string, enableCache bool) (*FileStorage, error)
+func NewFileStorage(baseDir string, useCache bool) (*FileStorage, error)
 func NewMemoryStorage() *MemoryStorage
 ```
 
@@ -143,6 +143,6 @@ func main() {
 ## 下一步
 
 - 探索[核心类型](./types.md)以了解数据结构
-- 学习[解析](./parsing.md)CPE字符串
+- 学习[解析](./parsing.md)CPE 字符串
 - 发现[匹配](./matching.md)功能
 - 查看实用的[指南](/zh/guide/)

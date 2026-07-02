@@ -1,10 +1,10 @@
-# WFN转换
+# WFN 转换
 
-本示例演示如何在CPE格式和Well-Formed Name (WFN)格式之间进行转换，以及如何使用WFN进行高效的处理和匹配操作。
+本示例演示如何在 CPE 格式和 Well-Formed Name（WFN）格式之间进行转换，以及如何使用 WFN 进行高效的处理和匹配操作。
 
 ## 概述
 
-Well-Formed Name (WFN) 是CPE的内部标准表示格式，提供了一种规范化的方式来表示CPE组件，使匹配和比较操作更加高效和可靠。
+Well-Formed Name (WFN) 是 CPE 的内部标准表示格式，提供了一种规范化的方式来表示 CPE 组件，使匹配和比较操作更加高效和可靠。
 
 下图以 WFN 为中心展示了三种格式的互转，绑定（bind）与解绑（unbind）操作在 WFN 与各外部表示之间转换：
 
@@ -24,319 +24,318 @@ package main
 import (
     "fmt"
     "log"
+
     "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
-    fmt.Println("=== WFN转换示例 ===")
-    
-    // 示例1：CPE到WFN转换
-    fmt.Println("\n1. CPE到WFN转换:")
-    
+    fmt.Println("=== WFN 转换示例 ===")
+
+    // 示例 1：CPE 到 WFN 转换
+    fmt.Println("\n1. CPE 到 WFN 转换:")
+
     cpeStrings := []string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
         "cpe:/a:oracle:java:1.8.0_291",
         "cpe:2.3:o:linux:kernel:5.4.0:*:*:*:*:*:*:*",
     }
-    
+
     for i, cpeStr := range cpeStrings {
         fmt.Printf("\n示例 %d: %s\n", i+1, cpeStr)
-        
-        // 解析CPE
-        cpeObj, err := cpeskills.ParseCPE(cpeStr)
+
+        // 解析 CPE 字符串（自动识别 2.2 / 2.3 格式）
+        cpeObj, err := cpeskills.Parse(cpeStr)
         if err != nil {
-            log.Printf("解析CPE失败: %v", err)
+            log.Printf("解析 CPE 失败: %v", err)
             continue
         }
-        
-        // 转换为WFN
-        wfn, err := cpeskills.CPEToWFN(cpeObj)
-        if err != nil {
-            log.Printf("转换为WFN失败: %v", err)
-            continue
-        }
-        
-        fmt.Printf("  原始CPE: %s\n", cpeStr)
-        fmt.Printf("  WFN格式: %s\n", wfn.String())
-        fmt.Printf("  部件:     %s\n", wfn.Part)
-        fmt.Printf("  供应商:   %s\n", wfn.Vendor)
-        fmt.Printf("  产品:     %s\n", wfn.Product)
-        fmt.Printf("  版本:     %s\n", wfn.Version)
+
+        // 将 CPE 转换为 WFN
+        wfn := cpeskills.FromCPE(cpeObj)
+
+        fmt.Printf("  原始 CPE: %s\n", cpeStr)
+        fmt.Printf("  WFN 格式: %s\n", wfn.WFNString())
+        fmt.Printf("  部件:     %s\n", wfn.Get(cpeskills.AttrPart))
+        fmt.Printf("  供应商:   %s\n", wfn.Get(cpeskills.AttrVendor))
+        fmt.Printf("  产品:     %s\n", wfn.Get(cpeskills.AttrProduct))
+        fmt.Printf("  版本:     %s\n", wfn.Get(cpeskills.AttrVersion))
     }
-    
-    // 示例2：WFN到CPE转换
-    fmt.Println("\n2. WFN到CPE转换:")
-    
-    // 手动创建WFN
+
+    // 示例 2：WFN 到 CPE 转换
+    fmt.Println("\n2. WFN 到 CPE 转换:")
+
+    // 手动创建 WFN（未设置的字符串字段通过 Get 读回为 ANY）
     wfn := &cpeskills.WFN{
-        Part:           "a",
-        Vendor:         "adobe",
-        Product:        "reader",
-        Version:        "2021.001.20150",
-        Update:         cpeskills.WFNAny,
-        Edition:        cpeskills.WFNAny,
-        Language:       cpeskills.WFNAny,
-        SoftwareEdition: cpeskills.WFNAny,
-        TargetSoftware: cpeskills.WFNAny,
-        TargetHardware: cpeskills.WFNAny,
-        Other:          cpeskills.WFNAny,
+        Part:    "a",
+        Vendor:  "adobe",
+        Product: "reader",
+        Version: "2021.001.20150",
     }
-    
-    fmt.Printf("WFN: %s\n", wfn.String())
-    
-    // 转换为CPE 2.3
-    cpe23, err := cpeskills.WFNToCPE23(wfn)
-    if err != nil {
-        log.Printf("转换为CPE 2.3失败: %v", err)
-    } else {
-        fmt.Printf("CPE 2.3: %s\n", cpe23)
-    }
-    
-    // 转换为CPE 2.2
-    cpe22, err := cpeskills.WFNToCPE22(wfn)
-    if err != nil {
-        log.Printf("转换为CPE 2.2失败: %v", err)
-    } else {
-        fmt.Printf("CPE 2.2: %s\n", cpe22)
-    }
-    
-    // 示例3：WFN属性值
-    fmt.Println("\n3. WFN属性值:")
-    
-    // 演示不同的WFN属性值
-    examples := []struct {
-        name  string
-        value string
-        desc  string
-    }{
-        {"ANY", cpeskills.WFNAny, "匹配任意值"},
-        {"NA", cpeskills.WFNNotApplicable, "不适用"},
-        {"字面值", "windows", "字面字符串值"},
-        {"转义值", cpeskills.QuoteWFNValue("special~chars"), "转义特殊字符"},
-    }
-    
-    for _, example := range examples {
-        fmt.Printf("  %s: '%s' - %s\n", example.name, example.value, example.desc)
-    }
-    
-    // 示例4：WFN匹配
-    fmt.Println("\n4. WFN匹配:")
-    
-    // 创建源和目标WFN
+
+    fmt.Printf("WFN: %s\n", wfn.WFNString())
+
+    // 将 WFN 绑定为 CPE 2.3 格式化字符串
+    fmt.Printf("CPE 2.3: %s\n", wfn.ToCPE23String())
+    // 将 WFN 绑定为 CPE 2.2 URI
+    fmt.Printf("CPE 2.2: %s\n", wfn.ToCPE22String())
+
+    // 示例 3：WFN 属性值与 Get/Set
+    fmt.Println("\n3. WFN 属性值:")
+
+    w := cpeskills.NewWFN() // 所有属性默认为 ANY
+    fmt.Printf("  空 WFN Get(product): %s（ANY 匹配任意值）\n", w.Get(cpeskills.AttrProduct))
+    w.Set(cpeskills.AttrPart, cpeskills.PartApplicationShort)
+    w.Set(cpeskills.AttrVendor, "microsoft")
+    w.Set(cpeskills.AttrProduct, "windows")
+    w.Set(cpeskills.AttrVersion, "10")
+    w.Set(cpeskills.AttrUpdate, cpeskills.ValueNA) // NA = 不适用
+    fmt.Printf("  Set 后: %s\n", w.WFNString())
+    fmt.Printf("  ANY 常量: %q\n", cpeskills.ValueANY)
+    fmt.Printf("  NA  常量: %q\n", cpeskills.ValueNA)
+
+    // 示例 4：WFN 匹配
+    fmt.Println("\n4. WFN 匹配:")
+
+    // 源属性为 ANY (*) 时可匹配任意目标值
     sourceWFN := &cpeskills.WFN{
         Part:    "a",
         Vendor:  "microsoft",
-        Product: cpeskills.WFNAny, // 任意产品
-        Version: cpeskills.WFNAny, // 任意版本
+        Product: cpeskills.ValueANY, // 任意产品
+        Version: cpeskills.ValueANY, // 任意版本
     }
-    
+
     targetWFNs := []*cpeskills.WFN{
         {Part: "a", Vendor: "microsoft", Product: "windows", Version: "10"},
         {Part: "a", Vendor: "microsoft", Product: "office", Version: "2019"},
         {Part: "a", Vendor: "oracle", Product: "java", Version: "11"},
         {Part: "o", Vendor: "microsoft", Product: "windows", Version: "10"},
     }
-    
-    fmt.Printf("源WFN: %s\n", sourceWFN.String())
+
+    fmt.Printf("源 WFN: %s\n", sourceWFN.WFNString())
     fmt.Println("匹配目标:")
-    
+
     for i, targetWFN := range targetWFNs {
-        match := cpeskills.MatchWFN(sourceWFN, targetWFN)
-        status := "❌"
+        match := sourceWFN.Match(targetWFN)
+        status := "否"
         if match {
-            status = "✅"
+            status = "是"
         }
-        fmt.Printf("  %s 目标 %d: %s\n", status, i+1, targetWFN.String())
+        fmt.Printf("  [%s] 目标 %d: %s\n", status, i+1, targetWFN.WFNString())
     }
-    
-    // 示例5：WFN验证
-    fmt.Println("\n5. WFN验证:")
-    
+
+    // 示例 5：WFN 校验（标识符名称检查）
+    fmt.Println("\n5. WFN 校验:")
+
     validationTests := []struct {
-        wfn   *cpeskills.WFN
-        desc  string
-        valid bool
+        wfn  *cpeskills.WFN
+        desc string
+        want bool
     }{
         {
             &cpeskills.WFN{Part: "a", Vendor: "microsoft", Product: "windows"},
-            "有效的应用程序WFN",
+            "含部件、供应商、产品 => 是标识符",
             true,
         },
         {
             &cpeskills.WFN{Part: "x", Vendor: "microsoft", Product: "windows"},
-            "无效的部件值",
-            false,
+            "仍是标识符（此处不校验部件取值）",
+            true,
         },
         {
             &cpeskills.WFN{Part: "a", Vendor: "", Product: "windows"},
-            "空供应商",
+            "空供应商（ANY）不是标识符",
             false,
         },
         {
             &cpeskills.WFN{Part: "a", Vendor: "microsoft", Product: ""},
-            "空产品",
+            "空产品（ANY）不是标识符",
             false,
         },
     }
-    
+
     for i, test := range validationTests {
-        err := cpeskills.ValidateWFN(test.wfn)
-        isValid := err == nil
-        
-        status := "❌"
-        if isValid == test.valid {
-            status = "✅"
+        isValid := test.wfn.IsIdentifierName()
+        status := "通过"
+        if isValid != test.want {
+            status = "失败"
         }
-        
-        fmt.Printf("  %s 测试 %d: %s\n", status, i+1, test.desc)
-        fmt.Printf("    WFN: %s\n", test.wfn.String())
-        if err != nil {
-            fmt.Printf("    错误: %v\n", err)
-        }
+        fmt.Printf("  [%s] 测试 %d: %s\n", status, i+1, test.desc)
+        fmt.Printf("    WFN: %s\n", test.wfn.WFNString())
     }
-    
-    // 示例6：WFN规范化
-    fmt.Println("\n6. WFN规范化:")
-    
-    unnormalizedWFN := &cpeskills.WFN{
-        Part:    "A", // 应该是小写
-        Vendor:  "Microsoft", // 应该是小写
-        Product: "Windows~10", // 特殊字符
-        Version: "10.0.19041.1234",
+
+    // 示例 6：绑定到外部格式
+    fmt.Println("\n6. 绑定到外部格式:")
+
+    bindWFN := &cpeskills.WFN{
+        Part:    "a",
+        Vendor:  "apache",
+        Product: "tomcat",
+        Version: "9.0.0",
     }
-    
-    fmt.Printf("规范化前: %s\n", unnormalizedWFN.String())
-    
-    normalizedWFN := cpeskills.NormalizeWFN(unnormalizedWFN)
-    fmt.Printf("规范化后: %s\n", normalizedWFN.String())
-    
-    // 示例7：WFN比较
-    fmt.Println("\n7. WFN比较:")
-    
-    wfn1 := &cpeskills.WFN{
-        Part: "a", Vendor: "apache", Product: "tomcat", Version: "9.0.0",
+    fmt.Printf("  WFN:        %s\n", bindWFN.WFNString())
+    fmt.Printf("  BindToFS:   %s\n", cpeskills.BindToFS(bindWFN))
+    fmt.Printf("  BindToURI:  %s\n", cpeskills.BindToURI(bindWFN))
+
+    // 反向解绑回 WFN
+    roundTrip, err := cpeskills.UnbindFS(cpeskills.BindToFS(bindWFN))
+    if err != nil {
+        log.Printf("  UnbindFS 失败: %v", err)
+    } else {
+        fmt.Printf("  UnbindFS:   %s\n", roundTrip.WFNString())
     }
-    wfn2 := &cpeskills.WFN{
-        Part: "a", Vendor: "apache", Product: "tomcat", Version: "9.0.1",
-    }
-    wfn3 := &cpeskills.WFN{
-        Part: "a", Vendor: "apache", Product: "tomcat", Version: "9.0.0",
-    }
-    
-    fmt.Printf("WFN1: %s\n", wfn1.String())
-    fmt.Printf("WFN2: %s\n", wfn2.String())
-    fmt.Printf("WFN3: %s\n", wfn3.String())
-    
-    fmt.Printf("WFN1 == WFN2: %t\n", cpeskills.CompareWFN(wfn1, wfn2) == 0)
-    fmt.Printf("WFN1 == WFN3: %t\n", cpeskills.CompareWFN(wfn1, wfn3) == 0)
-    fmt.Printf("WFN1 < WFN2:  %t\n", cpeskills.CompareWFN(wfn1, wfn2) < 0)
-    
-    // 示例8：特殊字符处理
-    fmt.Println("\n8. 特殊字符处理:")
-    
-    specialValues := []string{
-        "product~name",
-        "version*with?wildcards",
-        "name:with:colons",
-        "path\\with\\backslashes",
-    }
-    
-    for _, value := range specialValues {
-        quoted := cpeskills.QuoteWFNValue(value)
-        unquoted := cpeskills.UnquoteWFNValue(quoted)
-        
-        fmt.Printf("  原始: %s\n", value)
-        fmt.Printf("  转义: %s\n", quoted)
-        fmt.Printf("  还原: %s\n", unquoted)
-        fmt.Printf("  正确: %t\n\n", value == unquoted)
-    }
-    
-    // 示例9：批量转换
-    fmt.Println("\n9. 批量转换:")
-    
+
+    // 示例 7：属性级比较
+    fmt.Println("\n7. 属性级比较:")
+
+    wfn1 := &cpeskills.WFN{Part: "a", Vendor: "apache", Product: "tomcat", Version: "9.0.0"}
+    wfn2 := &cpeskills.WFN{Part: "a", Vendor: "apache", Product: "tomcat", Version: "9.0.1"}
+    wfn3 := &cpeskills.WFN{Part: "a", Vendor: "apache", Product: "tomcat", Version: "9.0.0"}
+
+    fmt.Printf("WFN1: %s\n", wfn1.WFNString())
+    fmt.Printf("WFN2: %s\n", wfn2.WFNString())
+    fmt.Printf("WFN3: %s\n", wfn3.WFNString())
+
+    // CompareWFNs 返回每个属性的关系映射。
+    // 取值含义：1=超集，0=相等，-1=子集，-2=不相交。
+    cmp12 := cpeskills.CompareWFNs(wfn1, wfn2)
+    cmp13 := cpeskills.CompareWFNs(wfn1, wfn3)
+    fmt.Printf("WFN1 与 WFN2 版本关系: %d（0=相等，-2=不相交）\n", cmp12[cpeskills.AttrVersion])
+    fmt.Printf("WFN1 与 WFN3 版本关系: %d（0=相等）\n", cmp13[cpeskills.AttrVersion])
+    fmt.Printf("WFN1 与 WFN3 所有属性相等: %t\n", cpeskills.CompareWFNRelation(cmp13) == cpeskills.RelationEqual)
+
+    // 示例 8：批量转换
+    fmt.Println("\n8. 批量转换:")
+
     batchCPEs := []string{
         "cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*",
         "cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*",
         "cpe:2.3:a:oracle:java:11.0.12:*:*:*:*:*:*:*",
         "cpe:2.3:o:canonical:ubuntu:20.04:*:*:*:*:*:*:*",
     }
-    
-    fmt.Printf("批量转换 %d 个CPE:\n", len(batchCPEs))
-    
-    wfnList := []*cpeskills.WFN{}
+
+    fmt.Printf("批量转换 %d 个 CPE:\n", len(batchCPEs))
+
+    wfnList := make([]*cpeskills.WFN, 0, len(batchCPEs))
     for i, cpeStr := range batchCPEs {
-        cpeObj, err := cpeskills.ParseCpe23(cpeStr)
+        cpeObj, err := cpeskills.Parse(cpeStr)
         if err != nil {
-            fmt.Printf("  ❌ %d. 解析失败: %s\n", i+1, cpeStr)
+            fmt.Printf("  [否] %d. 解析失败: %s\n", i+1, cpeStr)
             continue
         }
-        
-        wfn, err := cpeskills.CPEToWFN(cpeObj)
-        if err != nil {
-            fmt.Printf("  ❌ %d. 转换失败: %s\n", i+1, cpeStr)
-            continue
-        }
-        
-        wfnList = append(wfnList, wfn)
-        fmt.Printf("  ✅ %d. %s %s %s\n", i+1, wfn.Vendor, wfn.Product, wfn.Version)
+        w := cpeskills.FromCPE(cpeObj)
+        wfnList = append(wfnList, w)
+        fmt.Printf("  [是] %d. %s %s %s\n", i+1, w.Get(cpeskills.AttrVendor), w.Get(cpeskills.AttrProduct), w.Get(cpeskills.AttrVersion))
     }
-    
-    // 转换回CPE格式
-    fmt.Printf("\n转换回CPE 2.3格式:\n")
-    for i, wfn := range wfnList {
-        cpe23, err := cpeskills.WFNToCPE23(wfn)
-        if err != nil {
-            fmt.Printf("  ❌ %d. 转换失败\n", i+1)
-        } else {
-            fmt.Printf("  ✅ %d. %s\n", i+1, cpe23)
-        }
+
+    fmt.Println("\n转换回 CPE 2.3:")
+    for i, w := range wfnList {
+        fmt.Printf("  [是] %d. %s\n", i+1, w.ToCPE23String())
     }
 }
 ```
 
 ## 预期输出
 
-```
-=== WFN转换示例 ===
+```text
+=== WFN 转换示例 ===
 
-1. CPE到WFN转换:
+1. CPE 到 WFN 转换:
 
 示例 1: cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
-  原始CPE: cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
-  WFN格式: wfn:[part="a",vendor="microsoft",product="windows",version="10",update=ANY,edition=ANY,language=ANY,sw_edition=ANY,target_sw=ANY,target_hw=ANY,other=ANY]
+  原始 CPE: cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
+  WFN 格式: wfn:[part="a",vendor="microsoft",product="windows",version="10"]
   部件:     a
   供应商:   microsoft
   产品:     windows
   版本:     10
 
-2. WFN到CPE转换:
-WFN: wfn:[part="a",vendor="adobe",product="reader",version="2021.001.20150",update=ANY,edition=ANY,language=ANY,sw_edition=ANY,target_sw=ANY,target_hw=ANY,other=ANY]
-CPE 2.3: cpe:2.3:a:adobe:reader:2021.001.20150:*:*:*:*:*:*:*
-CPE 2.2: cpe:/a:adobe:reader:2021.001.20150
+示例 2: cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*
+  原始 CPE: cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*
+  WFN 格式: wfn:[part="a",vendor="apache",product="tomcat",version="9.0.0"]
+  部件:     a
+  供应商:   apache
+  产品:     tomcat
+  版本:     9.0.0
 
-3. WFN属性值:
-  ANY: '*' - 匹配任意值
-  NA: '-' - 不适用
-  字面值: 'windows' - 字面字符串值
-  转义值: 'special\~chars' - 转义特殊字符
+示例 3: cpe:/a:oracle:java:1.8.0_291
+  原始 CPE: cpe:/a:oracle:java:1.8.0_291
+  WFN 格式: wfn:[part="a",vendor="oracle",product="java",version="1.8.0_291"]
+  部件:     a
+  供应商:   oracle
+  产品:     java
+  版本:     1.8.0_291
 
-4. WFN匹配:
-源WFN: wfn:[part="a",vendor="microsoft",product=ANY,version=ANY]
+示例 4: cpe:2.3:o:linux:kernel:5.4.0:*:*:*:*:*:*:*
+  原始 CPE: cpe:2.3:o:linux:kernel:5.4.0:*:*:*:*:*:*:*
+  WFN 格式: wfn:[part="o",vendor="linux",product="kernel",version="5.4.0"]
+  部件:     o
+  供应商:   linux
+  产品:     kernel
+  版本:     5.4.0
+
+2. WFN 到 CPE 转换:
+WFN: wfn:[part="a",vendor="adobe",product="reader",version="2021.001.20150"]
+CPE 2.3: cpe:2.3:a:adobe:reader:2021\.001\.20150:::::::
+CPE 2.2: cpe:/a:adobe:reader:2021%2e001%2e20150:
+
+3. WFN 属性值:
+  空 WFN Get(product): *（ANY 匹配任意值）
+  Set 后: wfn:[part="a",vendor="microsoft",product="windows",version="10",update="-"]
+  ANY 常量: "*"
+  NA  常量: "-"
+
+4. WFN 匹配:
+源 WFN: wfn:[part="a",vendor="microsoft"]
 匹配目标:
-  ✅ 目标 1: wfn:[part="a",vendor="microsoft",product="windows",version="10"]
-  ✅ 目标 2: wfn:[part="a",vendor="microsoft",product="office",version="2019"]
-  ❌ 目标 3: wfn:[part="a",vendor="oracle",product="java",version="11"]
-  ❌ 目标 4: wfn:[part="o",vendor="microsoft",product="windows",version="10"]
+  [是] 目标 1: wfn:[part="a",vendor="microsoft",product="windows",version="10"]
+  [是] 目标 2: wfn:[part="a",vendor="microsoft",product="office",version="2019"]
+  [否] 目标 3: wfn:[part="a",vendor="oracle",product="java",version="11"]
+  [否] 目标 4: wfn:[part="o",vendor="microsoft",product="windows",version="10"]
 
-...
+5. WFN 校验:
+  [通过] 测试 1: 含部件、供应商、产品 => 是标识符
+    WFN: wfn:[part="a",vendor="microsoft",product="windows"]
+  [通过] 测试 2: 仍是标识符（此处不校验部件取值）
+    WFN: wfn:[part="x",vendor="microsoft",product="windows"]
+  [通过] 测试 3: 空供应商（ANY）不是标识符
+    WFN: wfn:[part="a",product="windows"]
+  [通过] 测试 4: 空产品（ANY）不是标识符
+    WFN: wfn:[part="a",vendor="microsoft"]
+
+6. 绑定到外部格式:
+  WFN:        wfn:[part="a",vendor="apache",product="tomcat",version="9.0.0"]
+  BindToFS:   cpe:2.3:a:apache:tomcat:9\.0\.0:*:*:*:*:*:*:*
+  BindToURI:  cpe:/a:apache:tomcat:9%2e0%2e0:*
+  UnbindFS:   wfn:[part="a",vendor="apache",product="tomcat",version="9.0.0"]
+
+7. 属性级比较:
+WFN1: wfn:[part="a",vendor="apache",product="tomcat",version="9.0.0"]
+WFN2: wfn:[part="a",vendor="apache",product="tomcat",version="9.0.1"]
+WFN3: wfn:[part="a",vendor="apache",product="tomcat",version="9.0.0"]
+WFN1 与 WFN2 版本关系: -2（0=相等，-2=不相交）
+WFN1 与 WFN3 版本关系: 0（0=相等）
+WFN1 与 WFN3 所有属性相等: true
+
+8. 批量转换:
+批量转换 4 个 CPE:
+  [是] 1. microsoft windows 10
+  [是] 2. apache tomcat 9.0.0
+  [是] 3. oracle java 11.0.12
+  [是] 4. canonical ubuntu 20.04
+
+转换回 CPE 2.3:
+  [是] 1. cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*
+  [是] 2. cpe:2.3:a:apache:tomcat:9\.0\.0:*:*:*:*:*:*:*
+  [是] 3. cpe:2.3:a:oracle:java:11\.0\.12:*:*:*:*:*:*:*
+  [是] 4. cpe:2.3:o:canonical:ubuntu:20\.04:*:*:*:*:*:*:*
 ```
 
 ## 关键概念
 
-### 1. WFN结构
+### 1. WFN 结构
 
-WFN包含11个属性：
+WFN 包含 11 个属性：
 - **part**: 组件类型 (a, h, o)
 - **vendor**: 供应商名称
 - **product**: 产品名称
@@ -355,7 +354,7 @@ WFN包含11个属性：
 - **NA (-)**: 不适用/未定义
 - **字面值**: 精确字符串匹配
 
-### 3. WFN优势
+### 3. WFN 优势
 
 - **规范形式**: 标准化表示
 - **高效匹配**: 优化的比较操作
@@ -364,14 +363,14 @@ WFN包含11个属性：
 
 ## 最佳实践
 
-1. **内部处理使用WFN**: 将CPE字符串转换为WFN进行操作
-2. **验证WFN**: 使用前始终验证WFN对象
-3. **规范化输入**: 规范化WFN以确保一致的比较
-4. **处理特殊值**: 正确处理ANY和NA值
-5. **转换回去**: 将WFN转换回CPE格式进行输出
+1. **内部处理使用 WFN**: 将 CPE 字符串转换为 WFN 进行操作
+2. **验证 WFN**: 使用前始终验证 WFN 对象
+3. **规范化输入**: 规范化 WFN 以确保一致的比较
+4. **处理特殊值**: 正确处理 ANY 和 NA 值
+5. **转换回去**: 将 WFN 转换回 CPE 格式进行输出
 
 ## 下一步
 
-- 学习[高级匹配](./advanced-matching.md)使用WFN
-- 探索[CPE集合](./sets.md)进行批量WFN操作
-- 查看[存储](./storage.md)来持久化WFN数据
+- 学习[高级匹配](./advanced-matching.md)使用 WFN
+- 探索[CPE 集合](./sets.md)进行批量 WFN 操作
+- 查看[存储](./storage.md)来持久化 WFN 数据

@@ -66,14 +66,14 @@ if !windowsPattern.Match(office) {
 ### MatchCPE
 
 ```go
-func MatchCPE(cpe1, cpe2 *CPE, options *MatchOptions) bool
+func MatchCPE(criteria *CPE, target *CPE, options *MatchOptions) bool
 ```
 
 Performs CPE matching with configurable options.
 
 **Parameters:**
-- `cpe1` - First CPE to compare
-- `cpe2` - Second CPE to compare
+- `criteria` - CPE pattern to match against
+- `target` - CPE to test for matching
 - `options` - Matching options (can be `nil` for defaults)
 
 **Returns:**
@@ -337,7 +337,6 @@ package main
 
 import (
     "fmt"
-    "log"
     "github.com/scagogogo/cpe-skills"
 )
 

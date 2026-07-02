@@ -64,7 +64,7 @@ if err != nil {
 ### CPE 2.3 格式结构
 
 CPE 2.3 格式遵循如下结构：
-```
+```text
 cpe:2.3:<part>:<vendor>:<product>:<version>:<update>:<edition>:<language>:<sw_edition>:<target_sw>:<target_hw>:<other>
 ```
 
@@ -130,12 +130,12 @@ fmt.Printf("Software edition: %s\n", mysqlCPE.SoftwareEdition) // enterprise
 ### CPE 2.2 格式结构
 
 CPE 2.2 格式遵循如下结构：
-```
+```text
 cpe:/<part>:<vendor>:<product>:<version>:<update>:<edition>:<language>
 ```
 
 带附加字段的扩展格式：
-```
+```text
 cpe:/<part>:<vendor>:<product>:<version>:<update>:<edition>:<language>:~<sw_edition>~<target_sw>~<target_hw>~<other>
 ```
 

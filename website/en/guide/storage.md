@@ -15,26 +15,36 @@ The following diagram shows the storage architecture and how the concrete backen
 classDiagram
     class Storage {
         <<interface>>
-        +Save(cpe) error
-        +Load(id) CPE
-        +Delete(id) error
-        +List() list
+        +Initialize() error
+        +Close() error
+        +StoreCPE(cpe) error
+        +RetrieveCPE(id) CPE
+        +SearchCPE(criteria, options) CPE
+        +StoreCVE(cve) error
+        +RetrieveCVE(cveID) CVEReference
     }
     class FileStorage {
         +Initialize() error
         +Close() error
+        +StoreCPE(cpe) error
+        +RetrieveCPE(id) CPE
     }
     class MemoryStorage {
         +Initialize() error
         +Close() error
+        +StoreCPE(cpe) error
+        +RetrieveCPE(id) CPE
     }
     class StorageManager {
-        +primary Storage
-        +cache Storage
+        +Storage Primary
+        +Storage Cache
+        +bool CacheEnabled
+        +SetCache(cache)
+        +GetStats() StorageStats
     }
     Storage <|.. FileStorage
     Storage <|.. MemoryStorage
-    StorageManager o-- Storage
+    StorageManager o-- Storage : "primary + cache"
 ```
 
 ## Complete Example
@@ -187,17 +197,18 @@ func main() {
     
     // Create a sample CVE
     sampleCVE := &cpeskills.CVEReference{
-        ID:          "CVE-2021-44228",
+        CVEID:       "CVE-2021-44228",
         Description: "Apache Log4j2 JNDI features do not protect against attacker controlled LDAP",
-        CVSS:        10.0,
-        Severity:    "CRITICAL",
+        CVSSScore:   10.0,
+        Severity:    "Critical",
     }
+    sampleCVE.AddAffectedCPE("cpe:2.3:a:apache:log4j:2.14:*:*:*:*:*:*:*")
     
     err = storage.StoreCVE(sampleCVE)
     if err != nil {
         log.Printf("Failed to store CVE: %v", err)
     } else {
-        fmt.Printf("✓ Stored CVE: %s\n", sampleCVE.ID)
+        fmt.Printf("✓ Stored CVE: %s\n", sampleCVE.CVEID)
     }
     
     // Retrieve CVE
@@ -205,8 +216,8 @@ func main() {
     if err != nil {
         log.Printf("Failed to retrieve CVE: %v", err)
     } else {
-        fmt.Printf("✓ Retrieved CVE: %s (CVSS: %.1f)\n", 
-            retrievedCVE.ID, retrievedCVE.CVSS)
+        fmt.Printf("✓ Retrieved CVE: %s (CVSS: %.1f, Severity: %s)\n",
+            retrievedCVE.CVEID, retrievedCVE.CVSSScore, retrievedCVE.Severity)
     }
     
     // Example 9: Update and Delete operations
@@ -251,7 +262,7 @@ func main() {
 
 ## Expected Output
 
-```
+```text
 === CPE Storage Examples ===
 
 1. File Storage:

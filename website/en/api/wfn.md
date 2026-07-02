@@ -319,13 +319,13 @@ WFN uses special value handling for logical values:
 func FSStringToURI(fs string) string
 ```
 
-Converts a CPE 2.3 formatted string to CPE 2.2 URI format.
+Converts a file-system-safe CPE string (where `:` separators are replaced by `___` and `_`) back into a standard CPE URI string. The file-system-safe form is used to turn a CPE into a path-safe filename component.
 
 **Parameters:**
-- `fs` - Formatted string value
+- `fs` - File-system-safe CPE string (e.g., `"cpe___2.3_a_microsoft_windows_10_-_-_-_-_-_-_-"`)
 
 **Returns:**
-- `string` - URI-format value
+- `string` - Standard CPE URI string (e.g., `"cpe:2.3:a:microsoft:windows:10:-:-:-:-:-:-:-"`)
 
 ### URIToFSString
 
@@ -333,13 +333,13 @@ Converts a CPE 2.3 formatted string to CPE 2.2 URI format.
 func URIToFSString(uri string) string
 ```
 
-Converts a CPE 2.2 URI value to CPE 2.3 formatted string.
+Converts a standard CPE URI string into a file-system-safe form by replacing `:` separators with `___` and `_`, so the result can be safely used as a filename component.
 
 **Parameters:**
-- `uri` - URI value
+- `uri` - Standard CPE URI string (e.g., `"cpe:2.3:a:microsoft:windows:10:-:-:-:-:-:-:-"`)
 
 **Returns:**
-- `string` - Formatted string value
+- `string` - File-system-safe CPE string (e.g., `"cpe___2.3_a_microsoft_windows_10_-_-_-_-_-_-_-"`)
 
 ## Format Binding
 

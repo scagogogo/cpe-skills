@@ -186,7 +186,7 @@ func main() {
 
 ## Expected Output
 
-```
+```text
 === CPE Parsing Examples ===
 
 1. Parsing CPE 2.3 Format:

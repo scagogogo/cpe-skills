@@ -44,7 +44,6 @@ package main
 
 import (
     "fmt"
-    "log"
     "github.com/scagogogo/cpe-skills"
 )
 
@@ -77,7 +76,6 @@ func main() {
     
     options := &cpeskills.MatchOptions{
         IgnoreVersion: true,
-        CaseSensitive: false,
     }
     
     fmt.Printf("Windows 10 vs Windows 11 (ignore version): %t\n",
@@ -172,7 +170,7 @@ func main() {
 
 ## Expected Output
 
-```
+```text
 === CPE Matching Examples ===
 
 1. Basic Matching:
@@ -216,8 +214,9 @@ Testing pattern: cpe:2.3:a:microsoft:*:*:*:*:*:*:*:*:*
 
 ### 2. Match Options
 - `IgnoreVersion`: Skip version comparison
-- `IgnoreUpdate`: Skip update comparison  
-- `CaseSensitive`: Control case sensitivity
+- `AllowSubVersions`: Allow sub-version matching (e.g., "1.0" matches "1.0.1")
+- `UseRegex`: Treat string fields as regular expressions
+- `VersionRange`: Match against a version range (`MinVersion`/`MaxVersion`)
 
 ### 3. Advanced Match Modes
 - `exact`: Precise field matching

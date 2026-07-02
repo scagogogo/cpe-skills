@@ -60,12 +60,12 @@ func FormatCpe23(cpe *CPE) string
 func FormatCpe22(cpe *CPE) string
 
 // Match CPEs
-func (c *CPE) Match(other *CPE) bool
-func MatchCPE(cpe1, cpe2 *CPE, options *MatchOptions) bool
-func AdvancedMatchCPE(criteria, target *CPE, options *AdvancedMatchOptions) bool
+func (x *CPE) Match(other *CPE) bool
+func MatchCPE(criteria *CPE, target *CPE, options *MatchOptions) bool
+func AdvancedMatchCPE(criteria *CPE, target *CPE, options *AdvancedMatchOptions) bool
 
 // Storage operations
-func NewFileStorage(baseDir string, enableCache bool) (*FileStorage, error)
+func NewFileStorage(baseDir string, useCache bool) (*FileStorage, error)
 func NewMemoryStorage() *MemoryStorage
 ```
 

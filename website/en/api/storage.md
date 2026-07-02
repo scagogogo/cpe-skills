@@ -15,8 +15,11 @@ classDiagram
         +SearchCPE(criteria, options) CPE
     }
     class FileStorage {
-        +string BaseDir
-        +bool EnableCache
+        +Initialize() error
+        +Close() error
+        +StoreCPE(cpe) error
+        +RetrieveCPE(id) CPE
+        +SearchCPE(criteria, options) CPE
     }
     class MemoryStorage {
         +Initialize() error
@@ -74,14 +77,14 @@ type Storage interface {
 ### NewFileStorage
 
 ```go
-func NewFileStorage(baseDir string, enableCache bool) (*FileStorage, error)
+func NewFileStorage(baseDir string, useCache bool) (*FileStorage, error)
 ```
 
 Creates a new file-based storage implementation.
 
 **Parameters:**
 - `baseDir` - Base directory for storing files
-- `enableCache` - Whether to enable in-memory caching
+- `useCache` - Whether to enable in-memory caching
 
 **Returns:**
 - `*FileStorage` - File storage instance
@@ -106,7 +109,7 @@ if err != nil {
 ### FileStorage Structure
 
 The file storage organizes data in the following directory structure:
-```
+```text
 baseDir/
 ├── cpes/           # CPE files (JSON format)
 ├── cves/           # CVE files (JSON format)

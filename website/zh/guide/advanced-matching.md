@@ -1,6 +1,6 @@
 # 高级匹配
 
-本示例演示CPE库中的高级匹配技术，包括模糊匹配、语义匹配和复杂的匹配策略。
+本示例演示 CPE 库中的高级匹配技术，包括模糊匹配、语义匹配和复杂的匹配策略。
 
 ## 概述
 
@@ -40,12 +40,153 @@ package main
 import (
     "fmt"
     "log"
-    "strings"
+
     "github.com/scagogogo/cpe-skills"
 )
 
 func main() {
-    fmt.Println("=== CPE高级匹配示例 ===")
+    fmt.Println("=== CPE 高级匹配示例 ===")
+
+    // 示例 1：基本匹配（CPE.Match / MatchCPE）
+    fmt.Println("\n1. 基本匹配:")
+
+    // 通配符模式匹配任意版本的 Windows。
+    patternCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+    if err != nil {
+        log.Fatal(err)
+    }
+    targetCPE, err := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // 方法形式：pattern.Match(target) 遵循 CPE 名称匹配规范，
+    // 任一字段中的 "*" 可匹配对应字段的任意值。
+    fmt.Printf("模式 %s 匹配 %s: %v\n",
+        patternCPE.GetURI(), targetCPE.GetURI(), patternCPE.Match(targetCPE))
+
+    // 使用 MatchOptions 的函数形式。此处 IgnoreVersion 使版本字段在比较时被跳过。
+    opts := cpeskills.DefaultMatchOptions()
+    opts.IgnoreVersion = true
+    fmt.Printf("MatchCPE (IgnoreVersion=true): %v\n",
+        cpeskills.MatchCPE(patternCPE, targetCPE, opts))
+
+    // 示例 2：高级匹配模式（exact / subset / superset / distance）
+    fmt.Println("\n2. 高级匹配模式:")
+
+    // criteria 是更通用的模式，target 是具体的 CPE。
+    criteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:*:*:*:*:*:*:*:*")
+    specific, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:windows:10:*:*:*:*:*:*:*")
+
+    modes := []struct {
+        name string
+        mode string
+    }{
+        {"exact", "exact"},
+        {"subset", "subset"},      // criteria 是 target 的子集（更具体）
+        {"superset", "superset"},  // criteria 是 target 的超集（更宽泛）
+        {"distance", "distance"},  // 基于距离/相似度的匹配
+    }
+
+    for _, m := range modes {
+        o := cpeskills.NewAdvancedMatchOptions()
+        o.MatchMode = m.mode
+        result := cpeskills.AdvancedMatchCPE(criteria, specific, o)
+        fmt.Printf("  mode=%-8s -> %v\n", m.name, result)
+    }
+
+    // 示例 3：正则、忽略大小写与部分匹配选项
+    fmt.Println("\n3. 正则 / 忽略大小写 / 部分匹配选项:")
+
+    // UseRegex 将 vendor/product 字段当作正则表达式处理。
+    // IgnoreCase 使这些正则匹配不区分大小写。
+    regexCriteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:.*soft.*:.*:1.*:*:*:*:*:*:*")
+    regexTarget, _ := cpeskills.ParseCpe23("cpe:2.3:a:microsoft:office:2019:*:*:*:*:*:*:*")
+
+    regexOpts := cpeskills.NewAdvancedMatchOptions()
+    regexOpts.MatchMode = "exact"
+    regexOpts.UseRegex = true
+    regexOpts.IgnoreCase = true
+    fmt.Printf("UseRegex+IgnoreCase 匹配: %v\n",
+        cpeskills.AdvancedMatchCPE(regexCriteria, regexTarget, regexOpts))
+
+    // PartialMatch 允许对字符串字段进行子串匹配。
+    partialCriteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:*:*:*:*:*:*:*:*")
+    partialTarget, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat_server:9.0.0:*:*:*:*:*:*:*")
+    partialOpts := cpeskills.NewAdvancedMatchOptions()
+    partialOpts.MatchMode = "exact"
+    partialOpts.PartialMatch = true
+    fmt.Printf("PartialMatch (tomcat 在 tomcat_server 中): %v\n",
+        cpeskills.AdvancedMatchCPE(partialCriteria, partialTarget, partialOpts))
+
+    // 示例 4：FieldOptions（按字段配置权重与是否必需）
+    fmt.Println("\n4. FieldOptions (权重 / 必需):")
+
+    // 配置按字段的行为。"vendor" 和 "product" 必需且权重更高；
+    // "version" 可选，权重较低。
+    fieldCriteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:*:*:*:*:*:*:*:*")
+    fieldTarget, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+
+    fieldOpts := cpeskills.NewAdvancedMatchOptions()
+    fieldOpts.MatchMode = "exact"
+    fieldOpts.FieldOptions = map[string]cpeskills.FieldMatchOption{
+        "vendor":  {Weight: 0.3, Required: true, MatchMethod: "exact"},
+        "product": {Weight: 0.4, Required: true, MatchMethod: "exact"},
+        "version": {Weight: 0.2, Required: false, MatchMethod: "exact"},
+    }
+    fmt.Printf("FieldOptions 匹配: %v\n",
+        cpeskills.AdvancedMatchCPE(fieldCriteria, fieldTarget, fieldOpts))
+
+    // 示例 5：ScoreThreshold
+    fmt.Println("\n5. ScoreThreshold:")
+
+    // 降低 ScoreThreshold 会放宽 distance 匹配，使近似匹配通过。
+    distCriteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.0:*:*:*:*:*:*:*")
+    distTarget, _ := cpeskills.ParseCpe23("cpe:2.3:a:apache:tomcat:9.0.1:*:*:*:*:*:*:*")
+
+    strictOpts := cpeskills.NewAdvancedMatchOptions()
+    strictOpts.MatchMode = "distance"
+    strictOpts.ScoreThreshold = 0.9
+    fmt.Printf("ScoreThreshold=0.9: %v\n",
+        cpeskills.AdvancedMatchCPE(distCriteria, distTarget, strictOpts))
+
+    looseOpts := cpeskills.NewAdvancedMatchOptions()
+    looseOpts.MatchMode = "distance"
+    looseOpts.ScoreThreshold = 0.5
+    fmt.Printf("ScoreThreshold=0.5: %v\n",
+        cpeskills.AdvancedMatchCPE(distCriteria, distTarget, looseOpts))
+
+    // 示例 6：版本比较（CompareVersions + 类型转换）
+    fmt.Println("\n6. 版本比较:")
+
+    // CPE 字段类型（Vendor/Product/Version）是 `type X string` 别名，
+    // 在传给 strings.Contains 或 CompareVersions 等通用 string 辅助函数前，
+    // 必须用 string() 进行转换。
+    v1 := targetCPE.Version
+    fmt.Printf("CompareVersions(%q, %q) = %d\n",
+        string(v1), "10", cpeskills.CompareVersions(string(v1), "10"))
+
+    fmt.Printf("IsVersionInRange(%q, %q, %q) = %v\n",
+        string(v1), "1.0", "99.0",
+        cpeskills.IsVersionInRange(string(v1), "1.0", "99.0"))
+
+    // 示例 7：通过 AdvancedMatchOptions 进行版本范围匹配
+    fmt.Println("\n7. 版本范围匹配:")
+
+    // VersionCompareMode 配合 VersionLower / VersionUpper，
+    // 在 AdvancedMatchCPE 内部执行基于范围的版本匹配。
+    rangeCriteria, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:*:*:*:*:*:*:*:*")
+    rangeTarget, _ := cpeskills.ParseCpe23("cpe:2.3:a:oracle:java:8.0.291:*:*:*:*:*:*:*")
+
+    rangeOpts := cpeskills.NewAdvancedMatchOptions()
+    rangeOpts.MatchMode = "exact"
+    rangeOpts.VersionCompareMode = "range"
+    rangeOpts.VersionLower = "8.0.0"
+    rangeOpts.VersionUpper = "8.0.999"
+    fmt.Printf("Java 8.0.291 在 [8.0.0, 8.0.999] 内: %v\n",
+        cpeskills.AdvancedMatchCPE(rangeCriteria, rangeTarget, rangeOpts))
+}
+```
     
     // 示例1：模糊匹配
     fmt.Println("\n1. 模糊匹配:")
@@ -444,7 +585,7 @@ func calculateWeightedScore(ref, test *cpeskills.CPE, weights map[string]float64
 
 - **范围匹配**: 检查版本是否在范围内
 - **兼容性**: 向后兼容性检查
-- **语义版本**: 理解major.minor.patch结构
+- **语义版本**: 理解 major.minor.patch 结构
 - **特殊格式**: 处理构建号和日期版本
 
 ## 最佳实践
@@ -464,6 +605,6 @@ func calculateWeightedScore(ref, test *cpeskills.CPE, weights map[string]float64
 
 ## 下一步
 
-- 学习[NVD集成](./nvd-integration.md)获取实际漏洞数据
-- 探索[CPE集合](./sets.md)进行批量高级匹配
+- 学习[NVD 集成](./nvd-integration.md)获取实际漏洞数据
+- 探索[CPE 集合](./sets.md)进行批量高级匹配
 - 查看[存储](./storage.md)来持久化匹配结果
